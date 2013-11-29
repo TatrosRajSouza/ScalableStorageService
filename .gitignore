@@ -1,3 +1,13 @@
+.gitignore.swp
+bin/
+logs/
+CLIENT_MANIFEST.MF
+ECS_MANIFEST.MF
+SERVER_MANIFEST.MF
+ms3-client.jar
+ms3-ecs.jar
+ms3-server.jar
+
 *.class
 
 # Package Files #
