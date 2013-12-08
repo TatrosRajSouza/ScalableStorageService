@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
+import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
@@ -28,6 +29,7 @@ public class KVStore implements KVCommInterface {
 	private int port;
 	private int currentRetries = 0;
 	private static final int NUM_RETRIES = 3;
+	private InfrastructureMetadata metaData;
 	
 	
 	/**
@@ -39,6 +41,10 @@ public class KVStore implements KVCommInterface {
 		this.address = address;
 		this.port = port;
 		this.logger = KVClient.getLogger();
+		
+		/* Create empty meta data and add the user-specified server */
+		this.metaData = new InfrastructureMetadata();
+		this.metaData.addServer("Initial User-Specified Server", address, port);
 	}
 
 	/**
@@ -127,6 +133,7 @@ public class KVStore implements KVCommInterface {
 	public KVMessage put(String key, String value) throws ConnectException {
 		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			try {
+				/* Optimistic Query, send put request to current connected server */
 				kvComm.sendMessage(new KVQuery(StatusType.PUT, key, value).toBytes());
 				logger.info("Sent PUT Request for <key, value>: <" + key + ", " + value + ">");
 			} catch (IOException ex) {
@@ -141,6 +148,23 @@ public class KVStore implements KVCommInterface {
 				byte[] putResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(putResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(), kvQueryMessage.getValue());
+				
+				/* We should receive PUT_SUCCESS or SERVER_NOT_RESPONSIBLE */
+				if (kvResult.getStatus() == StatusType.PUT_SUCCESS) {
+					/* Success */
+					return kvResult;
+				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
+					/* Need to update meta data and contact other server */
+					if (kvResult.key == "metaData") {
+						/* Update stale local meta data with actual meta data from server */
+						logger.info("Received new MetaData from Server: " + kvResult.value);
+						this.metaData.update(kvResult.value);
+						
+						
+					}
+				} else {
+					
+				}
 				return kvResult;
 			} catch (InvalidMessageException ex) {
 				logger.error("Unable to generate KVQueryMessage from Server response:\n" + ex.getMessage());

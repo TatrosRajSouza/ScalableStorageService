@@ -34,6 +34,14 @@ public class InfrastructureMetadata {
 	}
 	
 	/**
+	 * Get the list of active servers according to meta data
+	 * @return list of active servers
+	 */
+	public ArrayList<ServerData> getServers() {
+		return servers;
+	}
+	
+	/**
 	 * Expand this meta data by adding a new server
 	 * @param name Name of the server
 	 * @param address IP address of the server
