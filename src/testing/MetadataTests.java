@@ -46,6 +46,8 @@ public class MetadataTests extends TestCase {
 	@Test
 	/* Remove certain servers from metaData */
 	public void testRemoveMetaData() {
+		metaData.addServer("ServerE", "127.0.0.5", 50004);
+		metaData.addServer("ServerF", "127.0.0.6", 50005);
 		metaData.removeServer("127.0.0.5", 50004);
 		metaData.removeServer("127.0.0.6", 50005);
 		
