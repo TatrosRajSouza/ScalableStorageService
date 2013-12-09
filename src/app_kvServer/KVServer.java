@@ -4,20 +4,28 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import logger.LogSetup;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public class KVServer extends Thread {
 	private final static boolean DEBUG = false;
 	private static Logger logger = Logger.getRootLogger();
-
+	public static KVData kvdata = new KVData();
+	private String ip;
 	private int port;
+	private List<ClientConnection> clientList = new ArrayList<ClientConnection>();
 	private ServerSocket serverSocket;
 	private boolean running;
 
 	/**
-	 * Constructs a (Echo-) Server object which listens to connection attempts 
+	 * Constructs a Storage Server object which listens to connection attempts 
 	 * at the given port.
 	 * 
 	 * @param port a port number which the Server is listening to in order to 
@@ -26,38 +34,31 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
+		
 	}
-	/* public KVServer(int port, String levelString){
-		this.port = port;
-		this.setLevel(levelString);
-	}
-	private String setLevel(String levelString) {
+	
+	/**
+	 * Initializes and starts the server but blocked for client requests
+	 */
+	// convert with meta data parameter
+	public void initKVServer()
+	{
+		try {
+			new LogSetup("logs/server.log", Level.ALL);
+			System.setProperty("file.encoding", "US-ASCII");
+			int port = 50000;
+			String ip = "localhost";
+			new KVServer(port).start();
 
-		if(levelString.equals(Level.ALL.toString())) {
-			logger.setLevel(Level.ALL);
-			return Level.ALL.toString();
-		} else if(levelString.equals(Level.DEBUG.toString())) {
-			logger.setLevel(Level.DEBUG);
-			return Level.DEBUG.toString();
-		} else if(levelString.equals(Level.INFO.toString())) {
-			logger.setLevel(Level.INFO);
-			return Level.INFO.toString();
-		} else if(levelString.equals(Level.WARN.toString())) {
-			logger.setLevel(Level.WARN);
-			return Level.WARN.toString();
-		} else if(levelString.equals(Level.ERROR.toString())) {
-			logger.setLevel(Level.ERROR);
-			return Level.ERROR.toString();
-		} else if(levelString.equals(Level.FATAL.toString())) {
-			logger.setLevel(Level.FATAL);
-			return Level.FATAL.toString();
-		} else if(levelString.equals(Level.OFF.toString())) {
-			logger.setLevel(Level.OFF);
-			return Level.OFF.toString();
-		} else {
-			return LogSetup.UNKNOWN_LEVEL;
+		} catch (IOException e) {
+			System.out.println("Error! Unable to initialize logger!");
+			e.printStackTrace();
+
+		} catch (NumberFormatException nfe) {
+			logger.error("Invalid port number" + nfe.getMessage());
+			
 		}
-	}*/
+	}
 	/**
 	 * Initializes and starts the server. 
 	 * Loops until the the server should be closed.
@@ -73,7 +74,8 @@ public class KVServer extends Thread {
 					ClientConnection connection = 
 							new ClientConnection(client);
 					new Thread(connection).start();
-
+					// store the clients for further accessing
+					clientList.add(connection);
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());
@@ -93,7 +95,49 @@ public class KVServer extends Thread {
 	/**
 	 * Stops the server insofar that it won't listen at the given port any more.
 	 */
-	public void stopServer(){
+	public void start()
+	{
+		
+		logger.info("Allowing server to serve client requests");
+		changeServeClientStatus(true,1);
+		
+	}
+	public void stopServer(){		
+		logger.info("Stopping server to serve client requests");
+		changeServeClientStatus(false,1);
+		
+	}
+	 public void lockWrite()
+	    {
+		 logger.info("locking server to write requests");
+		 changeServeClientStatus(true,2);
+	    }
+	 public void UnLockWrite()
+	    {
+		 logger.info("unlocking server to write requests");
+		 changeServeClientStatus(false,2);
+	    }
+	private void changeServeClientStatus(boolean status,int flag)
+	{
+		ClientConnection connection;
+		for (Iterator<ClientConnection> connectionIterator = this.clientList.iterator(); connectionIterator.hasNext(); )
+	    {
+			connection = connectionIterator.next();
+		if(connection.isOpen())
+			{
+			if(flag == 1)
+				connection.setServeClientRequest(status);
+			else if(flag == 2)
+				connection.setWriteLocked(status);
+			}
+			else
+			{
+				this.clientList.remove(connection);
+			}
+		}
+	}
+
+	public void shutDown(){
 		running = false;
 		try {
 			serverSocket.close();
@@ -101,8 +145,16 @@ public class KVServer extends Thread {
 			logger.error("Error! " +
 					"Unable to close socket on port: " + port, e);
 		}
+		System.exit(1);
 	}
-
+   public void update()
+   {
+	   // update the metadata
+   }
+   public void moveData(KVServer kvserver)
+   {
+	  kvdata.moveData(kvserver);
+   }
 	private boolean initializeServer() {
 		logger.info("Initialize server ...");
 		try {
@@ -120,77 +172,5 @@ public class KVServer extends Thread {
 		}
 	}
 
-	/**
-	 * Main entry point for the echo server application. 
-	 * @param args contains the port number at args[0].
-	 */
-	public static void main(String[] args) {
-		if (!DEBUG) {
-			try {
-				new LogSetup("logs/server.log", Level.ALL);
-				if(args.length != 1) {
-					System.out.println("Error! Invalid number of arguments!");
-					System.out.println("Usage: Server <port>!");
-				} else {
-					int port = Integer.parseInt(args[0]);
-					new KVServer(port).start();
-				}
-			} catch (IOException e) {
-				System.out.println("Error! Unable to initialize logger!");
-				e.printStackTrace();
-				System.exit(1);
-			} catch (NumberFormatException nfe) {
-				System.out.println("Error! Invalid argument <port>! Not a number!");
-				System.out.println("Usage: Server <port>!");
-				System.exit(1);
-			}
-		} else {
-			try {
-				new LogSetup("logs/server.log", Level.ALL);
-				System.setProperty("file.encoding", "US-ASCII");
-				int port = 50000;
-				new KVServer(port).start();
-
-			} catch (IOException e) {
-				System.out.println("Error! Unable to initialize logger!");
-				e.printStackTrace();
-				System.exit(1);
-			} catch (NumberFormatException nfe) {
-				System.out.println("Error! Invalid argument <port>! Not a number!");
-				System.out.println("Usage: Server <port>!");
-				System.exit(1);
-			}
-		}
-	}
+	
 }
-/*public static void main(String[] args) {
-		try {
-			new LogSetup("logs/server.log", Level.ALL);
-			if(args.length != 2) {
-				System.out.println("Error! Invalid number of arguments!");
-				System.out.println("Usage: Server <port> <loglevel(ALL/DEBUG/INFO/ERROR/WARN/OFF>!");
-			} else {
-				int port = Integer.parseInt(args[0]);
-				String levelString = args[1];
-				if(levelString.equals(LogSetup.UNKNOWN_LEVEL)) {
-					System.out.println("No valid log level!");
-					System.out.println("Usage: Server <port> <loglevel(ALL/DEBUG/INFO/ERROR/WARN/OFF>!");
-				}
-				else
-				{
-					new KVServer(port,levelString).start();
-
-				}
-			}
-		} catch (IOException e) {
-			System.out.println("Error! Unable to initialize logger!");
-			e.printStackTrace();
-			System.exit(1);
-		} catch (NumberFormatException nfe) {
-			System.out.println("Error! Invalid argument <port>! Not a number!");
-			System.out.println("Usage: Server <port>!");
-			System.exit(1);
-		}
-	}
-
-}*/

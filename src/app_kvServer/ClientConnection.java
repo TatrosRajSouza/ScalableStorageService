@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.log4j.Logger;
 
@@ -21,14 +23,39 @@ import common.messages.KVQuery;
 public class ClientConnection implements Runnable {
 
 	private static Logger logger = Logger.getRootLogger();
-
-	private boolean isOpen;
+	private boolean serveClientRequest;
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
-	private static KVData kvdata = new KVData();
 	private Socket clientSocket;
 	private InputStream input;
 	private OutputStream output;
+	public boolean isWriteLocked() {
+		return isWriteLocked;
+	}
+
+	public void setWriteLocked(boolean isWriteLocked) {
+		this.isWriteLocked = isWriteLocked;
+	}
+
+
+	private boolean isWriteLocked;
+	private boolean isOpen;
+	public boolean isServeClientRequest() {
+		return serveClientRequest;
+	}
+
+	public void setServeClientRequest(boolean serveClientRequest) {
+		this.serveClientRequest = serveClientRequest;
+	}
+
+	public boolean isOpen() {
+		return isOpen;
+	}
+
+	public void setOpen(boolean isOpen) {
+		this.isOpen = isOpen;
+	}
+
 
 	/**
 	 * Constructs a new CientConnection object for a given TCP socket.
@@ -37,6 +64,8 @@ public class ClientConnection implements Runnable {
 	public ClientConnection(Socket clientSocket) {
 		this.clientSocket = clientSocket;
 		this.isOpen = true;
+		this.serveClientRequest = false;
+		this.isWriteLocked = false;
 	}
 
 	/**
@@ -61,107 +90,151 @@ public class ClientConnection implements Runnable {
 			}
 			while(isOpen) {
 				try {
-					byte[] latestMsg = receiveMessage();
-					KVQuery kvQueryCommand;
-					try {
-						kvQueryCommand = new KVQuery(latestMsg);
-						String key=null,value=null,returnValue=null;
-						String command = kvQueryCommand.getStatus().toString();
-						logger.debug("Received Command is: " + command);
+					// Serve clients only after ECS permission
+					if(serveClientRequest)
+					{
+						byte[] latestMsg = receiveMessage();
+						KVQuery kvQueryCommand;
+						try {
+							kvQueryCommand = new KVQuery(latestMsg);
+							String key=null,value=null,returnValue=null;
+							String command = kvQueryCommand.getStatus().toString();
+							logger.debug("Received Command is: " + command);
 
-						if(command.equals("GET"))	{
-							System.out.println("trying to get key");
-							key = kvQueryCommand.getKey();
-							System.out.println("Key is: " + kvQueryCommand.getKey());
-							
+							if(command.equals("GET"))	{
+								key = kvQueryCommand.getKey();
+								String hashedKey = checkRange(key);
+								if(hashedKey != null)
+								{
+									//future : check in range or not
+									System.out.println("trying to get key");
 
-								logger.debug("Num keys in map: " + kvdata.dataStore.size());
-								for (String k : kvdata.dataStore.keySet())
-								{
-									logger.debug("Key: " + k);
-								}
+									System.out.println("Key is: " + kvQueryCommand.getKey());
 
-								returnValue = kvdata.get(key);
-								logger.debug("returnValue: " + returnValue);
-								if(returnValue != null) {
-									KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
-									sendMessage(kvQueryGet.toBytes());
-								}
-								else
-								{
-									String errorMsg = "Error in get operation for the key/Key is not present <key>: " + "<" + key + ">";
-									logger.error(errorMsg);
-									KVQuery kvQueryGeterror = new KVQuery(KVMessage.StatusType.GET_ERROR,errorMsg);
-									sendMessage(kvQueryGeterror.toBytes());
-								}
-							
-						}
-						else if(command.equals("PUT"))
-						{
-							key = kvQueryCommand.getKey();
-							value = kvQueryCommand.getValue();
-							
-								returnValue = kvdata.put(key,value);
-								if(!value.equals("null") )
-								{
-									if(returnValue == null)
+
+									logger.debug("Num keys in map: " + KVServer.kvdata.dataStore.size());
+									for (String k : KVServer.kvdata.dataStore.keySet())
 									{
-										KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
-										sendMessage(kvQueryPut.toBytes());
+										logger.debug("Key: " + k);
 									}
-									else if(returnValue == value)
-									{
-										KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
-										sendMessage(kvQueryUpdate.toBytes());
+
+									returnValue = KVServer.kvdata.get(key);
+									logger.debug("returnValue: " + returnValue);
+									if(returnValue != null) {
+										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
+										sendMessage(kvQueryGet.toBytes());
 									}
 									else
 									{
-										String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
+										String errorMsg = "Error in get operation for the key/Key is not present <key>: " + "<" + key + ">";
 										logger.error(errorMsg);
-										sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+										KVQuery kvQueryGeterror = new KVQuery(KVMessage.StatusType.GET_ERROR,errorMsg);
+										sendMessage(kvQueryGeterror.toBytes());
 									}
 								}
-
-								if(value.equals("null"))
-								{
-									if(returnValue != null)
-									{
-									KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
-									sendMessage(kvQueryDelete.toBytes());
-									}
 								else
 								{
-									String errorMsg = "Error in Delete operation for Key:"+key  ;
-									logger.error(errorMsg);
-									sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
+									// send not responsible message with metadata
 								}
 
-								}
-						}
-						else if(command.equals("DISCONNECT"))
-						{
-							KVQuery kvQueryDisconnect;
-							try {
-								kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
-								sendMessage(kvQueryDisconnect.toBytes());
-							} catch (InvalidMessageException e) {
-								// TODO Auto-generated catch block
-								logger.error("Error in sending disconnect message");
 							}
-						}
+							else if(command.equals("PUT"))
+							{
+								key = kvQueryCommand.getKey();
+								String hashedKey = checkRange(key);
+								if(hashedKey != null)
+								{
+								//future : check in range or not
+								if(!this.isWriteLocked)
+								{
+									
+									value = kvQueryCommand.getValue();
+
+									returnValue = KVServer.kvdata.put(key,value);
+									if(!value.equals("null") )
+									{
+										if(returnValue == null)
+										{
+											KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
+											sendMessage(kvQueryPut.toBytes());
+										}
+										else if(returnValue == value)
+										{
+											KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
+											sendMessage(kvQueryUpdate.toBytes());
+										}
+										else
+										{
+											String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
+											logger.error(errorMsg);
+											sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+										}
+									}
+
+									if(value.equals("null"))
+									{
+										if(returnValue != null)
+										{
+											KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
+											sendMessage(kvQueryDelete.toBytes());
+										}
+										else
+										{
+											String errorMsg = "Error in Delete operation for Key:"+key  ;
+											logger.error(errorMsg);
+											sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
+										}
+
+									}
+								}
+								else
+								{
+									KVQuery kvQueryWriteLock = new KVQuery(KVMessage.StatusType.SERVER_WRITE_LOCK);
+									sendMessage(kvQueryWriteLock.toBytes());
+								}
+								}
+								else
+								{
+								// send not responsible error message and meta data	
+								}
+							}
 							
-					} catch (InvalidMessageException e) {
-						logger.error("Invalid message received from client");
-						KVQuery kvQueryInvalid;
+							else if(command.equals("DISCONNECT"))
+							{
+								KVQuery kvQueryDisconnect;
+								try {
+									kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
+									sendMessage(kvQueryDisconnect.toBytes());
+								} catch (InvalidMessageException e) {
+									// TODO Auto-generated catch block
+									logger.error("Error in sending disconnect message");
+								}
+							}
+
+						} catch (InvalidMessageException e) {
+							logger.error("Invalid message received from client");
+							KVQuery kvQueryInvalid;
+							try {
+								kvQueryInvalid = new KVQuery(KVMessage.StatusType.FAILED,"Invalid command");
+								sendMessage(kvQueryInvalid.toBytes());
+							} catch (InvalidMessageException e1) {
+								// TODO Auto-generated catch block
+								logger.error("Error in invalid message format:server side");
+							}
+
+
+						}
+					}
+					else
+					{
+						KVQuery kvQueryNoService;
 						try {
-							kvQueryInvalid = new KVQuery(KVMessage.StatusType.FAILED,"Invalid command");
-							sendMessage(kvQueryInvalid.toBytes());
+							kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,"Server is stopped");
+							sendMessage(kvQueryNoService.toBytes());
 						} catch (InvalidMessageException e1) {
 							// TODO Auto-generated catch block
-							logger.error("Error in invalid message format:server side");
+							logger.error("Error in invalid message format:server side:");
 						}
-						
-						
 					}
 
 				} catch (IOException ioe) {
@@ -171,6 +244,7 @@ public class ClientConnection implements Runnable {
 
 			}
 
+
 		} catch (IOException ioe) {
 			logger.error("Error! Connection could not be established!", ioe);
 
@@ -178,12 +252,12 @@ public class ClientConnection implements Runnable {
 
 			try {
 				if (clientSocket != null) {
-					
-					
+
+
 					input.close();
 					output.close();
 					clientSocket.close();
-					
+
 				}
 			} catch (IOException ioe) {
 				logger.error("Error! Unable to tear down connection!", ioe);
@@ -191,7 +265,31 @@ public class ClientConnection implements Runnable {
 		}
 	}
 
-	
+
+
+	private String checkRange(String key) {
+		// TODO Auto-generated method stub
+		MessageDigest md;
+		String hashedKey = null;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			md.update(key.getBytes());
+			hashedKey =  md.digest().toString();
+			/*byte byteData[] = md.digest();
+			StringBuffer sb = new StringBuffer();
+			for (int i = 0; i < byteData.length; i++) {
+				sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+			}*/
+			// if not in the range return null
+			
+		} 
+		catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			logger.error("Error in MD5 generation"+ e.getMessage());
+		}
+
+		return hashedKey;
+	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {
 		KVQuery kvQueryError;

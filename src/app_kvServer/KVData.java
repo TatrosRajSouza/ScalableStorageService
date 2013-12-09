@@ -1,5 +1,7 @@
 package app_kvServer;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -37,5 +39,21 @@ public class KVData {
 	public String get(String key)  {
 		// TODO Auto-generated method stub
 		return dataStore.get(key);
+	}
+
+	public void moveData(KVServer kvserver) {
+		// TODO Auto-generated method stub
+		boolean flag = true;
+		// iterate over the range or hashmap?
+		 Iterator<Map.Entry<String,String>> it = dataStore.entrySet().iterator();
+		    while (it.hasNext()) {
+		    	Map.Entry<String,String> pairs = (Map.Entry<String,String>)it.next();
+		    }
+		for (Map.Entry<String, String> entry : dataStore.entrySet())
+		{
+			
+		    System.out.println(entry.getKey() + "/" + entry.getValue());
+		}
+		
 	}
 }
