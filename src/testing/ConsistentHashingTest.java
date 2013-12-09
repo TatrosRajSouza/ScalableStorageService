@@ -5,8 +5,8 @@ import java.util.SortedMap;
 
 import org.junit.Test;
 
-import client.ConsistentHashing;
 import common.messages.ServerData;
+import consistent_hashing.ConsistentHashing;
 import junit.framework.TestCase;
 
 public class ConsistentHashingTest extends TestCase {
@@ -57,10 +57,39 @@ public class ConsistentHashingTest extends TestCase {
 		conHash.addServer("127.0.0.252", 50003);
 		
 		SortedMap<Integer, String> map = conHash.getHashCircle();
+		// {-1067817501=127.0.0.254:50001, 918589990=127.0.0.253:50002, 2002620904=127.0.0.252:50003, 2012606280=127.0.0.255:50000}
 		
 		assertTrue(map.containsValue("127.0.0.255:50000"));
 		assertTrue(map.containsValue("127.0.0.254:50001"));
 		assertTrue(map.containsValue("127.0.0.253:50002"));
 		assertTrue(map.containsValue("127.0.0.252:50003"));
+	}
+	
+	public void testLocateServerForKey() {
+													
+		String key1 = "ThisIsAKey"; // keyHash: 1969410312      -> Expected Server: 127.0.0.252:50003 (hash: 2002620904)
+		String key2 = "ExampleKey"; // keyHash: -1480982169		-> Expected Server: 127.0.0.254:50001 (hash: -1067817501)
+		Exception e = null;
+		
+		// Map: {-1067817501=127.0.0.254:50001, 918589990=127.0.0.253:50002, 2002620904=127.0.0.252:50003, 2012606280=127.0.0.255:50000}
+		conHash.addServer("127.0.0.255", 50000);
+		conHash.addServer("127.0.0.254", 50001);
+		conHash.addServer("127.0.0.253", 50002);
+		conHash.addServer("127.0.0.252", 50003);
+		
+		try {
+			ServerData serverDataKey1 = conHash.getServerForKey(key1); 
+			// System.out.println("Name: " + serverDataKey1.getName() + "\nAddress: " + serverDataKey1.getAddress() + "\nPort: " + serverDataKey1.getPort());
+			
+			ServerData serverDataKey2 = conHash.getServerForKey(key2);
+			// System.out.println("Name: " + serverDataKey2.getName() + "\nAddress: " + serverDataKey2.getAddress() + "\nPort: " + serverDataKey2.getPort());
+			
+			assertTrue(serverDataKey1.getName().equals("127.0.0.252:50003"));
+			assertTrue(serverDataKey2.getName().equals("127.0.0.254:50001"));
+		} catch (Exception ex) {
+			e = ex;
+		}
+		
+		assertNull(e);
 	}
 }
