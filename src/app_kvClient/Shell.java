@@ -133,7 +133,10 @@ public class Shell {
 					System.out.println("\n>>> Sending GET request for key " + key);
 					KVMessage kvResult = kvClient.get(key);
 					try {
-						System.out.println("\n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getValue());
+						if (kvResult != null)
+							System.out.println("\n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getValue());
+						else
+							System.out.println("Unexpected error: The kvResult was null");
 					} catch (InvalidMessageException ex) {
 						System.out.println("Unable to read the return Message. Reason: " + ex.getMessage());
 					}

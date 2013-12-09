@@ -49,6 +49,7 @@ public class KVStore implements KVCommInterface {
 		/* Create empty meta data and add the user-specified server */
 		this.metaData = new InfrastructureMetadata();
 		this.metaData.addServer("Initial User-Specified Server", address, port);
+		this.metaData.addServer("Second Test Server", address, 50001);
 		/* Initialize the consistent Hashing */
 		this.consHash = new ConsistentHashing(metaData.getServers());
 	}
@@ -130,6 +131,54 @@ public class KVStore implements KVCommInterface {
 	}
 
 	/**
+	 * Find and connect to the responsible server for a given key according to the current meta data
+	 * @param key The key that we want to find the responsible server for
+	 * @return ServerData for the responsible Server
+	 */
+	private ServerData connectResponsibleServer(String key) {
+		/* Obtain responsible server according to current meta data */
+		ServerData responsibleServer = null;
+		try {
+			responsibleServer = consHash.getServerForKey(key);
+
+			logger.info("The responsible Server for key " + key + " is: " + responsibleServer.getAddress() + ":" + responsibleServer.getPort());
+			/* Make sure we select the correct server and connect to it */
+			if (!(responsibleServer.getAddress().equals(this.address)) || responsibleServer.getPort() != this.port) {
+				logger.info("We are currently not connected to the responsible server (Connected to: " + this.address + ":" + this.port);
+				if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
+					logger.info("Disconnecting from " + address + ":" + port + " (currently connected Server)");
+					this.disconnect();
+				}
+				
+				this.address = responsibleServer.getAddress();
+				this.port = responsibleServer.getPort();
+				
+				try {
+					logger.info("Connecting to Responsible Server: " + address + ":" + port);
+					this.connect();
+				} catch (UnknownHostException ex) {
+					logger.warn("Put Request Failed. Responsible Server is Unknown Host!");
+					// ex.printStackTrace();
+				} catch (IOException ex) {
+					logger.warn("Put Request Failed. Could not establish connection due to an IOError!");
+					// ex.printStackTrace();
+				} catch (InvalidMessageException ex) {
+					logger.warn("Put Request Failed. Unable to connect to responsible server. Received an invalid message: \n" + ex.getMessage());
+					// ex.printStackTrace();
+				}
+			}
+		} catch (IllegalArgumentException ex) {
+			logger.error("Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
+			// ex.printStackTrace();
+		} catch (EmptyServerDataException ex) {
+			logger.error("Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
+			// ex.printStackTrace();
+		}
+		
+		return responsibleServer;
+	}
+	
+	/**
 	 * Put a key value pair to the remote KVServer
 	 * @param key The key that should be inserted
 	 * @param value The value associated with the key
@@ -137,7 +186,11 @@ public class KVStore implements KVCommInterface {
 	 */
 	@Override
 	public KVMessage put(String key, String value) throws ConnectException {
+		/* Find & if necessary, connect to responsible Server */
+		ServerData responsibleServer = connectResponsibleServer(key);
+		
 		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
+			logger.info("Connected to the responsible Server: " + address + ":" + port);
 			try {
 				/* Optimistic Query, send put request to current connected server */
 				kvComm.sendMessage(new KVQuery(StatusType.PUT, key, value).toBytes());
@@ -154,12 +207,8 @@ public class KVStore implements KVCommInterface {
 				byte[] putResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(putResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(), kvQueryMessage.getValue());
-				
-				/* We should receive PUT_SUCCESS or SERVER_NOT_RESPONSIBLE */
-				if (kvResult.getStatus() == StatusType.PUT_SUCCESS) {
-					/* Success */
-					return kvResult;
-				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
+
+				if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
 					if (kvResult.key == "metaData") {
 						/* Update stale local meta data with actual meta data from server */
@@ -167,20 +216,21 @@ public class KVStore implements KVCommInterface {
 						this.metaData.update(kvResult.value);
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
-						/* Retrieve responsible Server for put key */
-						ServerData responsibleServer = this.consHash.getServerForKey(key);
-						
-						/* Disconnect from the current Server and connect to the responsible Server */
-						this.disconnect();
-						this.address = responsibleServer.getAddress();
-						this.port = responsibleServer.getPort();
-						this.connect();
+						/* Retrieve & connect responsible Server for put key */
+						responsibleServer = connectResponsibleServer(key);
+						if (responsibleServer == null) {
+							logger.error("Put Request Failed. Unable to find responsible server for key: " + key + "\nList of servers in circle: \n");
+							for (String server : consHash.getHashCircle().values()) {
+								logger.error(server);
+							}
+							return null;
+						}
 						/* Retry PUT */
 						this.put(key, value);
 					}
-				} else {
-					
 				}
+				
+				// PUT_SUCCESS or PUT_UPDATE
 				return kvResult;
 			} catch (InvalidMessageException ex) {
 				logger.error("Unable to generate KVQueryMessage from Server response:\n" + ex.getMessage());
@@ -192,9 +242,6 @@ public class KVStore implements KVCommInterface {
 				// ex.printStackTrace();
 			} catch (IllegalArgumentException ex) {
 				logger.error("Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
-				// ex.printStackTrace();
-			} catch (EmptyServerDataException ex) {
-				logger.error("Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
 				// ex.printStackTrace();
 			}
 			return null;
@@ -210,6 +257,9 @@ public class KVStore implements KVCommInterface {
 	 */
 	@Override
 	public KVMessage get(String key) throws ConnectException {
+		/* Find & if necessary, connect to responsible Server */
+		ServerData responsibleServer = connectResponsibleServer(key);
+		
 		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			/* Optimistic query to currently connected Server */
 			try {
@@ -230,7 +280,7 @@ public class KVStore implements KVCommInterface {
 				KVQuery kvQueryMessage = new KVQuery(getResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getValue(),kvQueryMessage.getKey());
 				
-				if (kvResult.getStatus() == StatusType.GET_SUCCESS) {
+				if (kvResult.getStatus() == StatusType.GET_SUCCESS || kvResult.getStatus() == StatusType.GET_ERROR) {
 					return kvResult;
 				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
@@ -240,14 +290,15 @@ public class KVStore implements KVCommInterface {
 						this.metaData.update(kvResult.value);
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
-						/* Retrieve responsible Server for put key */
-						ServerData responsibleServer = this.consHash.getServerForKey(key);
-						
-						/* Disconnect from the current Server and connect to the responsible Server */
-						this.disconnect();
-						this.address = responsibleServer.getAddress();
-						this.port = responsibleServer.getPort();
-						this.connect();
+						/* Retrieve & connect responsible Server for put key */
+						this.connectResponsibleServer(key);
+						if (responsibleServer == null) {
+							logger.error("Get Request Failed. Unable to find responsible server for key: " + key + "\nList of servers in circle: \n");
+							for (String server : consHash.getHashCircle().values()) {
+								logger.error(server);
+							}
+							return null;
+						}
 						/* Retry GET */
 						this.get(key);
 					} else {
@@ -267,9 +318,6 @@ public class KVStore implements KVCommInterface {
 				// ex.printStackTrace();
 			} catch (IllegalArgumentException ex) {
 				logger.error("Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
-				// ex.printStackTrace();
-			} catch (EmptyServerDataException ex) {
-				logger.error("Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
 				// ex.printStackTrace();
 			}
 			return null;
