@@ -106,6 +106,18 @@ public class ConsistentHashing {
 	}
 	
 	/**
+	 * Clear all server hashes from circle and replace with new data provided
+	 * @param servers List of servers to hash and add to the circle 
+	 */
+	public void update(ArrayList<ServerData> servers) {
+		hashCircle.clear();
+		
+		for (ServerData server : servers) {
+			addServer(server.getAddress(), server.getPort());
+		}
+	}
+	
+	/**
 	 * Obtain the responsible server for a certain key
 	 * @param key The String key you want to obtain the server for
 	 * @return The responsible server for the provided key

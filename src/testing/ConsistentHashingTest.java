@@ -65,6 +65,56 @@ public class ConsistentHashingTest extends TestCase {
 		assertTrue(map.containsValue("127.0.0.252:50003"));
 	}
 	
+	public void testUpdate() {
+		// First Version of ServerData
+		ArrayList<ServerData> servers = new ArrayList<ServerData>();
+		servers.add(new ServerData("ServerA","127.0.0.1",50000));
+		servers.add(new ServerData("ServerB","127.0.0.2",50001));
+		servers.add(new ServerData("ServerC","127.0.0.3",50002));
+		servers.add(new ServerData("ServerD","127.0.0.4",50003));
+		servers.add(new ServerData("ServerE","127.0.0.5",50004));
+		
+		// Create ConsistentHashing from provided ServerData
+		conHash = new ConsistentHashing(servers);
+		
+		// Obtain HashCircle
+		SortedMap<Integer, String> map = conHash.getHashCircle();
+		
+		// Check assertions
+		assertTrue(map.containsValue("127.0.0.1:50000"));
+		assertTrue(map.containsValue("127.0.0.2:50001"));
+		assertTrue(map.containsValue("127.0.0.3:50002"));
+		assertTrue(map.containsValue("127.0.0.4:50003"));
+		assertTrue(map.containsValue("127.0.0.5:50004"));
+		
+		// Second Version of ServerData
+		ArrayList<ServerData> serversNew = new ArrayList<ServerData>();
+		serversNew.add(new ServerData("ServerF","127.0.0.6",50005));
+		serversNew.add(new ServerData("ServerG","127.0.0.7",50006));
+		serversNew.add(new ServerData("ServerH","127.0.0.8",50007));
+		serversNew.add(new ServerData("ServerI","127.0.0.9",50008));
+		serversNew.add(new ServerData("ServerJ","127.0.0.10",50009));
+		
+		// Update call on ConsistentHashing: Replace data with new version
+		conHash.update(serversNew);
+		
+		// Obtain HashCircle
+		SortedMap<Integer, String> mapNew = conHash.getHashCircle();
+		
+		// Check assertions
+		assertFalse(mapNew.containsValue("127.0.0.1:50000"));
+		assertFalse(mapNew.containsValue("127.0.0.2:50001"));
+		assertFalse(mapNew.containsValue("127.0.0.3:50002"));
+		assertFalse(mapNew.containsValue("127.0.0.4:50003"));
+		assertFalse(mapNew.containsValue("127.0.0.5:50004"));
+		
+		assertTrue(mapNew.containsValue("127.0.0.6:50005"));
+		assertTrue(mapNew.containsValue("127.0.0.7:50006"));
+		assertTrue(mapNew.containsValue("127.0.0.8:50007"));
+		assertTrue(mapNew.containsValue("127.0.0.9:50008"));
+		assertTrue(mapNew.containsValue("127.0.0.10:50009"));
+	}
+	
 	public void testLocateServerForKey() {
 													
 		String key1 = "ThisIsAKey"; // keyHash: 1969410312      -> Expected Server: 127.0.0.252:50003 (hash: 2002620904)
