@@ -16,6 +16,12 @@ public interface KVMessage {
     	SERVER_STOPPED,         /* Server is stopped, no requests are processed */
     	SERVER_WRITE_LOCK,      /* Server locked for out, only get possible */
     	SERVER_NOT_RESPONSIBLE, /* Request not successful, server not responsible for key */
+    	/* Note: 3 Arguments Query. Send new Query with StatusType SERVER_NOT_RESPONSIBLE, 
+    	 * set key to "metaData" (just the constant string) and 
+    	 * set value to string representation of current meta data.
+    	 * How to obtain the string representation: 
+    	 * Use InfrastructureMetadata class to create new meta data and call toString().
+    	 */
     	
     	/* Custom message flags */
 		CONNECT,				/* Connect - request */

@@ -1,0 +1,1 @@
+ssh -n 127.0.0.1 nohup java -jar /home/claynon/git/BasicStorageServer/ms2-server.jar 50000 ERROR &

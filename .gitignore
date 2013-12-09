@@ -1,4 +1,6 @@
 .gitignore.swp
+.classpath
+.settings/org.eclipse.jdt.core.prefs
 bin/
 logs/
 CLIENT_MANIFEST.MF
