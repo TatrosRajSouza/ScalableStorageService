@@ -15,7 +15,7 @@ public class KVServerNode/* implements Comparable<KVServerNode>*/{
 		this.name = name;
 		this.address = address;
 		this.port = port;
-		startIndex = ECS.hashing.hashServer(address, port);
+		//startIndex = ECS.hashing.hashServer(address, port);
 	}
 	
 	/*@Override

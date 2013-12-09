@@ -67,7 +67,7 @@ public class ConsistentHashing {
 	 * @param port Remote port number
 	 * @return 32-bit md5 hash
 	 */
-	public BigInteger hashServer(String address, int port) {
+	private BigInteger hashServer(String address, int port) {
 		String hashStr = address + ":" + port;
 		try {
 			md5digest.reset();
