@@ -1,5 +1,7 @@
 package consistent_hashing;
+
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -22,15 +24,15 @@ import common.messages.ServerData;
 public class ConsistentHashing {
 	MessageDigest md5digest;
 	private static Logger logger;
-	SortedMap<Integer, String> hashCircle;
+	SortedMap<BigInteger, String> hashCircle;
 
 	/**
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
-		hashCircle =  new TreeMap<Integer, String>();
+		hashCircle =  new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
-		
+
 		try {
 			md5digest = MessageDigest.getInstance("MD5");
 		} catch (NoSuchAlgorithmException e) {
@@ -38,63 +40,64 @@ public class ConsistentHashing {
 			// e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Enables Consistent Hashing, start with a number of servers hashed to the circle
 	 * @param servers An ArrayList of ServerData that should be hashed to the circle
 	 */
 	public ConsistentHashing(ArrayList<ServerData> servers) {
-		hashCircle =  new TreeMap<Integer, String>();
+		hashCircle =  new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
-		
+
 		try {
 			md5digest = MessageDigest.getInstance("MD5");
 		} catch (NoSuchAlgorithmException e) {
 			logger.error("Failed to create MessageDigest. The specified algorithm is not supported.");
 			// e.printStackTrace();
 		}
-		
+
 		for (ServerData server : servers) {
 			addServer(server.getAddress(), server.getPort());
 		}
 	}
-	
+
 	/**
 	 * For internal use, generates 32-bit md5 hash for <address>:<port> of a server 
 	 * @param address IP Address of the server
 	 * @param port Remote port number
 	 * @return 32-bit md5 hash
 	 */
-	private int hashServer(String address, int port) {
+	public BigInteger hashServer(String address, int port) {
 		String hashStr = address + ":" + port;
 		try {
 			md5digest.reset();
 			byte[] bytes = md5digest.digest(hashStr.getBytes("US-ASCII"));
-			return byteArrToInt(bytes);
+			return new BigInteger(1,bytes);
+			//return byteArrToInt(bytes);
 		} catch (UnsupportedEncodingException e) {
 			logger.error("Failed to generate hash for Server. The specified encoding is not supported.");
 			// e.printStackTrace();
-			return 0;
+			return BigInteger.ZERO;
 		}
 	}
-	
+
 	/**
 	 * For internal use, generates 32-bit md5 hash for a String key 
 	 * @param key A String key that should be hashed
 	 * @return 32-bit md5 hash
 	 */
-	private int hashKey(String key) {
+	private BigInteger hashKey(String key) {
 		try {
 			md5digest.reset();
 			byte[] bytes = md5digest.digest(key.getBytes("US-ASCII"));
-			return byteArrToInt(bytes);
+			return new BigInteger(1,bytes);
 		} catch (UnsupportedEncodingException e) {
 			logger.error("Failed to generate hash for Server. The specified encoding is not supported.");
 			// e.printStackTrace();
-			return 0;
+			return BigInteger.ZERO;
 		}
 	}
-	
+
 	/**
 	 * Add a new server, hashing it to the circle
 	 * @param address IP address of the server
@@ -104,19 +107,19 @@ public class ConsistentHashing {
 		String name = address + ":" + port;
 		hashCircle.put(hashServer(address, port), name);
 	}
-	
+
 	/**
 	 * Clear all server hashes from circle and replace with new data provided
 	 * @param servers List of servers to hash and add to the circle 
 	 */
 	public void update(ArrayList<ServerData> servers) {
 		hashCircle.clear();
-		
+
 		for (ServerData server : servers) {
 			addServer(server.getAddress(), server.getPort());
 		}
 	}
-	
+
 	/**
 	 * Obtain the responsible server for a certain key
 	 * @param key The String key you want to obtain the server for
@@ -125,18 +128,18 @@ public class ConsistentHashing {
 	 */
 	public ServerData getServerForKey(String key) throws EmptyServerDataException, IllegalArgumentException {
 		// logger.debug("Trying to obtain Server for key " + key);
-		
+
 		/* Make sure we have Servers on the circle */
 		if (hashCircle.isEmpty()) {
 			throw new EmptyServerDataException("There are no Servers in the hashCircle");
 		}
-		
-		int keyHash = hashKey(key); // obtain hash of the provided key
+
+		BigInteger keyHash = hashKey(key); // obtain hash of the provided key
 		// logger.debug("Key " + key + " hashed to " + keyHash);
-		
+
 		if (!hashCircle.containsKey(keyHash)) { // hash of key not in circle? -> Find next larger server hash in clock-wise direction
-			SortedMap<Integer, String> tailMap = hashCircle.tailMap(keyHash); // Obtain the tailMap for the key hash
-			
+			SortedMap<BigInteger, String> tailMap = hashCircle.tailMap(keyHash); // Obtain the tailMap for the key hash
+
 			if (tailMap.isEmpty()) { // TailMap was empty, hence Wrap-around and return the first server in the map
 				try {
 					return ServerDataFromValue(hashCircle.get(hashCircle.firstKey()));
@@ -162,7 +165,7 @@ public class ConsistentHashing {
 			}
 		}
 	}
-	
+
 	/**
 	 * Internal use, create instance of ServerData for a value in the hash-circle
 	 * @param value A value for a server on the hash-circle ("<IP>:<Port>")
@@ -170,7 +173,7 @@ public class ConsistentHashing {
 	 */
 	private ServerData ServerDataFromValue(String value) throws IllegalArgumentException {
 		String serverStr[] = value.split(":");
-		
+
 		if (serverStr.length == 2) {
 			String serverName = serverStr[0] + ":" + serverStr[1];
 			String serverAddress = serverStr[0];
@@ -180,22 +183,12 @@ public class ConsistentHashing {
 			throw new IllegalArgumentException(value + " is not of the valid format <IP>:<port>");
 		}
 	}
-	
+
 	/**
 	 * Obtain the hash-circle
 	 * @return The hash-circle as a SortedMap
 	 */
-	public SortedMap<Integer, String> getHashCircle() {
+	public SortedMap<BigInteger, String> getHashCircle() {
 		return hashCircle;
-	}
-	
-	/**
-	 * Convert a byte array to int
-	 * @param b The byte array
-	 * @return 32-bit integer
-	 */
-	private int byteArrToInt(byte[] b) 
-	{
-	    return   (b[3] & 0xFF | (b[2] & 0xFF) << 8 | (b[1] & 0xFF) << 16 | (b[0] & 0xFF) << 24);
 	}
 }
