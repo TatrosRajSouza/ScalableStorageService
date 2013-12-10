@@ -8,7 +8,7 @@ Messages sent by the ECS to a Server nodes:
 	UNLOCK_WRITE
 	MOVE_DATA <startIndex> <endIndex> <server>
 	UPDATE <metadata>
-	CONNECT			- I don't think this will be necessary
+	CONNECT
 	DISCONNECT
 
 Messages sent by a Server nodes to the ECS: 
