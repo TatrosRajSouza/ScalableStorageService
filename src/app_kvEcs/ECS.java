@@ -3,9 +3,13 @@ package app_kvEcs;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Random;
 
+import client.KVCommunication;
 import common.messages.InfrastructureMetadata;
 import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
@@ -15,6 +19,7 @@ public class ECS {
 	private InfrastructureMetadata serverRepository;
 	private InfrastructureMetadata storageService;
 	private ConsistentHashing hashing;
+	private Map<String, KVCommunication> communications;
 	private boolean running;
 	private Random generator;
 
@@ -22,6 +27,7 @@ public class ECS {
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
+		communications = new Hashtable<String, KVCommunication>();
 		running = false;
 		generator = new Random();
 	}
@@ -46,7 +52,16 @@ public class ECS {
 		}
 		hashing.addServer(address, port);
 		runScript(address, port);
-		//TODO establish connection?
+		try {
+			KVCommunication comm = new KVCommunication(address, port);
+			communications.put(address + ":" + Integer.toString(port) , comm);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		//Initialize the new storage server with the updated meta­data and start it.
 		//Set write lock (lockWrite()) on the successor node;
 		//Invoke the transfer of the affected data items to the new storage server:

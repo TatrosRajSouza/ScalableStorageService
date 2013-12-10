@@ -16,9 +16,6 @@ public class KVQuery implements KVMessage {
 
 	private String[] arguments;
 
-	private static final int BUFFER_SIZE = 1024;
-	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
-
 	private static Logger logger = Logger.getRootLogger();
 
 	/**
