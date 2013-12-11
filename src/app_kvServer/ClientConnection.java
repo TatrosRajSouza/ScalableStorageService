@@ -14,6 +14,7 @@ import app_kvServer.KVData;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
+import consistent_hashing.ConsistentHashing;
 /**
  * Represents a connection end point for a particular client that is 
  * connected to the server. This class is responsible for message reception 
@@ -103,8 +104,8 @@ public class ClientConnection implements Runnable {
 
 							if(command.equals("GET"))	{
 								key = kvQueryCommand.getKey();
-								String hashedKey = checkRange(key);
-								if(hashedKey != null)
+								int hashedKey = checkRange(key);
+								if(hashedKey != 0)
 								{
 									//future : check in range or not
 									System.out.println("trying to get key");
@@ -113,12 +114,12 @@ public class ClientConnection implements Runnable {
 
 
 									logger.debug("Num keys in map: " + KVServer.kvdata.dataStore.size());
-									for (String k : KVServer.kvdata.dataStore.keySet())
+									for (int k : KVServer.kvdata.dataStore.keySet())
 									{
 										logger.debug("Key: " + k);
 									}
 
-									returnValue = KVServer.kvdata.get(key);
+									returnValue = KVServer.kvdata.get(hashedKey);
 									logger.debug("returnValue: " + returnValue);
 									if(returnValue != null) {
 										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
@@ -141,8 +142,8 @@ public class ClientConnection implements Runnable {
 							else if(command.equals("PUT"))
 							{
 								key = kvQueryCommand.getKey();
-								String hashedKey = checkRange(key);
-								if(hashedKey != null)
+								int hashedKey = checkRange(key);
+								if(hashedKey != 0)
 								{
 								//future : check in range or not
 								if(!this.isWriteLocked)
@@ -150,7 +151,7 @@ public class ClientConnection implements Runnable {
 									
 									value = kvQueryCommand.getValue();
 
-									returnValue = KVServer.kvdata.put(key,value);
+									returnValue = KVServer.kvdata.put(hashedKey,value);
 									if(!value.equals("null") )
 									{
 										if(returnValue == null)
@@ -267,14 +268,17 @@ public class ClientConnection implements Runnable {
 
 
 
-	private String checkRange(String key) {
+	private int checkRange(String key) {
 		// TODO Auto-generated method stub
-		MessageDigest md;
-		String hashedKey = null;
-		try {
-			md = MessageDigest.getInstance("MD5");
-			md.update(key.getBytes());
-			hashedKey =  md.digest().toString();
+		ConsistentHashing consistentHashing = new ConsistentHashing();
+		int hashedKey = consistentHashing.hashCode();
+		return hashedKey;
+		//MessageDigest md;
+		//String hashedKey = null;
+		//try {
+			//md = MessageDigest.getInstance("MD5");
+			//md.update(key.getBytes());
+			//hashedKey =  md.digest().toString();
 			/*byte byteData[] = md.digest();
 			StringBuffer sb = new StringBuffer();
 			for (int i = 0; i < byteData.length; i++) {
@@ -282,14 +286,11 @@ public class ClientConnection implements Runnable {
 			}*/
 			// if not in the range return null
 			
-		} 
-		catch (NoSuchAlgorithmException e) {
+		//} 
+		//catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
-			logger.error("Error in MD5 generation"+ e.getMessage());
+			//logger.error("Error in MD5 generation"+ e.getMessage());
 		}
-
-		return hashedKey;
-	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {
 		KVQuery kvQueryError;
