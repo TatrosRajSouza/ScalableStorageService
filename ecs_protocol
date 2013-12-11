@@ -1,0 +1,24 @@
+
+Messages sent by the ECS to a Server nodes:
+	INIT <metadata>
+	START
+	STOP
+	SHUTDOWN
+	LOCK_WRITE
+	UNLOCK_WRITE
+	MOVE_DATA <startIndex> <endIndex> <server>
+	UPDATE <metadata>
+	CONNECT
+	DISCONNECT
+
+Messages sent by a Server nodes to the ECS: 
+	CONNECT_SUCCESS
+	CONNECT_ERROR
+	DISCONNECT_SUCCESS
+
+
+Types of the arguments:
+	INIT, START, STOP, etc: ECSStatusType
+	<metadata>: InfrastructureMetadata
+	<startIndex>, <endIndex>: BigInteger
+	<server>: ServerData

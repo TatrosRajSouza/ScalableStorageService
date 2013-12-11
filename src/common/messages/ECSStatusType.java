@@ -1,0 +1,18 @@
+package common.messages;
+
+public enum ECSStatusType {
+	INIT,
+	START,
+	STOP,
+	SHUTDOWN,
+	LOCK_WRITE,
+	UNLOCK_WRITE,
+	MOVE_DATA,
+	UPDATE,
+	
+	CONNECT,
+	CONNECT_SUCCESS,
+	CONNECT_ERROR,
+	DISCONNECT,
+	DISCONNECT_SUCCESS
+}

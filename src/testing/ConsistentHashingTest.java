@@ -1,5 +1,6 @@
 package testing;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.SortedMap;
 
@@ -39,7 +40,7 @@ public class ConsistentHashingTest extends TestCase {
 		
 		conHash = new ConsistentHashing(servers);
 		
-		SortedMap<Integer, String> map = conHash.getHashCircle();
+		SortedMap<BigInteger, String> map = conHash.getHashCircle();
 		
 		assertTrue(map.containsValue("127.0.0.1:50000"));
 		assertTrue(map.containsValue("127.0.0.2:50001"));
@@ -56,7 +57,7 @@ public class ConsistentHashingTest extends TestCase {
 		conHash.addServer("127.0.0.253", 50002);
 		conHash.addServer("127.0.0.252", 50003);
 		
-		SortedMap<Integer, String> map = conHash.getHashCircle();
+		SortedMap<BigInteger, String> map = conHash.getHashCircle();
 		// {-1067817501=127.0.0.254:50001, 918589990=127.0.0.253:50002, 2002620904=127.0.0.252:50003, 2012606280=127.0.0.255:50000}
 		
 		assertTrue(map.containsValue("127.0.0.255:50000"));
@@ -78,7 +79,7 @@ public class ConsistentHashingTest extends TestCase {
 		conHash = new ConsistentHashing(servers);
 		
 		// Obtain HashCircle
-		SortedMap<Integer, String> map = conHash.getHashCircle();
+		SortedMap<BigInteger, String> map = conHash.getHashCircle();
 		
 		// Check assertions
 		assertTrue(map.containsValue("127.0.0.1:50000"));
@@ -99,7 +100,7 @@ public class ConsistentHashingTest extends TestCase {
 		conHash.update(serversNew);
 		
 		// Obtain HashCircle
-		SortedMap<Integer, String> mapNew = conHash.getHashCircle();
+		SortedMap<BigInteger, String> mapNew = conHash.getHashCircle();
 		
 		// Check assertions
 		assertFalse(mapNew.containsValue("127.0.0.1:50000"));

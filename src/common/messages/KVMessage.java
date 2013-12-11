@@ -1,6 +1,8 @@
 package common.messages;
 
 public interface KVMessage {
+	public static final int BUFFER_SIZE = 1024;
+	public static final int DROP_SIZE = 128 * BUFFER_SIZE;
 	
     public enum StatusType {
     	/* Flags as per specification */
