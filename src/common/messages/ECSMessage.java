@@ -39,7 +39,7 @@ public class ECSMessage {
 			case 2:
 				if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 					metadata = new InfrastructureMetadata(arguments[1]);
-				} else if (command == ECSStatusType.CONNECT_ERROR) {
+				} else if (command == ECSStatusType.CONNECT_ERROR || command == ECSStatusType.CONNECT_SUCCESS) {
 					this.message = arguments[1];
 				} else {
 					throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -65,7 +65,8 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command)
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.CONNECT_ERROR) {
+				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.CONNECT_SUCCESS
+				|| command == ECSStatusType.CONNECT_ERROR) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		this.command = command;
@@ -82,7 +83,7 @@ public class ECSMessage {
 
 	public ECSMessage(ECSStatusType command, String message)
 			throws InvalidMessageException {
-		if (command != ECSStatusType.CONNECT_ERROR) {
+		if (command != ECSStatusType.CONNECT_ERROR || command != ECSStatusType.CONNECT_SUCCESS) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		this.message = message;
@@ -107,12 +108,11 @@ public class ECSMessage {
 		if (command == ECSStatusType.START || command == ECSStatusType.STOP
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
 				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.CONNECT
-				|| command == ECSStatusType.CONNECT_SUCCESS || command == ECSStatusType.DISCONNECT
-				|| command == ECSStatusType.DISCONNECT_SUCCESS) {
+				|| command == ECSStatusType.DISCONNECT || command == ECSStatusType.DISCONNECT_SUCCESS) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
-		} else if (command == ECSStatusType.CONNECT_ERROR) {
+		} else if (command == ECSStatusType.CONNECT_SUCCESS || command == ECSStatusType.CONNECT_ERROR) {
 			message += "\n" + this.message + "\r";
 		} else if (command == ECSStatusType.MOVE_DATA) {
 			message += "\n" + startIndex.toString() + "\n" + endIndex.toString() + "\n"
@@ -167,7 +167,7 @@ public class ECSMessage {
 	}
 
 	public String getMessage() throws InvalidMessageException {
-		if (command != ECSStatusType.CONNECT_ERROR) {
+		if (command != ECSStatusType.CONNECT_SUCCESS || command != ECSStatusType.CONNECT_ERROR) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		return message;
