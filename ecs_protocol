@@ -8,13 +8,9 @@ Messages sent by the ECS to a Server nodes:
 	UNLOCK_WRITE
 	MOVE_DATA <startIndex> <endIndex> <server>
 	UPDATE <metadata>
-	CONNECT
-	DISCONNECT
 
 Messages sent by a Server nodes to the ECS: 
-	CONNECT_SUCCESS <message>
-	CONNECT_ERROR <message>
-	DISCONNECT_SUCCESS
+	MOVE_COMPLETE
 
 
 Types of the arguments:
