@@ -12,8 +12,8 @@ Messages sent by the ECS to a Server nodes:
 	DISCONNECT
 
 Messages sent by a Server nodes to the ECS: 
-	CONNECT_SUCCESS
-	CONNECT_ERROR
+	CONNECT_SUCCESS <message>
+	CONNECT_ERROR <message>
 	DISCONNECT_SUCCESS
 
 
