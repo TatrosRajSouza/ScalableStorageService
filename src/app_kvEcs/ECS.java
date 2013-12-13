@@ -62,28 +62,6 @@ public class ECS {
 
 	}
 
-	private ECSServerCommunicator initNode() {
-		ECSServerCommunicator node = moveRandomNode(serverRepository, storageService);
-		if (node == null) {
-			//TODO exception or something like that
-			return null;
-		}
-
-		sendSSHCall(node.getAddress(), node.getPort());
-		hashing.addServer(node.getAddress(), node.getPort());
-		try {
-			node.connect();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return node;
-	}
-
 	public void addNode() {
 		ECSMessage message;
 		ECSServerCommunicator nextNode;
@@ -97,8 +75,12 @@ public class ECS {
 			nextNode = getNextNode(node);
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
-			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(nextNode), nextNode);
-			// Should wait?
+			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(nextNode),
+					getEndIndex(nextNode), nextNode);
+			message = nextNode.receiveMessage();
+			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
+				//TODO error
+			}
 			message = new ECSMessage(ECSStatusType.UPDATE, serverRepository);
 			for (ServerData server : serverRepository.getServers()) {
 				nextNode = (ECSServerCommunicator) server;
@@ -131,7 +113,7 @@ public class ECS {
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			node.sendMessage(message.toBytes());
 			// Set the write lock on the server that has to be deleted.
-			
+			//message = new ECSMessage(bytes)
 			// Send meta­data update to the successor node (i.e., successor is now also responsible
 			// for the range of the server that is to be removed)
 			// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
@@ -228,6 +210,28 @@ public class ECS {
 		return hashing;
 	}
 
+	private ECSServerCommunicator initNode() {
+		ECSServerCommunicator node = moveRandomNode(serverRepository, storageService);
+		if (node == null) {
+			//TODO exception or something like that
+			return null;
+		}
+
+		sendSSHCall(node.getAddress(), node.getPort());
+		hashing.addServer(node.getAddress(), node.getPort());
+		try {
+			node.connect();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return node;
+	}
+	
 	private void startNode(ECSServerCommunicator node) {
 		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
@@ -299,6 +303,26 @@ public class ECS {
 			if (node.getPort() == port && node.getAddress().equals(address)) {
 				return startIndex;
 			}
+		}
+		return null;
+	}
+	
+	private BigInteger getEndIndex(ECSServerCommunicator node) {
+		boolean next = false;
+		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
+		for (BigInteger startIndex : hashCircle.keySet()) {
+			if (next) {
+				return startIndex;
+			}
+			String[] server = hashCircle.get(startIndex).split(":");
+			String address = server[0];
+			int port = Integer.parseInt(server[1]);
+			if (node.getPort() == port && node.getAddress().equals(address)) {
+				next = true;
+			}
+		}
+		if (next) {
+			return hashCircle.firstKey();
 		}
 		return null;
 	}
