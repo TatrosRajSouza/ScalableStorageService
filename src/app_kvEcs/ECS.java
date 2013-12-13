@@ -118,51 +118,6 @@ public class ECS {
 		}
 	}
 
-	private BigInteger getStartIndex(ECSServerCommunicator node) {
-		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
-		for (BigInteger startIndex : hashCircle.keySet()) {
-			String[] server = hashCircle.get(startIndex).split(":");
-			String address = server[0];
-			int port = Integer.parseInt(server[1]);
-			if (node.getPort() == port && node.getAddress().equals(address)) {
-				return startIndex;
-			}
-		}
-		return null;
-	}
-
-	// This method should go in the ConsistentHashing class
-	private ECSServerCommunicator getNextNode(ECSServerCommunicator node) {
-		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
-		boolean next = false;
-		
-		for (BigInteger hashValue : hashCircle.keySet()) {
-			if (next) {
-				getServer(hashValue);
-			} else if (hashCircle.get(hashValue).equals(node.getAddress() + ":" + node.getPort())) {
-				next = true;
-			}
-		}
-		
-		if (next) {
-			getServer(hashCircle.firstKey());
-		}
-		
-		return null;
-	}
-	
-	private ECSServerCommunicator getServer(BigInteger hashValue) {
-		String[] addressAndPort = hashing.getHashCircle().get(hashValue).split(":");
-		String address = addressAndPort[0];
-		int port = Integer.parseInt(addressAndPort[1]);
-		for (ServerData server : storageService.getServers()) {
-			if (server.getPort() == port && server.getAddress().equals(address)) {
-				return (ECSServerCommunicator) server;
-			}
-		}
-		return null;
-	}
-
 	public void removeNode() {
 		/*ServerData node = */moveRandomNode(storageService, serverRepository);
 		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
@@ -244,22 +199,6 @@ public class ECS {
 		br.close();
 	}
 
-	private void sendSSHCall(String address, int port) {
-		//Process proc;
-		String[] args = {"./script.sh", address, Integer.toString(port)};
-
-		Runtime run = Runtime.getRuntime();
-		try {
-			//proc = run.exec(script);
-			//run.exec("./script.sh");
-			run.exec(args);
-			//TODO figure out where the output is going
-		} catch (IOException e) {
-			//TODO deal with this exception
-			e.printStackTrace();
-		}
-	}
-
 	// this is not in the interface specification
 	public InfrastructureMetadata getServerRepository() {
 		return serverRepository;
@@ -332,5 +271,62 @@ public class ECS {
 		to.addServer(node.getName(), node.getAddress(), node.getPort());
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
+	}
+	
+	private BigInteger getStartIndex(ECSServerCommunicator node) {
+		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
+		for (BigInteger startIndex : hashCircle.keySet()) {
+			String[] server = hashCircle.get(startIndex).split(":");
+			String address = server[0];
+			int port = Integer.parseInt(server[1]);
+			if (node.getPort() == port && node.getAddress().equals(address)) {
+				return startIndex;
+			}
+		}
+		return null;
+	}
+
+	// This method should go in the ConsistentHashing class
+	private ECSServerCommunicator getNextNode(ECSServerCommunicator node) {
+		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
+		boolean next = false;
+		
+		for (BigInteger hashValue : hashCircle.keySet()) {
+			if (next) {
+				getServer(hashValue);
+			} else if (hashCircle.get(hashValue).equals(node.getAddress() + ":" + node.getPort())) {
+				next = true;
+			}
+		}
+		
+		if (next) {
+			getServer(hashCircle.firstKey());
+		}
+		
+		return null;
+	}
+	
+	private ECSServerCommunicator getServer(BigInteger hashValue) {
+		String[] addressAndPort = hashing.getHashCircle().get(hashValue).split(":");
+		String address = addressAndPort[0];
+		int port = Integer.parseInt(addressAndPort[1]);
+		for (ServerData server : storageService.getServers()) {
+			if (server.getPort() == port && server.getAddress().equals(address)) {
+				return (ECSServerCommunicator) server;
+			}
+		}
+		return null;
+	}
+	
+	private void sendSSHCall(String address, int port) {
+		String[] args = {"./script.sh", address, Integer.toString(port)};
+
+		Runtime run = Runtime.getRuntime();
+		try {
+			run.exec(args);
+		} catch (IOException e) {
+			//TODO deal with this exception
+			e.printStackTrace();
+		}
 	}
 }
