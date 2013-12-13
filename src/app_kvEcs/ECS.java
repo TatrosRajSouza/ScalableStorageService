@@ -3,14 +3,17 @@ package app_kvEcs;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.Random;
 
-import client.KVCommunication;
+import org.apache.log4j.Logger;
+
+import common.messages.ECSMessage;
+import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;
+import common.messages.InvalidMessageException;
 import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
 
@@ -19,55 +22,69 @@ public class ECS {
 	private InfrastructureMetadata serverRepository;
 	private InfrastructureMetadata storageService;
 	private ConsistentHashing hashing;
-	private Map<String, KVCommunication> communications;
-	private boolean running;
+	//Is this running var really necessary?
 	private Random generator;
 
+	protected static Logger logger = Logger.getRootLogger();
+	
 	public ECS() {
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
-		communications = new Hashtable<String, KVCommunication>();
-		running = false;
 		generator = new Random();
 	}
 
 	public void initService(int numberOfNodes) {
+		ECSStatusType command = ECSStatusType.INIT;
+		
 		for (int i = 0; i < numberOfNodes; i++) {
-			addNode();
+			initNode();
 		}
-	}
-
-	public void addNode() {
-		String address;
-		int port;
-		KVCommunication comm;
-
-		ServerData node = moveRandomNode(serverRepository, storageService);
-		if (node == null) {
-			//TODO exception or something like that
-			return;
-		} else {
-			address = node.getAddress();
-			port = node.getPort();
-		}
-		hashing.addServer(address, port);
-		runScript(address, port);
-		//try {
-			//Thread.sleep(500);
-			comm = connectServerNode(address, port);
-			communications.put(address + ":" + Integer.toString(port) , comm);
-			comm.closeConnection();
-		/*} catch (UnknownHostException e) {
+		try {
+			ECSServerCommunicator server;
+			ECSMessage message = new ECSMessage(command, storageService);
+			for (ServerData kvServer : storageService.getServers()) {
+				server = (ECSServerCommunicator) kvServer;
+				server.sendMessage(message.toBytes());
+			}
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SocketTimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (InterruptedException e) {
+		}
+		
+	}
+
+	private ECSServerCommunicator initNode() {
+		ECSServerCommunicator node = moveRandomNode(serverRepository, storageService);
+		if (node == null) {
+			//TODO exception or something like that
+			return null;
+		}
+
+		sendSSHCall(node.getAddress(), node.getPort());
+		hashing.addServer(node.getAddress(), node.getPort());
+		try {
+			node.connect();
+		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}*/
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return node;
+	}
+
+	public void addNode() {
+		/*ECSServerCommunicator  node = */initNode();
+
 		//Initialize the new storage server with the updated meta­data and start it.
 		//Set write lock (lockWrite()) on the successor node;
 		//Invoke the transfer of the affected data items to the new storage server:
@@ -76,8 +93,6 @@ public class ECS {
 		//	Send a meta­data update to all storage servers
 		//	Release the write lock on the successor node and finally remove the data items
 		//	that are no longer handled by this server
-
-
 	}
 
 	public void removeNode() {
@@ -88,28 +103,44 @@ public class ECS {
 
 	public void start() {
 		for (ServerData node : storageService.getServers()) {
-			startNode(node);
+			startNode((ECSServerCommunicator) node);
 		}
-		running = true;
-	}
-
-	private void startNode(ServerData node) {
-		// TODO Auto-generated method stub
-
 	}
 
 	public void stop() {
 		for (ServerData node : storageService.getServers()) {
-			stopNode(node);
+			stopNode((ECSServerCommunicator) node);
 		}
-		running = false;
 	}
 
-	private void stopNode(ServerData node) {
-		// TODO Auto-generated method stub
+	public void shutDown() {
+		ECSServerCommunicator serverCommunication;
+		ECSMessage ecsMessage;
 
+		for (ServerData server : storageService.getServers()) {
+			moveRandomNode(storageService, serverRepository);
+			serverCommunication = (ECSServerCommunicator) server;
+			
+			try {
+				ecsMessage = new ECSMessage(ECSStatusType.SHUTDOWN);
+				serverCommunication.sendMessage(ecsMessage.toBytes());
+				serverCommunication.disconnect();
+			} catch (InvalidMessageException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SocketTimeoutException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+		}
 	}
 
+	// this is not in the interface specification
 	public void defineServerRepository(String fileName) throws Exception {
 		BufferedReader br = null;
 		String line;
@@ -128,8 +159,7 @@ public class ECS {
 		br.close();
 	}
 
-	//private
-	public void runScript(String address, int port) {
+	private void sendSSHCall(String address, int port) {
 		//Process proc;
 		String[] args = {"./script.sh", address, Integer.toString(port)};
 
@@ -145,24 +175,65 @@ public class ECS {
 		}
 	}
 
+	// this is not in the interface specification
 	public InfrastructureMetadata getServerRepository() {
 		return serverRepository;
 	}
 
+	// this is not in the interface specification
 	public InfrastructureMetadata getStorageService() {
 		return storageService;
 	}
 
+	// this is not in the interface specification
 	public ConsistentHashing getHashing() {
 		return hashing;
 	}
 
-	public boolean isRunning() {
-		return running;
+	private void startNode(ECSServerCommunicator node) {
+		ECSServerCommunicator serverCommunicator;
+		ECSMessage message;
+		try {
+			message = new ECSMessage(ECSStatusType.START);
+			for (ServerData server : storageService.getServers()) {
+				serverCommunicator = (ECSServerCommunicator) server;
+				serverCommunicator.sendMessage(message.toBytes());
+			}
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SocketTimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	private ServerData moveRandomNode(InfrastructureMetadata from, InfrastructureMetadata to) {
-		ServerData node;
+	private void stopNode(ECSServerCommunicator node) {
+		ECSServerCommunicator serverCommunicator;
+		ECSMessage message;
+		try {
+			message = new ECSMessage(ECSStatusType.STOP);
+			for (ServerData server : storageService.getServers()) {
+				serverCommunicator = (ECSServerCommunicator) server;
+				serverCommunicator.sendMessage(message.toBytes());
+			}
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SocketTimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private ECSServerCommunicator moveRandomNode(InfrastructureMetadata from, InfrastructureMetadata to) {
+		ECSServerCommunicator node;
 		int randomIndex;
 		ArrayList<ServerData> servers = from.getServers();
 
@@ -171,22 +242,10 @@ public class ECS {
 		}
 
 		randomIndex = generator.nextInt(servers.size());
-		node = servers.get(randomIndex);
+		node = (ECSServerCommunicator) servers.get(randomIndex);
 
 		to.addServer(node.getName(), node.getAddress(), node.getPort());
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
 	}
-	
-	private KVCommunication connectServerNode(String address, int port) {
-		//solves problem of the delay of initializing the nodes with a ssh connection
-		try {
-			return new KVCommunication(address, port);
-		} catch (UnknownHostException e) {
-			return connectServerNode(address, port);
-		} catch (IOException e) {
-			return connectServerNode(address, port);
-		}
-	}
-
 }
