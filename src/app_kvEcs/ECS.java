@@ -78,6 +78,7 @@ public class ECS {
 			nextNode.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(node),
 					getEndIndex(node), nextNode);
+			nextNode.sendMessage(message.toBytes());
 			message = nextNode.receiveMessage();
 			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
 				//TODO error
@@ -104,8 +105,10 @@ public class ECS {
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
+		ECSServerCommunicator nextNode = getNextNode(node);
 		BigInteger startIndex = getStartIndex(node);
 		BigInteger endIndex = getEndIndex(node);
+		
 		storageService.removeServer(node.getAddress(), node.getPort());
 		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
 		hashing.update(storageService.getServers());
@@ -115,13 +118,26 @@ public class ECS {
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			node.sendMessage(message.toBytes());
 			// Set the write lock on the server that has to be deleted.
-			message = new ECSMessage(ECSStatusType.UPDATE);
+			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
+			nextNode.sendMessage(message.toBytes());
 			// Send meta­data update to the successor node (i.e., successor is now also responsible
 			// for the range of the server that is to be removed)
+			message = new ECSMessage(ECSStatusType.MOVE_DATA, startIndex, endIndex, nextNode);
+			node.sendMessage(message.toBytes());
 			// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
 			// removed)  to the successor server. The data that is transferred should not be deleted
 			// immediately to be able to serve read requests in the mean time
 			// 		serverToRemove.moveData(range, successor)
+			message = node.receiveMessage();
+			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
+				//TODO error
+			}
+			for (ServerData server : serverRepository.getServers()) {
+				nextNode = (ECSServerCommunicator) server;
+				nextNode.sendMessage(message.toBytes());
+			}
+			message = new ECSMessage(ECSStatusType.SHUTDOWN);
+			node.disconnect();
 			// When all affected data has been transferred (i.e., the server that has to be removed
 			// sends back a notification to the ECS)
 			//		Send a meta­data update to the remaining storage servers.
