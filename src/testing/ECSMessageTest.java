@@ -89,23 +89,27 @@ public class ECSMessageTest extends TestCase {
 		Exception ex = null;
 		ECSStatusType command0, command1 = null, command2 = null;
 		BigInteger start0, start1 = null, start2 = null;
+		BigInteger end0, end1 = null, end2 = null;
 		ServerData server0, server1 = null, server2 = null; 
 		byte[] bytes0, bytes1 = null, bytes2 = null;
 
 		command0 = ECSStatusType.MOVE_DATA;
 		start0 = BigInteger.valueOf(10);
+		end0 = BigInteger.valueOf(100);
 		server0 = new ServerData("node1", "127.0.0.1", 50000);
-		bytes0 = ("MOVE_DATA\n10\nnode1\n127.0.0.1\n50000\r").getBytes();
+		bytes0 = ("MOVE_DATA\n10\n100\nnode1\n127.0.0.1\n50000\r").getBytes();
 		
 		try {
-			ecsMsg1 = new ECSMessage(command0, start0, server0);
+			ecsMsg1 = new ECSMessage(command0, start0, end0, server0);
 			command1 = ecsMsg1.getCommand();
-			start1 = ecsMsg1.getIndex();
+			start1 = ecsMsg1.getStartIndex();
+			end1 = ecsMsg1.getEndIndex();
 			server1 = ecsMsg1.getServer();
 			bytes1 = ecsMsg1.toBytes();
 			ecsMsg2 = new ECSMessage(bytes1);
 			command2 = ecsMsg2.getCommand();
-			start2 = ecsMsg2.getIndex();
+			start2 = ecsMsg2.getStartIndex();
+			end2 = ecsMsg2.getEndIndex();
 			server2 = ecsMsg2.getServer();
 			bytes2 = ecsMsg2.toBytes();
 		} catch (InvalidMessageException e) {
@@ -116,6 +120,8 @@ public class ECSMessageTest extends TestCase {
 		assertEquals(command2, command1);
 		assertEquals(start0.toString(), start1.toString());
 		assertEquals(start2.toString(), start1.toString());
+		assertEquals(end0.toString(), end1.toString());
+		assertEquals(end2.toString(), end1.toString());
 		assertEquals(server0.getName() + server0.getAddress() + server0.getPort(),
 				server1.getName() + server1.getAddress() + server1.getPort());
 		assertEquals(server2.getName() + server2.getAddress() + server2.getPort(),
@@ -132,7 +138,7 @@ public class ECSMessageTest extends TestCase {
 
 		try {
 			ecsMsg1 = new ECSMessage(ECSStatusType.SHUTDOWN);
-			ecsMsg1.getIndex();
+			ecsMsg1.getStartIndex();
 		} catch (InvalidMessageException e) {
 			ex = e;
 		}
