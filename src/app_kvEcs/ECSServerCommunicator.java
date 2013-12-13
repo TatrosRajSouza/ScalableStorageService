@@ -5,6 +5,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import client.KVCommunication;
+import common.messages.ECSMessage;
+import common.messages.InvalidMessageException;
 import common.messages.ServerData;
 
 public class ECSServerCommunicator extends ServerData {
@@ -34,4 +36,8 @@ public class ECSServerCommunicator extends ServerData {
 		communication.sendMessage(msgBytes);
 	}
 	
+	public ECSMessage receiveMessage() throws SocketTimeoutException, IOException, InvalidMessageException {
+		byte[] message = communication.receiveMessage();
+		return new ECSMessage(message);
+	}
 }
