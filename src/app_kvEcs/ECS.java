@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.SortedMap;
 
@@ -75,8 +76,8 @@ public class ECS {
 			nextNode = getNextNode(node);
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
-			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(nextNode),
-					getEndIndex(nextNode), nextNode);
+			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(node),
+					getEndIndex(node), nextNode);
 			message = nextNode.receiveMessage();
 			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
 				//TODO error
@@ -104,6 +105,7 @@ public class ECS {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
 		BigInteger startIndex = getStartIndex(node);
+		BigInteger endIndex = getEndIndex(node);
 		storageService.removeServer(node.getAddress(), node.getPort());
 		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
 		hashing.update(storageService.getServers());
@@ -113,7 +115,7 @@ public class ECS {
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			node.sendMessage(message.toBytes());
 			// Set the write lock on the server that has to be deleted.
-			//message = new ECSMessage(bytes)
+			message = new ECSMessage(ECSStatusType.UPDATE);
 			// Send meta­data update to the successor node (i.e., successor is now also responsible
 			// for the range of the server that is to be removed)
 			// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
@@ -296,33 +298,39 @@ public class ECS {
 
 	private BigInteger getStartIndex(ECSServerCommunicator node) {
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
-		for (BigInteger startIndex : hashCircle.keySet()) {
-			String[] server = hashCircle.get(startIndex).split(":");
+		Iterator<BigInteger> iterator = hashCircle.keySet().iterator();
+		BigInteger startIndex = null;
+		BigInteger endIndex = null;
+		
+		if (iterator.hasNext()) {
+			startIndex = hashCircle.lastKey();
+		} else {
+			return null;
+		}
+		
+		while (iterator.hasNext()) {
+			endIndex = iterator.next();
+			String[] server = hashCircle.get(endIndex).split(":");
 			String address = server[0];
 			int port = Integer.parseInt(server[1]);
 			if (node.getPort() == port && node.getAddress().equals(address)) {
 				return startIndex;
 			}
+			startIndex = endIndex;
 		}
+
 		return null;
 	}
 	
 	private BigInteger getEndIndex(ECSServerCommunicator node) {
-		boolean next = false;
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
-		for (BigInteger startIndex : hashCircle.keySet()) {
-			if (next) {
-				return startIndex;
-			}
-			String[] server = hashCircle.get(startIndex).split(":");
+		for (BigInteger endIndex : hashCircle.keySet()) {
+			String[] server = hashCircle.get(endIndex).split(":");
 			String address = server[0];
 			int port = Integer.parseInt(server[1]);
 			if (node.getPort() == port && node.getAddress().equals(address)) {
-				next = true;
+				return endIndex;
 			}
-		}
-		if (next) {
-			return hashCircle.firstKey();
 		}
 		return null;
 	}
