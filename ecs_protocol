@@ -10,7 +10,7 @@ Messages sent by the ECS to a Server nodes:
 	UPDATE <metadata>
 
 Messages sent by a Server nodes to the ECS: 
-	MOVE_COMPLETE
+	MOVE_COMPLETED
 
 
 Types of the arguments:

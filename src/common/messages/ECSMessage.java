@@ -54,7 +54,7 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command)
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_COMPLETE) {
+				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_COMPLETED) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
@@ -85,7 +85,7 @@ public class ECSMessage {
 
 		if (command == ECSStatusType.START || command == ECSStatusType.STOP
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
-				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETE) {
+				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";

@@ -100,12 +100,12 @@ public class ECSMessageTest extends TestCase {
 		try {
 			ecsMsg1 = new ECSMessage(command0, start0, server0);
 			command1 = ecsMsg1.getCommand();
-			start1 = ecsMsg1.getStartIndex();
+			start1 = ecsMsg1.getIndex();
 			server1 = ecsMsg1.getServer();
 			bytes1 = ecsMsg1.toBytes();
 			ecsMsg2 = new ECSMessage(bytes1);
 			command2 = ecsMsg2.getCommand();
-			start2 = ecsMsg2.getStartIndex();
+			start2 = ecsMsg2.getIndex();
 			server2 = ecsMsg2.getServer();
 			bytes2 = ecsMsg2.toBytes();
 		} catch (InvalidMessageException e) {
@@ -132,7 +132,7 @@ public class ECSMessageTest extends TestCase {
 
 		try {
 			ecsMsg1 = new ECSMessage(ECSStatusType.SHUTDOWN);
-			ecsMsg1.getStartIndex();
+			ecsMsg1.getIndex();
 		} catch (InvalidMessageException e) {
 			ex = e;
 		}
