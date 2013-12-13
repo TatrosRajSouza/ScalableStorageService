@@ -6,7 +6,7 @@ Messages sent by the ECS to a Server nodes:
 	SHUTDOWN
 	LOCK_WRITE
 	UNLOCK_WRITE
-	MOVE_DATA <startIndex> <endIndex> <server>
+	MOVE_DATA <startIndex> <server>
 	UPDATE <metadata>
 
 Messages sent by a Server nodes to the ECS: 
@@ -16,5 +16,5 @@ Messages sent by a Server nodes to the ECS:
 Types of the arguments:
 	INIT, START, STOP, etc: ECSStatusType
 	<metadata>: InfrastructureMetadata
-	<startIndex>, <endIndex>: BigInteger
+	<startIndex>: BigInteger
 	<server>: ServerData

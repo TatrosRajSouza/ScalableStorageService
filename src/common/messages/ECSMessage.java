@@ -9,7 +9,6 @@ public class ECSMessage {
 	private ECSStatusType command;
 	private InfrastructureMetadata metadata;
 	private BigInteger startIndex;
-	private BigInteger endIndex;
 	private ServerData server;
 
 	private static Logger logger = Logger.getRootLogger();
@@ -32,20 +31,17 @@ public class ECSMessage {
 			case 1:
 				metadata = null;
 				startIndex = null;
-				endIndex = null;
 				server = null;
 				break;
 			case 2:
 				metadata = new InfrastructureMetadata(arguments[1]);
 				startIndex = null;
-				endIndex = null;
 				server = null;
 				break;
-			case 6:
+			case 5:
 				metadata = null;
 				startIndex = new BigInteger(arguments[1]);
-				endIndex = new BigInteger(arguments[2]);
-				server = new ServerData(arguments[3], arguments[4], Integer.parseInt(arguments[5]));
+				server = new ServerData(arguments[2], arguments[3], Integer.parseInt(arguments[4]));
 				break;
 			default:
 				throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -73,14 +69,13 @@ public class ECSMessage {
 		this.metadata = metadata;
 	}
 
-	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server)
+	public ECSMessage(ECSStatusType command, BigInteger startIndex, ServerData server)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.startIndex = startIndex;
-		this.endIndex = endIndex;
 		this.server = server;
 	}
 
@@ -95,7 +90,7 @@ public class ECSMessage {
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
 		} else if (command == ECSStatusType.MOVE_DATA) {
-			message += "\n" + startIndex.toString() + "\n" + endIndex.toString() + "\n"
+			message += "\n" + startIndex.toString() + "\n"
 					+ server.getName() + "\n" + server.getAddress() + "\n" 
 					+ Integer.toString(server.getPort()) + "\r";
 		} else {
@@ -130,13 +125,6 @@ public class ECSMessage {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		return startIndex;
-	}
-
-	public BigInteger getEndIndex() throws InvalidMessageException {
-		if (command != ECSStatusType.MOVE_DATA) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
-		}
-		return endIndex;
 	}
 
 	public ServerData getServer() throws InvalidMessageException {
