@@ -3,10 +3,12 @@ package app_kvEcs;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.SortedMap;
 
 import org.apache.log4j.Logger;
 
@@ -83,22 +85,104 @@ public class ECS {
 	}
 
 	public void addNode() {
-		/*ECSServerCommunicator  node = */initNode();
+		ECSMessage message;
+		ECSServerCommunicator nextNode;
+		ECSServerCommunicator node = initNode();
 
-		//Initialize the new storage server with the updated meta­data and start it.
-		//Set write lock (lockWrite()) on the successor node;
-		//Invoke the transfer of the affected data items to the new storage server:
-		//	successor.moveData(range, newServer)
-		//When all affected data has been transferred:
-		//	Send a meta­data update to all storage servers
-		//	Release the write lock on the successor node and finally remove the data items
-		//	that are no longer handled by this server
+		try {
+			message = new ECSMessage(ECSStatusType.INIT, serverRepository);
+			node.sendMessage(message.toBytes());
+			message = new ECSMessage(ECSStatusType.START);
+			node.sendMessage(message.toBytes());
+			nextNode = getNextNode(node);
+			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
+			nextNode.sendMessage(message.toBytes());
+			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(nextNode), nextNode);
+			// Should wait?
+			message = new ECSMessage(ECSStatusType.UPDATE, serverRepository);
+			for (ServerData server : serverRepository.getServers()) {
+				nextNode = (ECSServerCommunicator) server;
+				nextNode.sendMessage(message.toBytes());
+			}
+			message = new ECSMessage(ECSStatusType.UNLOCK_WRITE);
+			node.sendMessage(message.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SocketTimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private BigInteger getStartIndex(ECSServerCommunicator node) {
+		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
+		for (BigInteger startIndex : hashCircle.keySet()) {
+			String[] server = hashCircle.get(startIndex).split(":");
+			String address = server[0];
+			int port = Integer.parseInt(server[1]);
+			if (node.getPort() == port && node.getAddress().equals(address)) {
+				return startIndex;
+			}
+		}
+		return null;
+	}
+
+	// This method should go in the ConsistentHashing class
+	private ECSServerCommunicator getNextNode(ECSServerCommunicator node) {
+		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
+		boolean next = false;
+		
+		for (BigInteger hashValue : hashCircle.keySet()) {
+			if (next) {
+				getServer(hashValue);
+			} else if (hashCircle.get(hashValue).equals(node.getAddress() + ":" + node.getPort())) {
+				next = true;
+			}
+		}
+		
+		if (next) {
+			getServer(hashCircle.firstKey());
+		}
+		
+		return null;
+	}
+	
+	private ECSServerCommunicator getServer(BigInteger hashValue) {
+		String[] addressAndPort = hashing.getHashCircle().get(hashValue).split(":");
+		String address = addressAndPort[0];
+		int port = Integer.parseInt(addressAndPort[1]);
+		for (ServerData server : storageService.getServers()) {
+			if (server.getPort() == port && server.getAddress().equals(address)) {
+				return (ECSServerCommunicator) server;
+			}
+		}
+		return null;
 	}
 
 	public void removeNode() {
 		/*ServerData node = */moveRandomNode(storageService, serverRepository);
-		hashing.update(storageService.getServers());
 		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
+		hashing.update(storageService.getServers());
+		
+		
+		// Randomly select one of the storage servers.
+		// Recalculate and update the meta­data of the storage service (i.e., the range for the
+		// successor node)
+		// Set the write lock on the server that has to be deleted.
+		// Send meta­data update to the successor node (i.e., successor is now also responsible
+		// for the range of the server that is to be removed)
+		// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
+		// removed)  to the successor server. The data that is transferred should not be deleted
+		// immediately to be able to serve read requests in the mean time
+		// 		serverToRemove.moveData(range, successor)
+		// When all affected data has been transferred (i.e., the server that has to be removed
+		// sends back a notification to the ECS)
+		//		Send a meta­data update to the remaining storage servers.
+		//		Shutdown the respective storage server.
 	}
 
 	public void start() {
@@ -118,7 +202,6 @@ public class ECS {
 		ECSMessage ecsMessage;
 
 		for (ServerData server : storageService.getServers()) {
-			moveRandomNode(storageService, serverRepository);
 			serverCommunication = (ECSServerCommunicator) server;
 			
 			try {
@@ -135,9 +218,11 @@ public class ECS {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			
 		}
+		
+		serverRepository = new InfrastructureMetadata();
+		storageService = new InfrastructureMetadata();
+		hashing = new ConsistentHashing();
 	}
 
 	// this is not in the interface specification
