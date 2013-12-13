@@ -19,5 +19,6 @@ Types of the arguments:
 	<startIndex> <endIndex>: BigInteger
 	<server>: ServerData
 
-<endIndex> refers to the start of the next node and not the last index of the actual node.
-<endIndex> is probably not going to be used in this milestone
+
+<startIndex> refers to the start of the last node and not the first index of the actual node.
+<endIndex> refers to the index of the node
