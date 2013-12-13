@@ -8,7 +8,7 @@ public class ECSMessage {
 
 	private ECSStatusType command;
 	private InfrastructureMetadata metadata;
-	private BigInteger startIndex;
+	private BigInteger index;
 	private ServerData server;
 
 	private static Logger logger = Logger.getRootLogger();
@@ -30,17 +30,17 @@ public class ECSMessage {
 			switch (arguments.length) {
 			case 1:
 				metadata = null;
-				startIndex = null;
+				index = null;
 				server = null;
 				break;
 			case 2:
 				metadata = new InfrastructureMetadata(arguments[1]);
-				startIndex = null;
+				index = null;
 				server = null;
 				break;
 			case 5:
 				metadata = null;
-				startIndex = new BigInteger(arguments[1]);
+				index = new BigInteger(arguments[1]);
 				server = new ServerData(arguments[2], arguments[3], Integer.parseInt(arguments[4]));
 				break;
 			default:
@@ -75,7 +75,7 @@ public class ECSMessage {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
-		this.startIndex = startIndex;
+		this.index = startIndex;
 		this.server = server;
 	}
 
@@ -90,7 +90,7 @@ public class ECSMessage {
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
 		} else if (command == ECSStatusType.MOVE_DATA) {
-			message += "\n" + startIndex.toString() + "\n"
+			message += "\n" + index.toString() + "\n"
 					+ server.getName() + "\n" + server.getAddress() + "\n" 
 					+ Integer.toString(server.getPort()) + "\r";
 		} else {
@@ -120,11 +120,11 @@ public class ECSMessage {
 		return metadata;
 	}
 
-	public BigInteger getStartIndex() throws InvalidMessageException {
+	public BigInteger getIndex() throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
-		return startIndex;
+		return index;
 	}
 
 	public ServerData getServer() throws InvalidMessageException {

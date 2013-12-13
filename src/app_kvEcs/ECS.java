@@ -28,7 +28,7 @@ public class ECS {
 	private Random generator;
 
 	protected static Logger logger = Logger.getRootLogger();
-	
+
 	public ECS() {
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
@@ -38,7 +38,7 @@ public class ECS {
 
 	public void initService(int numberOfNodes) {
 		ECSStatusType command = ECSStatusType.INIT;
-		
+
 		for (int i = 0; i < numberOfNodes; i++) {
 			initNode();
 		}
@@ -59,7 +59,7 @@ public class ECS {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	private ECSServerCommunicator initNode() {
@@ -80,7 +80,7 @@ public class ECS {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return node;
 	}
 
@@ -119,25 +119,39 @@ public class ECS {
 	}
 
 	public void removeNode() {
-		/*ServerData node = */moveRandomNode(storageService, serverRepository);
+		ECSMessage message;
+		ECSServerCommunicator node = getRandomNode(storageService);
+		BigInteger startIndex = getStartIndex(node);
+		storageService.removeServer(node.getAddress(), node.getPort());
 		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
 		hashing.update(storageService.getServers());
-		
-		
-		// Randomly select one of the storage servers.
 		// Recalculate and update the meta­data of the storage service (i.e., the range for the
 		// successor node)
-		// Set the write lock on the server that has to be deleted.
-		// Send meta­data update to the successor node (i.e., successor is now also responsible
-		// for the range of the server that is to be removed)
-		// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
-		// removed)  to the successor server. The data that is transferred should not be deleted
-		// immediately to be able to serve read requests in the mean time
-		// 		serverToRemove.moveData(range, successor)
-		// When all affected data has been transferred (i.e., the server that has to be removed
-		// sends back a notification to the ECS)
-		//		Send a meta­data update to the remaining storage servers.
-		//		Shutdown the respective storage server.
+		try {
+			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
+			node.sendMessage(message.toBytes());
+			// Set the write lock on the server that has to be deleted.
+			
+			// Send meta­data update to the successor node (i.e., successor is now also responsible
+			// for the range of the server that is to be removed)
+			// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
+			// removed)  to the successor server. The data that is transferred should not be deleted
+			// immediately to be able to serve read requests in the mean time
+			// 		serverToRemove.moveData(range, successor)
+			// When all affected data has been transferred (i.e., the server that has to be removed
+			// sends back a notification to the ECS)
+			//		Send a meta­data update to the remaining storage servers.
+			//		Shutdown the respective storage server.
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SocketTimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void start() {
@@ -158,7 +172,7 @@ public class ECS {
 
 		for (ServerData server : storageService.getServers()) {
 			serverCommunication = (ECSServerCommunicator) server;
-			
+
 			try {
 				ecsMessage = new ECSMessage(ECSStatusType.SHUTDOWN);
 				serverCommunication.sendMessage(ecsMessage.toBytes());
@@ -174,7 +188,7 @@ public class ECS {
 				e.printStackTrace();
 			}
 		}
-		
+
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
@@ -257,22 +271,25 @@ public class ECS {
 	}
 
 	private ECSServerCommunicator moveRandomNode(InfrastructureMetadata from, InfrastructureMetadata to) {
-		ECSServerCommunicator node;
-		int randomIndex;
-		ArrayList<ServerData> servers = from.getServers();
+		ECSServerCommunicator node;		
 
-		if (servers.isEmpty()) {
-			return null;
-		}
-
-		randomIndex = generator.nextInt(servers.size());
-		node = (ECSServerCommunicator) servers.get(randomIndex);
-
+		node = getRandomNode(from);
 		to.addServer(node.getName(), node.getAddress(), node.getPort());
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
 	}
-	
+
+	private ECSServerCommunicator getRandomNode(InfrastructureMetadata metadata) {
+		int randomIndex;
+		ArrayList<ServerData> servers = metadata.getServers();
+
+		if (servers.isEmpty()) {
+			return null;
+		}
+		randomIndex = generator.nextInt(servers.size());
+		return (ECSServerCommunicator) servers.get(randomIndex);
+	}
+
 	private BigInteger getStartIndex(ECSServerCommunicator node) {
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
 		for (BigInteger startIndex : hashCircle.keySet()) {
@@ -290,7 +307,7 @@ public class ECS {
 	private ECSServerCommunicator getNextNode(ECSServerCommunicator node) {
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
 		boolean next = false;
-		
+
 		for (BigInteger hashValue : hashCircle.keySet()) {
 			if (next) {
 				getServer(hashValue);
@@ -298,14 +315,14 @@ public class ECS {
 				next = true;
 			}
 		}
-		
+
 		if (next) {
 			getServer(hashCircle.firstKey());
 		}
-		
+
 		return null;
 	}
-	
+
 	private ECSServerCommunicator getServer(BigInteger hashValue) {
 		String[] addressAndPort = hashing.getHashCircle().get(hashValue).split(":");
 		String address = addressAndPort[0];
@@ -317,7 +334,7 @@ public class ECS {
 		}
 		return null;
 	}
-	
+
 	private void sendSSHCall(String address, int port) {
 		String[] args = {"./script.sh", address, Integer.toString(port)};
 

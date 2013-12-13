@@ -6,7 +6,7 @@ Messages sent by the ECS to a Server nodes:
 	SHUTDOWN
 	LOCK_WRITE
 	UNLOCK_WRITE - the server can delete the data moved to a new added server just after this message is received 
-	MOVE_DATA <startIndex> <server>
+	MOVE_DATA <index> <server> - index refer to startIndex of the node added or the endIndex of the node deleted 
 	UPDATE <metadata>
 
 Messages sent by a Server nodes to the ECS: 
@@ -16,5 +16,5 @@ Messages sent by a Server nodes to the ECS:
 Types of the arguments:
 	INIT, START, STOP, etc: ECSStatusType
 	<metadata>: InfrastructureMetadata
-	<startIndex>: BigInteger
+	<index>: BigInteger
 	<server>: ServerData
