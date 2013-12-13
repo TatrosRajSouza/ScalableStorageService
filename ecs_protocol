@@ -5,7 +5,7 @@ Messages sent by the ECS to a Server nodes:
 	STOP
 	SHUTDOWN
 	LOCK_WRITE
-	UNLOCK_WRITE
+	UNLOCK_WRITE - the server can delete the data moved to a new added server just after this message is received 
 	MOVE_DATA <startIndex> <server>
 	UPDATE <metadata>
 
