@@ -59,7 +59,7 @@ public class ECSMessage {
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
 				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_COMPLETE) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 	}
@@ -67,7 +67,7 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.metadata = metadata;
@@ -76,7 +76,7 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.startIndex = startIndex;

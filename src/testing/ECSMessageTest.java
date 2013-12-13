@@ -47,7 +47,7 @@ public class ECSMessageTest extends TestCase {
 	}
 
 	@Test
-	public void testMetadataArgumentMessageSuccess() {
+	public void testTwoArgumentMessageSuccess() {
 		ECSMessage ecsMsg1 = null, ecsMsg2 = null;
 		Exception ex = null;
 		ECSStatusType command0, command1 = null, command2 = null;
@@ -78,40 +78,6 @@ public class ECSMessageTest extends TestCase {
 		assertEquals(command2, command1);
 		assertEquals(metadata0.toString(), metadata1.toString());
 		assertEquals(metadata2.toString(), metadata1.toString());
-		assertEquals(new String(bytes0), new String(bytes1));
-		assertEquals(new String(bytes2), new String(bytes1));
-		assertNull(ex);
-	}
-	
-	@Test
-	public void testConnectErrorArgumentMessageSuccess() {
-		ECSMessage ecsMsg1 = null, ecsMsg2 = null;
-		Exception ex = null;
-		ECSStatusType command0, command1 = null, command2 = null;
-		String msg0, msg1 = null, msg2 = null;
-		byte[] bytes0, bytes1 = null, bytes2 = null;
-
-		command0 = ECSStatusType.CONNECT_ERROR;
-		msg0 = "error establishing connection";
-		bytes0 = ("CONNECT_ERROR\n" + msg0 + "\r").getBytes();
-		
-		try {
-			ecsMsg1 = new ECSMessage(command0, msg0);
-			command1 = ecsMsg1.getCommand();
-			msg1 = ecsMsg1.getMessage();
-			bytes1 = ecsMsg1.toBytes();
-			ecsMsg2 = new ECSMessage(bytes1);
-			command2 = ecsMsg2.getCommand();
-			msg2 = ecsMsg2.getMessage();
-			bytes2 = ecsMsg2.toBytes();
-		} catch (InvalidMessageException e) {
-			ex = e;
-		}
-
-		assertEquals(command0, command1);
-		assertEquals(command2, command1);
-		assertEquals(msg0, msg1);
-		assertEquals(msg2, msg1);
 		assertEquals(new String(bytes0), new String(bytes1));
 		assertEquals(new String(bytes2), new String(bytes1));
 		assertNull(ex);
