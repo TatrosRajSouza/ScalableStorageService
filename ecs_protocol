@@ -5,20 +5,20 @@ Messages sent by the ECS to a Server nodes:
 	STOP
 	SHUTDOWN
 	LOCK_WRITE
-	UNLOCK_WRITE
-	MOVE_DATA <startIndex> <endIndex> <server>
+	UNLOCK_WRITE - the server can delete the data moved to a new added server just after this message is received 
+	MOVE_DATA <startIndex> <endIndex> <server> - index refer to startIndex of the node added or the endIndex of the node deleted 
 	UPDATE <metadata>
-	CONNECT
-	DISCONNECT
 
 Messages sent by a Server nodes to the ECS: 
-	CONNECT_SUCCESS <message>
-	CONNECT_ERROR <message>
-	DISCONNECT_SUCCESS
+	MOVE_COMPLETED
 
 
 Types of the arguments:
 	INIT, START, STOP, etc: ECSStatusType
 	<metadata>: InfrastructureMetadata
-	<startIndex>, <endIndex>: BigInteger
+	<startIndex> <endIndex>: BigInteger
 	<server>: ServerData
+
+
+<startIndex> refers to the start of the last node and not the first index of the actual node.
+<endIndex> refers to the index of the node

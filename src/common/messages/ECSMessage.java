@@ -11,7 +11,6 @@ public class ECSMessage {
 	private BigInteger startIndex;
 	private BigInteger endIndex;
 	private ServerData server;
-	private String message;
 
 	private static Logger logger = Logger.getRootLogger();
 
@@ -37,13 +36,7 @@ public class ECSMessage {
 				server = null;
 				break;
 			case 2:
-				if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
-					metadata = new InfrastructureMetadata(arguments[1]);
-				} else if (command == ECSStatusType.CONNECT_ERROR || command == ECSStatusType.CONNECT_SUCCESS) {
-					this.message = arguments[1];
-				} else {
-					throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
-				}
+				metadata = new InfrastructureMetadata(arguments[1]);
 				startIndex = null;
 				endIndex = null;
 				server = null;
@@ -65,9 +58,8 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command)
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.CONNECT_SUCCESS
-				|| command == ECSStatusType.CONNECT_ERROR) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_COMPLETED) {
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 	}
@@ -75,25 +67,16 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.metadata = metadata;
 	}
 
-	public ECSMessage(ECSStatusType command, String message)
-			throws InvalidMessageException {
-		if (command != ECSStatusType.CONNECT_ERROR || command != ECSStatusType.CONNECT_SUCCESS) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
-		}
-		this.message = message;
-		this.command = command;
-	}
-
 	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.startIndex = startIndex;
@@ -107,13 +90,10 @@ public class ECSMessage {
 
 		if (command == ECSStatusType.START || command == ECSStatusType.STOP
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
-				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.CONNECT
-				|| command == ECSStatusType.DISCONNECT || command == ECSStatusType.DISCONNECT_SUCCESS) {
+				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
-		} else if (command == ECSStatusType.CONNECT_SUCCESS || command == ECSStatusType.CONNECT_ERROR) {
-			message += "\n" + this.message + "\r";
 		} else if (command == ECSStatusType.MOVE_DATA) {
 			message += "\n" + startIndex.toString() + "\n" + endIndex.toString() + "\n"
 					+ server.getName() + "\n" + server.getAddress() + "\n" 
@@ -151,7 +131,7 @@ public class ECSMessage {
 		}
 		return startIndex;
 	}
-
+	
 	public BigInteger getEndIndex() throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -164,13 +144,6 @@ public class ECSMessage {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		return server;
-	}
-
-	public String getMessage() throws InvalidMessageException {
-		if (command != ECSStatusType.CONNECT_SUCCESS || command != ECSStatusType.CONNECT_ERROR) {
-			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
-		}
-		return message;
 	}
 
 	private void setType(String command) throws InvalidMessageException {
