@@ -5,6 +5,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ public class KVServer extends Thread {
 	private final static boolean DEBUG = false;
 	private static Logger logger = Logger.getRootLogger();
 	public static KVData kvdata = new KVData();
+	public List<HashMap<Integer,String>> movedDataList = new ArrayList<HashMap<Integer,String>>();
 	private String ip;
 	private int port;
 	private List<ClientConnection> clientList = new ArrayList<ClientConnection>();
@@ -34,9 +36,9 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
-		
+
 	}
-	
+
 	/**
 	 * Initializes and starts the server but blocked for client requests
 	 */
@@ -56,7 +58,7 @@ public class KVServer extends Thread {
 
 		} catch (NumberFormatException nfe) {
 			logger.error("Invalid port number" + nfe.getMessage());
-			
+
 		}
 	}
 	/**
@@ -97,38 +99,38 @@ public class KVServer extends Thread {
 	 */
 	public void start()
 	{
-		
+
 		logger.info("Allowing server to serve client requests");
 		changeServeClientStatus(true,1);
-		
+
 	}
 	public void stopServer(){		
 		logger.info("Stopping server to serve client requests");
 		changeServeClientStatus(false,1);
-		
+
 	}
-	 public void lockWrite()
-	    {
-		 logger.info("locking server to write requests");
-		 changeServeClientStatus(true,2);
-	    }
-	 public void UnLockWrite()
-	    {
-		 logger.info("unlocking server to write requests");
-		 changeServeClientStatus(false,2);
-	    }
+	public void lockWrite()
+	{
+		logger.info("locking server to write requests");
+		changeServeClientStatus(true,2);
+	}
+	public void UnLockWrite()
+	{
+		logger.info("unlocking server to write requests");
+		changeServeClientStatus(false,2);
+	}
 	private void changeServeClientStatus(boolean status,int flag)
 	{
 		ClientConnection connection;
 		for (Iterator<ClientConnection> connectionIterator = this.clientList.iterator(); connectionIterator.hasNext(); )
-	    {
+		{
 			connection = connectionIterator.next();
-		if(connection.isOpen())
+			if(connection.isOpen())
 			{
-			if(flag == 1)
-				connection.setServeClientRequest(status);
-			else if(flag == 2)
-				connection.setWriteLocked(status);
+				if(flag == 1)
+					connection.setServeClientRequest(status);
+				else if(flag == 2)
+					connection.setWriteLocked(status);
 			}
 			else
 			{
@@ -147,14 +149,24 @@ public class KVServer extends Thread {
 		}
 		System.exit(1);
 	}
-   public void update()
-   {
-	   // update the metadata
-   }
-   public void moveData(KVServer kvserver)
-   {
-	  kvdata.moveData(kvserver);
-   }
+	public void update()
+	{
+		// update the metadata
+	}
+	public void moveData(int startIndex, int endIndex, KVServer kvserver)
+	{
+		HashMap<Integer,String> movingData = kvdata.findMovingData(startIndex, endIndex);
+		kvdata.moveData(movingData);
+		movedDataList.add(movingData);
+		// need to send message 
+	}
+	public void removeData(KVServer kvserver)
+	{
+		for(HashMap<Integer,String> movedData : movedDataList)
+		{
+kvdata.remove(movedData);
+		}
+	}
 	private boolean initializeServer() {
 		logger.info("Initialize server ...");
 		try {
@@ -171,6 +183,4 @@ public class KVServer extends Thread {
 			return false;
 		}
 	}
-
-	
 }
