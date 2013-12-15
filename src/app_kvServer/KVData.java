@@ -1,20 +1,22 @@
 package app_kvServer;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 
 public class KVData {
-	public ConcurrentHashMap<Integer, String> dataStore = new ConcurrentHashMap<Integer, String>();
+	public ConcurrentHashMap<BigInteger, String> dataStore = new ConcurrentHashMap<BigInteger, String>();
 	public KVData()
 	{
 
 	}
 
-	public String put(int key, String value) {
+	public String put(BigInteger key, String value) {
 		String returnValue = null;
 		if(!value.equals("null"))
 		{
@@ -35,13 +37,13 @@ public class KVData {
 		return returnValue;
 
 	}
-	public void moveData(HashMap<Integer,String> movingData)
+	public void moveData(HashMap<BigInteger,String> movingData)
 	{
 		if(dataStore.size() > 0)
 		{
-			Iterator<Map.Entry<Integer,String>> it = dataStore.entrySet().iterator();
+			Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
 			while (it.hasNext()) {
-				Map.Entry<Integer,String> pairs = (Map.Entry<Integer,String>)it.next();
+				Entry<BigInteger, String> pairs = (Map.Entry<BigInteger,String>)it.next();
 				dataStore.put(pairs.getKey(), pairs.getValue());
 			}
 		}
@@ -55,16 +57,17 @@ public class KVData {
 		return dataStore.get(key);
 	}
 
-	public HashMap<Integer,String> findMovingData(int startIndex, int endIndex)
+	public HashMap<BigInteger,String> findMovingData(BigInteger startIndex, BigInteger endIndex)
 	{
-		int key;
-		HashMap<Integer,String> movingData = new HashMap<Integer,String>();
+		BigInteger key;
+		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
 		// iterate over the range or hashmap?
-		Iterator<Map.Entry<Integer,String>> it = dataStore.entrySet().iterator();
+		Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<Integer,String> pairs = (Map.Entry<Integer,String>)it.next();
+			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
 			key = pairs.getKey();
-			if(startIndex < key && key < endIndex)
+			// need modification
+			if(startIndex.compareTo(key) + endIndex.compareTo(key) >0)
 			{
 				movingData.put(key, pairs.getValue());
 			}
@@ -72,8 +75,14 @@ public class KVData {
 		return movingData;
 	}
 
-	public void remove(HashMap<Integer, String> movedData) {
+	public void remove(HashMap<BigInteger, String> movedData) {
 		// TODO Auto-generated method stub
+		Iterator<Entry<BigInteger, String>> it = movedData.entrySet().iterator();
+		while(it.hasNext())
+		{
+			Map.Entry<BigInteger, String> pairs = (Map.Entry<BigInteger, String>)it.next();
+			dataStore.remove(pairs.getKey(), pairs.getValue());
+		}
 		
 	}
 

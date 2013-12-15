@@ -1,6 +1,7 @@
 package app_kvServer;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,16 +16,20 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.messages.InfrastructureMetadata;
+
 public class KVServer extends Thread {
 	private final static boolean DEBUG = false;
 	private static Logger logger = Logger.getRootLogger();
+	public static boolean serveClientRequest = false;
+	public static boolean isWriteLocked = false;
 	public static KVData kvdata = new KVData();
-	public List<HashMap<Integer,String>> movedDataList = new ArrayList<HashMap<Integer,String>>();
+	public static List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
 	private String ip;
-	private int port;
-	private List<ClientConnection> clientList = new ArrayList<ClientConnection>();
-	private ServerSocket serverSocket;
-	private boolean running;
+	public static int port;
+	public static ServerSocket serverSocket;
+	public static boolean running;
+	public static InfrastructureMetadata metaData;
 
 	/**
 	 * Constructs a Storage Server object which listens to connection attempts 
@@ -39,28 +44,7 @@ public class KVServer extends Thread {
 
 	}
 
-	/**
-	 * Initializes and starts the server but blocked for client requests
-	 */
-	// convert with meta data parameter
-	public void initKVServer()
-	{
-		try {
-			new LogSetup("logs/server.log", Level.ALL);
-			System.setProperty("file.encoding", "US-ASCII");
-			int port = 50000;
-			String ip = "localhost";
-			new KVServer(port).start();
-
-		} catch (IOException e) {
-			System.out.println("Error! Unable to initialize logger!");
-			e.printStackTrace();
-
-		} catch (NumberFormatException nfe) {
-			logger.error("Invalid port number" + nfe.getMessage());
-
-		}
-	}
+	
 	/**
 	 * Initializes and starts the server. 
 	 * Loops until the the server should be closed.
@@ -77,7 +61,7 @@ public class KVServer extends Thread {
 							new ClientConnection(client);
 					new Thread(connection).start();
 					// store the clients for further accessing
-					clientList.add(connection);
+					
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());
@@ -97,76 +81,7 @@ public class KVServer extends Thread {
 	/**
 	 * Stops the server insofar that it won't listen at the given port any more.
 	 */
-	public void start()
-	{
 
-		logger.info("Allowing server to serve client requests");
-		changeServeClientStatus(true,1);
-
-	}
-	public void stopServer(){		
-		logger.info("Stopping server to serve client requests");
-		changeServeClientStatus(false,1);
-
-	}
-	public void lockWrite()
-	{
-		logger.info("locking server to write requests");
-		changeServeClientStatus(true,2);
-	}
-	public void UnLockWrite()
-	{
-		logger.info("unlocking server to write requests");
-		changeServeClientStatus(false,2);
-	}
-	private void changeServeClientStatus(boolean status,int flag)
-	{
-		ClientConnection connection;
-		for (Iterator<ClientConnection> connectionIterator = this.clientList.iterator(); connectionIterator.hasNext(); )
-		{
-			connection = connectionIterator.next();
-			if(connection.isOpen())
-			{
-				if(flag == 1)
-					connection.setServeClientRequest(status);
-				else if(flag == 2)
-					connection.setWriteLocked(status);
-			}
-			else
-			{
-				this.clientList.remove(connection);
-			}
-		}
-	}
-
-	public void shutDown(){
-		running = false;
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			logger.error("Error! " +
-					"Unable to close socket on port: " + port, e);
-		}
-		System.exit(1);
-	}
-	public void update()
-	{
-		// update the metadata
-	}
-	public void moveData(int startIndex, int endIndex, KVServer kvserver)
-	{
-		HashMap<Integer,String> movingData = kvdata.findMovingData(startIndex, endIndex);
-		kvdata.moveData(movingData);
-		movedDataList.add(movingData);
-		// need to send message 
-	}
-	public void removeData(KVServer kvserver)
-	{
-		for(HashMap<Integer,String> movedData : movedDataList)
-		{
-kvdata.remove(movedData);
-		}
-	}
 	private boolean initializeServer() {
 		logger.info("Initialize server ...");
 		try {
@@ -183,4 +98,49 @@ kvdata.remove(movedData);
 			return false;
 		}
 	}
+
+
+	/**
+	 * Main entry point for the storage server application. 
+	 * @param args contains the port number at args[0].
+	 */
+	public static void main(String[] args) {
+		if (!DEBUG) {
+			try {
+				new LogSetup("logs/server.log", Level.ALL);
+				if(args.length != 1) {
+					System.out.println("Error! Invalid number of arguments!");
+					System.out.println("Usage: Server <port>!");
+				} else {
+					int port = Integer.parseInt(args[0]);
+					new KVServer(port).start();
+				}
+			} catch (IOException e) {
+				System.out.println("Error! Unable to initialize logger!");
+				e.printStackTrace();
+				System.exit(1);
+			} catch (NumberFormatException nfe) {
+				System.out.println("Error! Invalid argument <port>! Not a number!");
+				System.out.println("Usage: Server <port>!");
+				System.exit(1);
+			}
+		} else {
+			try {
+				new LogSetup("logs/server.log", Level.ALL);
+				System.setProperty("file.encoding", "US-ASCII");
+				int port = 50000;
+				new KVServer(port).start();
+
+			} catch (IOException e) {
+				System.out.println("Error! Unable to initialize logger!");
+				e.printStackTrace();
+				System.exit(1);
+			} catch (NumberFormatException nfe) {
+				System.out.println("Error! Invalid argument <port>! Not a number!");
+				System.out.println("Usage: Server <port>!");
+				System.exit(1);
+			}
+		}
+	}
+
 }

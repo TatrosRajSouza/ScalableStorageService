@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +12,8 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.log4j.Logger;
 
 import app_kvServer.KVData;
+import common.messages.ECSMessage;
+import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
@@ -24,30 +27,12 @@ import consistent_hashing.ConsistentHashing;
 public class ClientConnection implements Runnable {
 
 	private static Logger logger = Logger.getRootLogger();
-	private boolean serveClientRequest;
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
 	private Socket clientSocket;
 	private InputStream input;
 	private OutputStream output;
-	public boolean isWriteLocked() {
-		return isWriteLocked;
-	}
-
-	public void setWriteLocked(boolean isWriteLocked) {
-		this.isWriteLocked = isWriteLocked;
-	}
-
-
-	private boolean isWriteLocked;
 	private boolean isOpen;
-	public boolean isServeClientRequest() {
-		return serveClientRequest;
-	}
-
-	public void setServeClientRequest(boolean serveClientRequest) {
-		this.serveClientRequest = serveClientRequest;
-	}
 
 	public boolean isOpen() {
 		return isOpen;
@@ -65,8 +50,6 @@ public class ClientConnection implements Runnable {
 	public ClientConnection(Socket clientSocket) {
 		this.clientSocket = clientSocket;
 		this.isOpen = true;
-		this.serveClientRequest = false;
-		this.isWriteLocked = false;
 	}
 
 	/**
@@ -74,7 +57,7 @@ public class ClientConnection implements Runnable {
 	 * Loops until the connection is closed or aborted by the client.
 	 */ // example usage for testing: connect 127.0.0.1 50001
 	public void run() {
-		try {
+		try { //connection could not be established
 			output = clientSocket.getOutputStream();
 			input = clientSocket.getInputStream();
 			String connectSuccess = "Connection to MSRG Echo server established: " 
@@ -89,19 +72,19 @@ public class ClientConnection implements Runnable {
 				// TODO Auto-generated catch block
 				logger.error("Invalid connect message");
 			}
-			while(isOpen) {
-				try {
-					// Serve clients only after ECS permission
-					if(serveClientRequest)
-					{
-						byte[] latestMsg = receiveMessage();
-						KVQuery kvQueryCommand;
-						try {
-							kvQueryCommand = new KVQuery(latestMsg);
-							String key=null,value=null,returnValue=null;
-							String command = kvQueryCommand.getStatus().toString();
-							logger.debug("Received Command is: " + command);
+			while(isOpen) { // until connection open
+				try { //connection lost
+					
 
+					byte[] latestMsg = receiveMessage();
+					KVQuery kvQueryCommand;
+					try { //   not KVMessage
+						kvQueryCommand = new KVQuery(latestMsg);
+						String key=null,value=null,returnValue=null;
+						String command = kvQueryCommand.getStatus().toString();
+						logger.debug("Received Command is: " + command);
+						if(KVServer.serveClientRequest) //  ECS permission to serve client?
+						{
 							if(command.equals("GET"))	{
 								key = kvQueryCommand.getKey();
 								int hashedKey = checkRange(key);
@@ -142,64 +125,64 @@ public class ClientConnection implements Runnable {
 							else if(command.equals("PUT"))
 							{
 								key = kvQueryCommand.getKey();
-								int hashedKey = checkRange(key);
+								BigInteger hashedKey = checkRange(key);
 								if(hashedKey != 0)
 								{
-								//future : check in range or not
-								if(!this.isWriteLocked)
-								{
-									
-									value = kvQueryCommand.getValue();
-
-									returnValue = KVServer.kvdata.put(hashedKey,value);
-									if(!value.equals("null") )
+									//future : check in range or not
+									if(!KVServer.isWriteLocked)
 									{
-										if(returnValue == null)
+
+										value = kvQueryCommand.getValue();
+
+										returnValue = KVServer.kvdata.put(hashedKey,value);
+										if(!value.equals("null") )
 										{
-											KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
-											sendMessage(kvQueryPut.toBytes());
+											if(returnValue == null)
+											{
+												KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
+												sendMessage(kvQueryPut.toBytes());
+											}
+											else if(returnValue == value)
+											{
+												KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
+												sendMessage(kvQueryUpdate.toBytes());
+											}
+											else
+											{
+												String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
+												logger.error(errorMsg);
+												sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+											}
 										}
-										else if(returnValue == value)
+
+										if(value.equals("null"))
 										{
-											KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
-											sendMessage(kvQueryUpdate.toBytes());
-										}
-										else
-										{
-											String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
-											logger.error(errorMsg);
-											sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+											if(returnValue != null)
+											{
+												KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
+												sendMessage(kvQueryDelete.toBytes());
+											}
+											else
+											{
+												String errorMsg = "Error in Delete operation for Key:"+key  ;
+												logger.error(errorMsg);
+												sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
+											}
+
 										}
 									}
-
-									if(value.equals("null"))
+									else
 									{
-										if(returnValue != null)
-										{
-											KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
-											sendMessage(kvQueryDelete.toBytes());
-										}
-										else
-										{
-											String errorMsg = "Error in Delete operation for Key:"+key  ;
-											logger.error(errorMsg);
-											sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
-										}
-
+										KVQuery kvQueryWriteLock = new KVQuery(KVMessage.StatusType.SERVER_WRITE_LOCK);
+										sendMessage(kvQueryWriteLock.toBytes());
 									}
 								}
 								else
 								{
-									KVQuery kvQueryWriteLock = new KVQuery(KVMessage.StatusType.SERVER_WRITE_LOCK);
-									sendMessage(kvQueryWriteLock.toBytes());
-								}
-								}
-								else
-								{
-								// send not responsible error message and meta data	
+									// send not responsible error message and meta data	
 								}
 							}
-							
+
 							else if(command.equals("DISCONNECT"))
 							{
 								KVQuery kvQueryDisconnect;
@@ -212,7 +195,38 @@ public class ClientConnection implements Runnable {
 								}
 							}
 
-						} catch (InvalidMessageException e) {
+						} // ECS permission to serve clients?
+						else
+						{
+							KVQuery kvQueryNoService;
+							try {
+								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,"Server is stopped");
+								sendMessage(kvQueryNoService.toBytes());
+							} catch (InvalidMessageException e1) {
+								// TODO Auto-generated catch block
+								logger.error("Error in invalid message format:server side:");
+							}
+						}
+
+					}//   not KVMessage
+					catch (InvalidMessageException e) {
+						try{
+							EcsConnection ecsConnection = new EcsConnection(latestMsg);
+							try
+							{
+							if(ecsConnection.process())
+							{
+								ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+								sendMessage(ecsMoveSuccess.toBytes());
+							}
+							}
+							catch(InvalidMessageException ecs)
+							{
+								logger.error("Invalid message received from ECS");
+							}
+						}
+						catch(InvalidMessageException eEcs)
+						{
 							logger.error("Invalid message received from client");
 							KVQuery kvQueryInvalid;
 							try {
@@ -223,74 +237,55 @@ public class ClientConnection implements Runnable {
 								logger.error("Error in invalid message format:server side");
 							}
 
-
 						}
-					}
-					else
-					{
-						KVQuery kvQueryNoService;
-						try {
-							kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,"Server is stopped");
-							sendMessage(kvQueryNoService.toBytes());
-						} catch (InvalidMessageException e1) {
-							// TODO Auto-generated catch block
-							logger.error("Error in invalid message format:server side:");
-						}
-					}
-
-				} catch (IOException ioe) {
-					logger.error("Error! Connection lost!");
-					isOpen = false;
+					
 				}
 
+			} //connection lost
+				catch (IOException ioe) {
+				logger.error("Error! Connection lost!");
+				isOpen = false;
 			}
-
-
-		} catch (IOException ioe) {
+		}// until connection open
+		}//connection could not be established
+		catch (IOException ioe) {
 			logger.error("Error! Connection could not be established!", ioe);
 
 		} finally {
-
 			try {
 				if (clientSocket != null) {
-
-
 					input.close();
 					output.close();
 					clientSocket.close();
-
 				}
 			} catch (IOException ioe) {
 				logger.error("Error! Unable to tear down connection!", ioe);
 			}
 		}
 	}
-
-
-
-	private int checkRange(String key) {
+	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
 		ConsistentHashing consistentHashing = new ConsistentHashing();
-		int hashedKey = consistentHashing.hashCode();
+		BigInteger hashedKey = consistentHashing.
 		return hashedKey;
 		//MessageDigest md;
 		//String hashedKey = null;
 		//try {
-			//md = MessageDigest.getInstance("MD5");
-			//md.update(key.getBytes());
-			//hashedKey =  md.digest().toString();
-			/*byte byteData[] = md.digest();
+		//md = MessageDigest.getInstance("MD5");
+		//md.update(key.getBytes());
+		//hashedKey =  md.digest().toString();
+		/*byte byteData[] = md.digest();
 			StringBuffer sb = new StringBuffer();
 			for (int i = 0; i < byteData.length; i++) {
 				sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
 			}*/
-			// if not in the range return null
-			
+		// if not in the range return null
+
 		//} 
 		//catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			//logger.error("Error in MD5 generation"+ e.getMessage());
-		}
+		// TODO Auto-generated catch block
+		//logger.error("Error in MD5 generation"+ e.getMessage());
+	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {
 		KVQuery kvQueryError;
