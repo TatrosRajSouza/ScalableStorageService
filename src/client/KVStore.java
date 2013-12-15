@@ -27,7 +27,7 @@ import consistent_hashing.EmptyServerDataException;
 public class KVStore implements KVCommInterface {
 
 	private KVCommunication kvComm;
-	private Logger logger;
+	private static Logger logger = Logger.getRootLogger();
 	private String address;
 	private int port;
 	private int currentRetries = 0;
@@ -44,12 +44,11 @@ public class KVStore implements KVCommInterface {
 	public KVStore(String address, int port) {
 		this.address = address;
 		this.port = port;
-		this.logger = KVClient.getLogger();
 		
 		/* Create empty meta data and add the user-specified server */
 		this.metaData = new InfrastructureMetadata();
 		this.metaData.addServer("Initial User-Specified Server", address, port);
-		this.metaData.addServer("Second Test Server", address, 50001);
+		// this.metaData.addServer("Second Test Server", address, 50001);
 		/* Initialize the consistent Hashing */
 		this.consHash = new ConsistentHashing(metaData.getServers());
 	}
@@ -325,6 +324,16 @@ public class KVStore implements KVCommInterface {
 			throw new ConnectException("Not connected to a KVServer.");
 		}
 	}
-
 	
+	/**
+	 * Obtain the current meta data for this KVStore
+	 * @return {@link InfrastructureMetadata} The meta data for this instance of KVStore
+	 */
+	public InfrastructureMetadata getMetadata() {
+		return this.metaData;
+	}
+	
+	public SocketStatus getConnectionStatus() {
+		return this.kvComm.getSocketStatus();
+	}
 }

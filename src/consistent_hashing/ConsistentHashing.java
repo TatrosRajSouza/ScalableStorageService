@@ -14,7 +14,7 @@ import common.messages.ServerData;
 
 /**
  * Implements Consistent Hashing of Servers and Keys
- * Hashes Servers and Keys (Strings) to 32 bit md5 hashes.
+ * Hashes Servers and Keys (Strings) to 128 bit md5 hashes.
  * Hashes for Servers are stored on a circle (SortedMap hashCircle).
  * The responsible server for a key is the next larger hash in clock-wise direction
  * and can be obtained by calling getServerForKey(String key) 
@@ -62,10 +62,10 @@ public class ConsistentHashing {
 	}
 
 	/**
-	 * For internal use, generates 32-bit md5 hash for <address>:<port> of a server 
+	 * For internal use, generates 128-bit md5 hash for <address>:<port> of a server 
 	 * @param address IP Address of the server
 	 * @param port Remote port number
-	 * @return 32-bit md5 hash
+	 * @return 128-bit md5 hash
 	 */
 	private BigInteger hashServer(String address, int port) {
 		String hashStr = address + ":" + port;
@@ -82,9 +82,9 @@ public class ConsistentHashing {
 	}
 
 	/**
-	 * For internal use, generates 32-bit md5 hash for a String key 
+	 * For internal use, generates 128-bit md5 hash for a String key 
 	 * @param key A String key that should be hashed
-	 * @return 32-bit md5 hash
+	 * @return 128-bit md5 hash
 	 */
 	private BigInteger hashKey(String key) {
 		try {

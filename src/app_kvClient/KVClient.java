@@ -6,9 +6,11 @@ import java.net.UnknownHostException;
 
 import logger.LogSetup;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import client.KVCommunication;
@@ -34,7 +36,7 @@ public class KVClient {
 		} catch (IOException e) {
 			System.out.println("Error! Unable to initialize logger!");
 			// e.printStackTrace();
-			System.exit(1);
+			System.exit(1); 
 		} catch (SecurityException ex) {
 			System.out.println("Error! Unable to set enconding to ASCII.");
 			// ex.printStackTrace();
@@ -114,5 +116,26 @@ public class KVClient {
 		else
 			throw new ConnectException("Not connected to a KVStore.");
 		
+	}
+	
+	/**
+	 * Obtain the current meta data for this Client
+	 * @return {@link InfrastructureMetadata} The meta data for this client instance
+	 */
+	public InfrastructureMetadata getMetadata() {
+		if (kvStore != null) {
+			return this.kvStore.getMetadata();
+		} else {
+			logger.error("Cannot obtain meta data from client.");
+			return null;
+		}
+	}
+	
+	/**
+	 * Obtain Status of the client connection
+	 * @return {@link SocketStatus} the current socket state
+	 */
+	public SocketStatus getConnectionStatus() {
+		return this.kvStore.getConnectionStatus();
 	}
 }
