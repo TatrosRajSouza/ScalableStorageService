@@ -333,7 +333,25 @@ public class KVStore implements KVCommInterface {
 		return this.metaData;
 	}
 	
+	/**
+	 * Obtain the current Hash-circle for this instance of KVStore
+	 * @return {@link ConsistentHashing} current Hash-circle for this instance of KVStore
+	 */
+	public ConsistentHashing getHashCircle() {
+		return this.consHash;
+	}
+	
+	/**
+	 * Obtain connection status of communication module
+	 * @return {@link SocketStatus} connection status of communication module
+	 */
 	public SocketStatus getConnectionStatus() {
-		return this.kvComm.getSocketStatus();
+		if (this.kvComm != null)
+			return this.kvComm.getSocketStatus();
+		else {
+			logger.error("Cannot obtain socket status. Communication module not initialized.");
+			return SocketStatus.DISCONNECTED;
+		}
+			
 	}
 }

@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
+import consistent_hashing.ConsistentHashing;
 import client.KVCommunication;
 import client.KVStore;
 
@@ -127,6 +128,19 @@ public class KVClient {
 			return this.kvStore.getMetadata();
 		} else {
 			logger.error("Cannot obtain meta data from client.");
+			return null;
+		}
+	}
+	
+	/**
+	 * Obtain the current consistent hash-circle for this Client
+	 * @return {@link InfrastructureMetadata} The meta data for this client instance
+	 */
+	public ConsistentHashing getHashCircle() {
+		if (kvStore != null) {
+			return this.kvStore.getHashCircle();
+		} else {
+			logger.error("Cannot obtain hash-circle data from client.");
 			return null;
 		}
 	}

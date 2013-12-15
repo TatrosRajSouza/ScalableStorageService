@@ -76,6 +76,8 @@ public class ClientTest extends TestCase {
 			client.connect(serverAddress, serverPort);
 			// artificially add the second server to the meta data
 			client.getMetadata().addServer(server2Address + ":" + server2Port, server2Address, server2Port);
+			// update hash circle with meta data
+			client.getHashCircle().update(client.getMetadata().getServers());
 		} catch (UnknownHostException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();
@@ -91,7 +93,7 @@ public class ClientTest extends TestCase {
 			client.put("A", "B");
 			
 			// "Z" will hash to value stored on second server (127.0.0.1:50001)
-			client.put("Z", "Y");
+			client.put("ZZZZ", "Y");
 			
 			KVMessage receiveA = client.get("A"); // connects to 127.0.0.1:50000 and gets the value B
 			KVMessage receiveZ = client.get("Z"); // connects to 127.0.0.1:50001 and gets the value Y
