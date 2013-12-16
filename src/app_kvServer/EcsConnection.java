@@ -37,7 +37,7 @@ else if(ecsMessage.getCommand() == ECSStatusType.LOCK_WRITE)
 else if(ecsMessage.getCommand() == ECSStatusType.UNLOCK_WRITE)
 UnLockWrite();
 else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
-update(ecsMessage.getMetadata());
+update(ecsMessage.getMetadata().toString());
 else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
 {
  try {
@@ -101,9 +101,9 @@ return move;
 		}
 
 	}
-	private void update(InfrastructureMetadata metaData)
+	private void update(String metaDataString)
 	{
-		KVServer.metaData = metaData;
+		KVServer.metaData.update(metaDataString);
 	}
 	private boolean moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
