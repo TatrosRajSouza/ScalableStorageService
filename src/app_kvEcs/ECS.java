@@ -25,11 +25,13 @@ public class ECS {
 	private InfrastructureMetadata serverRepository;
 	private InfrastructureMetadata storageService;
 	private ConsistentHashing hashing;
-	//Is this running var really necessary?
 	private Random generator;
 
 	protected static Logger logger = Logger.getRootLogger();
 
+	/**
+	 * Initialize a new ECS.
+	 */
 	public ECS() {
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
@@ -37,139 +39,164 @@ public class ECS {
 		generator = new Random();
 	}
 
+	/**
+	 * Initialize and start numberOfNodes server nodes.
+	 * @param numberOfNodes Number of server nodes that are going to be initialized.
+	 */
 	public void initService(int numberOfNodes) {
-		ECSStatusType command = ECSStatusType.INIT;
-
 		for (int i = 0; i < numberOfNodes; i++) {
-			initNode();
+			ECSServerCommunicator node = initNode();
+			if (node == null) {
+				logger.warn("Trying to initialize more nodes that are available");
+			}
 		}
 		try {
+			logger.info("Initializing the metadata in the servers initialized.");
 			ECSServerCommunicator server;
-			ECSMessage message = new ECSMessage(command, storageService);
+			ECSMessage message = new ECSMessage(ECSStatusType.INIT, storageService);
 			for (ServerData kvServer : storageService.getServers()) {
 				server = (ECSServerCommunicator) kvServer;
 				server.sendMessage(message.toBytes());
 			}
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Problems creating the message. Please check the protocol specification."	);
 		} catch (SocketTimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message. Check with the server is on and try again.");
 		}
 
 	}
 
+	/**
+	 * Add a new node to the storage service at an arbitrary position.
+	 */
 	public void addNode() {
 		ECSMessage message;
-		ECSServerCommunicator nextNode;
 		ECSServerCommunicator node = initNode();
+		ECSServerCommunicator nextNode = getNextNode(node);
+		ECSServerCommunicator auxNode;
+
 
 		try {
+			logger.info("Initializing the metadata and starting the added server.");
 			message = new ECSMessage(ECSStatusType.INIT, serverRepository);
 			node.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.START);
 			node.sendMessage(message.toBytes());
-			nextNode = getNextNode(node);
+
+			logger.info("Moving the metadata to the added node.");
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(node),
-					getEndIndex(node), nextNode);
+					getEndIndex(node), node);
 			nextNode.sendMessage(message.toBytes());
 			message = nextNode.receiveMessage();
 			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
-				//TODO error
+				logger.error("Unexpected message received. Received  a " + message.getCommand() +
+						". Expected: " + ECSStatusType.MOVE_COMPLETED + ". While adding node " +
+						node.getAddress() + ":" + node.getPort());
+				return;
 			}
+
+			logger.info("Updating the metadata in the server nodes.");
 			message = new ECSMessage(ECSStatusType.UPDATE, serverRepository);
 			for (ServerData server : serverRepository.getServers()) {
-				nextNode = (ECSServerCommunicator) server;
-				nextNode.sendMessage(message.toBytes());
+				auxNode = (ECSServerCommunicator) server;
+				if (auxNode.getPort() != node.getPort() && !auxNode.getAddress().equals(node.getAddress())) {
+					auxNode.sendMessage(message.toBytes());
+				}
 			}
+
 			message = new ECSMessage(ECSStatusType.UNLOCK_WRITE);
-			node.sendMessage(message.toBytes());
+			nextNode.sendMessage(message.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		}
 	}
 
+	/**
+	 * Remove a node from the storage service at an arbitrary position.
+	 */
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
 		ECSServerCommunicator nextNode = getNextNode(node);
 		BigInteger startIndex = getStartIndex(node);
 		BigInteger endIndex = getEndIndex(node);
-		
+
+		logger.info("Removing server " + node.getAddress() + ":" + node.getPort());
 		storageService.removeServer(node.getAddress(), node.getPort());
-		//TODO add a removeServer() na InfrastructureMetadata e substituir esse update
-		hashing.update(storageService.getServers());
-		// Recalculate and update the meta­data of the storage service (i.e., the range for the
-		// successor node)
+		hashing.removeServer(node.getAddress(), node.getPort());
 		try {
+			logger.info("Moving data to the next node " + nextNode.getAddress() + ":" + nextNode.getPort());
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			node.sendMessage(message.toBytes());
-			// Set the write lock on the server that has to be deleted.
 			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
 			nextNode.sendMessage(message.toBytes());
-			// Send meta­data update to the successor node (i.e., successor is now also responsible
-			// for the range of the server that is to be removed)
 			message = new ECSMessage(ECSStatusType.MOVE_DATA, startIndex, endIndex, nextNode);
 			node.sendMessage(message.toBytes());
-			// Invoke the transfer of the affected data items (i.e., all data of the server that is to be
-			// removed)  to the successor server. The data that is transferred should not be deleted
-			// immediately to be able to serve read requests in the mean time
-			// 		serverToRemove.moveData(range, successor)
+
 			message = node.receiveMessage();
 			if (message.getCommand() != ECSStatusType.MOVE_COMPLETED) {
-				//TODO error
+				logger.error("Unexpected message received. Received  a " + message.getCommand() +
+						". Expected: " + ECSStatusType.MOVE_COMPLETED + ". While removing node " +
+						node.getAddress() + ":" + node.getPort());
+				return;
 			}
-			for (ServerData server : serverRepository.getServers()) {
+
+			logger.info("Updating the metadata in the server nodes.");
+			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
+			for (ServerData server : storageService.getServers()) {
 				nextNode = (ECSServerCommunicator) server;
 				nextNode.sendMessage(message.toBytes());
 			}
+
+			logger.info("Shuting down the node.");
 			message = new ECSMessage(ECSStatusType.SHUTDOWN);
+			node.sendMessage(message.toBytes());
 			node.disconnect();
-			// When all affected data has been transferred (i.e., the server that has to be removed
-			// sends back a notification to the ECS)
-			//		Send a meta­data update to the remaining storage servers.
-			//		Shutdown the respective storage server.
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		}
 	}
 
+	/**
+	 * Starts the storage service by calling start() on all KVServer instances that participate in the service.
+	 */
 	public void start() {
+		logger.info("Starting the service.");
 		for (ServerData node : storageService.getServers()) {
 			startNode((ECSServerCommunicator) node);
 		}
 	}
 
+	/**
+	 * Stops the service; all participating KVServers are stopped for processing client requests but the processes remain running.
+	 */
 	public void stop() {
+		logger.info("Stopping the service.");
 		for (ServerData node : storageService.getServers()) {
 			stopNode((ECSServerCommunicator) node);
 		}
 	}
 
+	/**
+	 * Stops all server instances and exits the remote processes.
+	 */
 	public void shutDown() {
 		ECSServerCommunicator serverCommunication;
 		ECSMessage ecsMessage;
 
+		logger.info("Shutting down the service.");
 		for (ServerData server : storageService.getServers()) {
 			serverCommunication = (ECSServerCommunicator) server;
 
@@ -178,14 +205,11 @@ public class ECS {
 				serverCommunication.sendMessage(ecsMessage.toBytes());
 				serverCommunication.disconnect();
 			} catch (InvalidMessageException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Problems creating the message. Please check the protocol specification.");
 			} catch (SocketTimeoutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 			}
 		}
 
@@ -194,11 +218,11 @@ public class ECS {
 		hashing = new ConsistentHashing();
 	}
 
-	// this is not in the interface specification
-	public void defineServerRepository(String fileName) throws Exception {
+	public void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
 		BufferedReader br = null;
 		String line;
 
+		logger.info("Reading the configurating file and creating the server repository.");
 		br = new BufferedReader(new FileReader(fileName));
 		while ((line = br.readLine()) != null) {
 			String args[] = line.split(" ");
@@ -206,53 +230,51 @@ public class ECS {
 				br.close();
 				throw new IllegalArgumentException();
 			}
-			//TODO exception
-			serverRepository.addServer(args[0], args[1], Integer.parseInt(args[2]));
+			ECSServerCommunicator server = new ECSServerCommunicator(args[0], args[1], Integer.parseInt(args[2]));
+			serverRepository.addServer(server);
 		}
 
 		br.close();
 	}
 
-	// this is not in the interface specification
 	public InfrastructureMetadata getServerRepository() {
 		return serverRepository;
 	}
 
-	// this is not in the interface specification
 	public InfrastructureMetadata getStorageService() {
 		return storageService;
 	}
 
-	// this is not in the interface specification
 	public ConsistentHashing getHashing() {
 		return hashing;
 	}
 
 	private ECSServerCommunicator initNode() {
 		ECSServerCommunicator node = moveRandomNode(serverRepository, storageService);
+
 		if (node == null) {
-			//TODO exception or something like that
 			return null;
 		}
+		logger.info("Initializing server node " + node.getAddress() + ":" + node.getPort());
 
 		sendSSHCall(node.getAddress(), node.getPort());
 		hashing.addServer(node.getAddress(), node.getPort());
 		try {
 			node.connect();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't reach the server node " + node.getAddress() + ":" + node.getPort());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't connect to the server node " + node.getAddress() + ":" + node.getPort());
 		}
 
 		return node;
 	}
-	
+
 	private void startNode(ECSServerCommunicator node) {
 		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
+
+		logger.info("Starting node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.START);
 			for (ServerData server : storageService.getServers()) {
@@ -260,20 +282,19 @@ public class ECS {
 				serverCommunicator.sendMessage(message.toBytes());
 			}
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't communicate with the server node " + node.getAddress() + ":" + node.getPort());
 		}
 	}
 
 	private void stopNode(ECSServerCommunicator node) {
 		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
+
+		logger.info("Stopping node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.STOP);
 			for (ServerData server : storageService.getServers()) {
@@ -281,14 +302,11 @@ public class ECS {
 				serverCommunicator.sendMessage(message.toBytes());
 			}
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Couldn't communicate with the server node " + node.getAddress() + ":" + node.getPort());
 		}
 	}
 
@@ -296,7 +314,7 @@ public class ECS {
 		ECSServerCommunicator node;		
 
 		node = getRandomNode(from);
-		to.addServer(node.getName(), node.getAddress(), node.getPort());
+		to.addServer(node);
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
 	}
@@ -317,27 +335,27 @@ public class ECS {
 		Iterator<BigInteger> iterator = hashCircle.keySet().iterator();
 		BigInteger startIndex = null;
 		BigInteger endIndex = null;
-		
+
 		if (iterator.hasNext()) {
 			startIndex = hashCircle.lastKey();
 		} else {
 			return null;
 		}
-		
+
 		while (iterator.hasNext()) {
 			endIndex = iterator.next();
 			String[] server = hashCircle.get(endIndex).split(":");
 			String address = server[0];
 			int port = Integer.parseInt(server[1]);
 			if (node.getPort() == port && node.getAddress().equals(address)) {
-				return startIndex;
+				break;
 			}
 			startIndex = endIndex;
 		}
 
-		return null;
+		return startIndex;
 	}
-	
+
 	private BigInteger getEndIndex(ECSServerCommunicator node) {
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
 		for (BigInteger endIndex : hashCircle.keySet()) {
@@ -351,7 +369,6 @@ public class ECS {
 		return null;
 	}
 
-	// This method should go in the ConsistentHashing class
 	private ECSServerCommunicator getNextNode(ECSServerCommunicator node) {
 		SortedMap<BigInteger, String> hashCircle = hashing.getHashCircle();
 		boolean next = false;
@@ -390,8 +407,7 @@ public class ECS {
 		try {
 			run.exec(args);
 		} catch (IOException e) {
-			//TODO deal with this exception
-			e.printStackTrace();
+			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		}
 	}
 }
