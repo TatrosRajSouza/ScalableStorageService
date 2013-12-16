@@ -27,9 +27,10 @@ public class ECS {
 	private ConsistentHashing hashing;
 	private Random generator;
 
-	protected static Logger logger = Logger.getRootLogger();
+	protected Logger logger = Logger.getRootLogger();
 
-	public ECS() {
+	public ECS(String fileName) throws NumberFormatException, IllegalArgumentException, IOException {
+		defineServerRepository(fileName);
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
@@ -197,7 +198,7 @@ public class ECS {
 	}
 
 	// this is not in the interface specification
-	public void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
+	private void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
 		BufferedReader br = null;
 		String line;
 
