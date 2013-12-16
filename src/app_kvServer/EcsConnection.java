@@ -10,6 +10,7 @@ import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
+import common.messages.ServerData;
 
 public class EcsConnection {
 	private static Logger logger = Logger.getRootLogger();
@@ -90,7 +91,7 @@ return move;
 	{
 		KVServer.metaData = metaData;
 	}
-	private void moveData(BigInteger startIndex, BigInteger endIndex, KVServer kvserver)
+	private void moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData)
 	{
 		HashMap<BigInteger, String> movingData = KVServer.kvdata.findMovingData(startIndex, endIndex);
 		KVServer.kvdata.moveData(movingData);

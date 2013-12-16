@@ -86,7 +86,7 @@ public class ConsistentHashing {
 	 * @param key A String key that should be hashed
 	 * @return 128-bit md5 hash
 	 */
-	private BigInteger hashKey(String key) {
+	public BigInteger hashKey(String key) {
 		try {
 			md5digest.reset();
 			byte[] bytes = md5digest.digest(key.getBytes("US-ASCII"));

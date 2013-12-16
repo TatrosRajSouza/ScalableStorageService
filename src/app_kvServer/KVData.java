@@ -52,9 +52,9 @@ public class KVData {
 
 	}
 
-	public String get(int key)  {
+	public String get(BigInteger hashedKey)  {
 		// TODO Auto-generated method stub
-		return dataStore.get(key);
+		return dataStore.get(hashedKey);
 	}
 
 	public HashMap<BigInteger,String> findMovingData(BigInteger startIndex, BigInteger endIndex)

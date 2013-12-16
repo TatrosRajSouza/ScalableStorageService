@@ -87,8 +87,8 @@ public class ClientConnection implements Runnable {
 						{
 							if(command.equals("GET"))	{
 								key = kvQueryCommand.getKey();
-								int hashedKey = checkRange(key);
-								if(hashedKey != 0)
+								BigInteger hashedKey = checkRange(key);
+								if(hashedKey != null)
 								{
 									//future : check in range or not
 									System.out.println("trying to get key");
@@ -97,7 +97,7 @@ public class ClientConnection implements Runnable {
 
 
 									logger.debug("Num keys in map: " + KVServer.kvdata.dataStore.size());
-									for (int k : KVServer.kvdata.dataStore.keySet())
+									for (BigInteger k : KVServer.kvdata.dataStore.keySet())
 									{
 										logger.debug("Key: " + k);
 									}
@@ -126,7 +126,7 @@ public class ClientConnection implements Runnable {
 							{
 								key = kvQueryCommand.getKey();
 								BigInteger hashedKey = checkRange(key);
-								if(hashedKey != 0)
+								if(hashedKey != null)
 								{
 									//future : check in range or not
 									if(!KVServer.isWriteLocked)
@@ -266,7 +266,7 @@ public class ClientConnection implements Runnable {
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
 		ConsistentHashing consistentHashing = new ConsistentHashing();
-		BigInteger hashedKey = consistentHashing.
+		BigInteger hashedKey = consistentHashing.hashKey(key);
 		return hashedKey;
 		//MessageDigest md;
 		//String hashedKey = null;
