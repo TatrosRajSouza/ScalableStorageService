@@ -1,3 +1,2 @@
-after moving data form one server to another server need to send a message. not found in ecs?
-Metadata shoul also contain index range for the server?
+
 Do I need to maintain timestamp for move data?

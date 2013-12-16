@@ -17,7 +17,9 @@ import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
+import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
+import consistent_hashing.EmptyServerDataException;
 /**
  * Represents a connection end point for a particular client that is 
  * connected to the server. This class is responsible for message reception 
@@ -74,7 +76,7 @@ public class ClientConnection implements Runnable {
 			}
 			while(isOpen) { // until connection open
 				try { //connection lost
-					
+
 
 					byte[] latestMsg = receiveMessage();
 					KVQuery kvQueryCommand;
@@ -119,6 +121,8 @@ public class ClientConnection implements Runnable {
 								else
 								{
 									// send not responsible message with metadata
+									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,KVServer.metaData.toString());
+									sendMessage(kvQueryNotResponsible.toBytes());
 								}
 
 							}
@@ -214,11 +218,16 @@ public class ClientConnection implements Runnable {
 							EcsConnection ecsConnection = new EcsConnection(latestMsg);
 							try
 							{
-							if(ecsConnection.process())
-							{
-								ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
-								sendMessage(ecsMoveSuccess.toBytes());
-							}
+								if(ecsConnection.process())
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
+								else
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
 							}
 							catch(InvalidMessageException ecs)
 							{
@@ -238,15 +247,15 @@ public class ClientConnection implements Runnable {
 							}
 
 						}
-					
-				}
 
-			} //connection lost
+					}
+
+				} //connection lost
 				catch (IOException ioe) {
-				logger.error("Error! Connection lost!");
-				isOpen = false;
-			}
-		}// until connection open
+					logger.error("Error! Connection lost!");
+					isOpen = false;
+				}
+			}// until connection open
 		}//connection could not be established
 		catch (IOException ioe) {
 			logger.error("Error! Connection could not be established!", ioe);
@@ -265,26 +274,22 @@ public class ClientConnection implements Runnable {
 	}
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
-		ConsistentHashing consistentHashing = new ConsistentHashing();
-		BigInteger hashedKey = consistentHashing.hashKey(key);
-		return hashedKey;
-		//MessageDigest md;
-		//String hashedKey = null;
-		//try {
-		//md = MessageDigest.getInstance("MD5");
-		//md.update(key.getBytes());
-		//hashedKey =  md.digest().toString();
-		/*byte byteData[] = md.digest();
-			StringBuffer sb = new StringBuffer();
-			for (int i = 0; i < byteData.length; i++) {
-				sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-			}*/
-		// if not in the range return null
+		ConsistentHashing consistentHashing = new ConsistentHashing(KVServer.metaData.getServers());
+		BigInteger hashedKey = null;
+		try {
+			ServerData serverData = consistentHashing.getServerForKey(key);
+			if(serverData.getAddress().equals(KVServer.ip))
+			{
+				hashedKey = consistentHashing.hashKey(key);
+				
 
-		//} 
-		//catch (NoSuchAlgorithmException e) {
-		// TODO Auto-generated catch block
-		//logger.error("Error in MD5 generation"+ e.getMessage());
+			}
+		} catch (IllegalArgumentException e) {
+			logger.error("Error in checkrange" + e.getMessage());
+		} catch (EmptyServerDataException e) {
+			logger.error("Error in checkrange" + e.getMessage());
+		}
+		return hashedKey;
 	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {

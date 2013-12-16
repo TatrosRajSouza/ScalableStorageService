@@ -2,10 +2,12 @@ package app_kvServer;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
+import client.KVCommunication;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;
@@ -38,10 +40,22 @@ else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
 update(ecsMessage.getMetadata());
 else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
 {
-moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
-
-move = true;
-
+ try {
+	move = moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
+} catch (UnknownHostException e) {
+	logger.error("Error while updation"+e.getMessage());
+} catch (IOException e) {
+	// TODO Auto-generated catch block
+	logger.error("Error while updation"+e.getMessage());
+} catch (InvalidMessageException e) {
+	// TODO Auto-generated catch block
+	logger.error("Error while updation"+e.getMessage());
+}
+}
+else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
+{
+	KVServer.kvdata.moveData(ecsMessage.getMovingData());
+	move = true;
 }
 return move;
 	}
@@ -91,12 +105,25 @@ return move;
 	{
 		KVServer.metaData = metaData;
 	}
-	private void moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData)
+	private boolean moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
 		HashMap<BigInteger, String> movingData = KVServer.kvdata.findMovingData(startIndex, endIndex);
-		KVServer.kvdata.moveData(movingData);
+		boolean move = false;
+		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
+
+			KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort());
+			communication.sendMessage(sendMessage.toBytes());
+			byte[] receivedmessage = communication.receiveMessage();
+			ECSMessage receiveMessage = new ECSMessage(receivedmessage);
+			if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_COMPLETED))
+			{
+				move = true;
+			}
+					
 		KVServer.movedDataList.add(movingData);
 		// need to send message 
+		return move;
+
 	}
 	private void removeData(KVServer kvserver)
 	{

@@ -1,6 +1,7 @@
 package common.messages;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
@@ -124,6 +125,11 @@ public class ECSMessage {
 		this.server = server;
 	}
 
+	public ECSMessage(ECSStatusType moveDataInternal,
+			HashMap<BigInteger, String> movingData) {
+		// TODO Auto-generated constructor stub
+	}
+
 	/**
 	 * Transform the message in an array of bytes to be sent to the ECS or to a server
 	 * @return The message in an array of bytes.
@@ -220,5 +226,10 @@ public class ECSMessage {
 		} catch (Exception ex) {
 			throw new InvalidMessageException("This code does not represent a command.");        
 		}
+	}
+
+	public HashMap<BigInteger, String> getMovingData() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

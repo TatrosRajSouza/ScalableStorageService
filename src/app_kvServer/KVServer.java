@@ -19,13 +19,13 @@ import org.apache.log4j.Logger;
 import common.messages.InfrastructureMetadata;
 
 public class KVServer extends Thread {
-	private final static boolean DEBUG = false;
+	private final static boolean DEBUG = true;
 	private static Logger logger = Logger.getRootLogger();
 	public static boolean serveClientRequest = false;
 	public static boolean isWriteLocked = false;
 	public static KVData kvdata = new KVData();
 	public static List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
-	private String ip;
+	public static String ip;
 	public static int port;
 	public static ServerSocket serverSocket;
 	public static boolean running;
@@ -75,7 +75,7 @@ public class KVServer extends Thread {
 	}
 
 	private boolean isRunning() {
-		return this.running;
+		return KVServer.running;
 	}
 
 	/**
@@ -86,6 +86,7 @@ public class KVServer extends Thread {
 		logger.info("Initialize server ...");
 		try {
 			serverSocket = new ServerSocket(port);
+			ip = serverSocket.getInetAddress().toString();
 			logger.info("Server listening on port: " 
 					+ serverSocket.getLocalPort());    
 			return true;
@@ -129,6 +130,7 @@ public class KVServer extends Thread {
 				new LogSetup("logs/server.log", Level.ALL);
 				System.setProperty("file.encoding", "US-ASCII");
 				int port = 50000;
+				serveClientRequest = true;
 				new KVServer(port).start();
 
 			} catch (IOException e) {
