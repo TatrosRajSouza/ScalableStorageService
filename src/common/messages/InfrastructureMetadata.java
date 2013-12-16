@@ -52,6 +52,14 @@ public class InfrastructureMetadata {
 	}
 	
 	/**
+	 * Expand this meta data by adding a new server
+	 * @param server The server that will be added to this meta data
+	 */
+	public void addServer(ServerData server) {
+		servers.add(server);
+	}
+	
+	/**
 	 * Remove the specified server from the meta data
 	 * @param address IP address of the server
 	 * @param port remote port the server is running on
