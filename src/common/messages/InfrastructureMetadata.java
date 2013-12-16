@@ -51,6 +51,10 @@ public class InfrastructureMetadata {
 		servers.add(new ServerData(name, address, port));
 	}
 	
+	public void addServer(ServerData server) {
+		servers.add(server);
+	}
+	
 	/**
 	 * Remove the specified server from the meta data
 	 * @param address IP address of the server
