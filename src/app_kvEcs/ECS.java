@@ -27,16 +27,22 @@ public class ECS {
 	private ConsistentHashing hashing;
 	private Random generator;
 
-	protected Logger logger = Logger.getRootLogger();
+	protected static Logger logger = Logger.getRootLogger();
 
-	public ECS(String fileName) throws NumberFormatException, IllegalArgumentException, IOException {
-		defineServerRepository(fileName);
+	/**
+	 * Initialize a new ECS.
+	 */
+	public ECS() {
 		serverRepository = new InfrastructureMetadata();
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
 		generator = new Random();
 	}
 
+	/**
+	 * Initialize and start numberOfNodes server nodes.
+	 * @param numberOfNodes Number of server nodes that are going to be initialized.
+	 */
 	public void initService(int numberOfNodes) {
 		for (int i = 0; i < numberOfNodes; i++) {
 			ECSServerCommunicator node = initNode();
@@ -62,6 +68,9 @@ public class ECS {
 
 	}
 
+	/**
+	 * Add a new node to the storage service at an arbitrary position.
+	 */
 	public void addNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = initNode();
@@ -110,6 +119,9 @@ public class ECS {
 		}
 	}
 
+	/**
+	 * Remove a node from the storage service at an arbitrary position.
+	 */
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
@@ -157,6 +169,9 @@ public class ECS {
 		}
 	}
 
+	/**
+	 * Starts the storage service by calling start() on all KVServer instances that participate in the service.
+	 */
 	public void start() {
 		logger.info("Starting the service.");
 		for (ServerData node : storageService.getServers()) {
@@ -164,6 +179,9 @@ public class ECS {
 		}
 	}
 
+	/**
+	 * Stops the service; all participating KVServers are stopped for processing client requests but the processes remain running.
+	 */
 	public void stop() {
 		logger.info("Stopping the service.");
 		for (ServerData node : storageService.getServers()) {
@@ -171,10 +189,13 @@ public class ECS {
 		}
 	}
 
+	/**
+	 * Stops all server instances and exits the remote processes.
+	 */
 	public void shutDown() {
 		ECSServerCommunicator serverCommunication;
 		ECSMessage ecsMessage;
-		
+
 		logger.info("Shutting down the service.");
 		for (ServerData server : storageService.getServers()) {
 			serverCommunication = (ECSServerCommunicator) server;
@@ -197,8 +218,7 @@ public class ECS {
 		hashing = new ConsistentHashing();
 	}
 
-	// this is not in the interface specification
-	private void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
+	public void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
 		BufferedReader br = null;
 		String line;
 
@@ -253,7 +273,7 @@ public class ECS {
 	private void startNode(ECSServerCommunicator node) {
 		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
-		
+
 		logger.info("Starting node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.START);
@@ -273,7 +293,7 @@ public class ECS {
 	private void stopNode(ECSServerCommunicator node) {
 		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
-		
+
 		logger.info("Stopping node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.STOP);
