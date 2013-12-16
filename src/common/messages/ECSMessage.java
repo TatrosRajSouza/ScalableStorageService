@@ -4,6 +4,12 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
+/**
+ * Create a message from or to ECS/Server.
+ * Implements the protocol established for this application
+ * @author Claynon de Souza
+ *
+ */
 public class ECSMessage {
 
 	private ECSStatusType command;
@@ -14,6 +20,11 @@ public class ECSMessage {
 
 	private static Logger logger = Logger.getRootLogger();
 
+	/**
+	 * Construct a message received in the form of an array of bytes.
+	 * @param bytes Message received in the form of bytes.
+	 * @throws InvalidMessageException Thrown when the message does not have the correct number of arguments or the command is not associated if the number of arguments given.
+	 */
 	public ECSMessage(byte[] bytes) throws InvalidMessageException {
 		String message;
 		String[] arguments;
@@ -30,18 +41,28 @@ public class ECSMessage {
 
 			switch (arguments.length) {
 			case 1:
+				if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
+				|| command == ECSStatusType.MOVE_DATA) {
+					throw new InvalidMessageException("Incorrect number of arguments or command.");
+				}
 				metadata = null;
 				startIndex = null;
 				endIndex = null;
 				server = null;
 				break;
 			case 2:
+				if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
+					throw new InvalidMessageException("Incorrect number of arguments or command.");
+				}
 				metadata = new InfrastructureMetadata(arguments[1]);
 				startIndex = null;
 				endIndex = null;
 				server = null;
 				break;
 			case 6:
+				if (command != ECSStatusType.MOVE_DATA) {
+					throw new InvalidMessageException("Incorrect number of arguments or command.");
+				}
 				metadata = null;
 				startIndex = new BigInteger(arguments[1]);
 				endIndex = new BigInteger(arguments[2]);
@@ -55,15 +76,26 @@ public class ECSMessage {
 		}
 	}
 
+	/**
+	 * Constructs a message that consists only of a command.
+	 * @param command The type of the message.
+	 * @throws InvalidMessageException Thrown when a command that requires arguments is entered.
+	 */
 	public ECSMessage(ECSStatusType command)
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_COMPLETED) {
+				|| command == ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 	}
 
+	/**
+	 * Construct a message with metadata.
+	 * @param command The type of the message.
+	 * @param metadata The metadata that will be sent to the server. 
+	 * @throws InvalidMessageException Thrown when the command requires no arguments or more arguments is entered. 
+	 */
 	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
@@ -73,6 +105,14 @@ public class ECSMessage {
 		this.metadata = metadata;
 	}
 
+	/**
+	 * Construct a message with a range index and the server data.
+	 * @param command The type of the message.
+	 * @param startIndex The first index the server serves.
+	 * @param endIndex The last index the server serves. It is the index of the server.
+	 * @param server The server that the indexes correspond. 
+	 * @throws InvalidMessageException Thrown when the command entered is correctly associated if less arguments. 
+	 */
 	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server)
 			throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
@@ -84,6 +124,10 @@ public class ECSMessage {
 		this.server = server;
 	}
 
+	/**
+	 * Transform the message in an array of bytes to be sent to the ECS or to a server
+	 * @return The message in an array of bytes.
+	 */
 	public byte[] toBytes() {
 		byte[] bytes = null;
 		String message = command.toString();
@@ -114,10 +158,19 @@ public class ECSMessage {
 		return bytes;
 	}
 
+	/**
+	 * Get the command of the message.
+	 * @return The command of the message.
+	 */
 	public ECSStatusType getCommand() {
 		return command;
 	}
 
+	/**
+	 * Get the metadata associated with the message if the command represents a message with a metadata argument. 
+	 * @return The metadata associated with the message.
+	 * @throws InvalidMessageException Thrown when the command is not associated with a metadata argument.
+	 */
 	public InfrastructureMetadata getMetadata() throws InvalidMessageException {
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -125,13 +178,23 @@ public class ECSMessage {
 		return metadata;
 	}
 
+	/**
+	 * Get the start index associated with the message if the command represents a message with a start index argument. 
+	 * @return The start index of the server associated with the message.
+	 * @throws InvalidMessageException Thrown when the command is not associated with a start index argument.
+	 */
 	public BigInteger getStartIndex() throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
 		}
 		return startIndex;
 	}
-	
+
+	/**
+	 * Get the end index associated with the message if the command represents a message with an end index argument. 
+	 * @return The end index of the server associated with the message.
+	 * @throws InvalidMessageException Thrown when the command is not associated with an end index argument.
+	 */
 	public BigInteger getEndIndex() throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -139,6 +202,11 @@ public class ECSMessage {
 		return endIndex;
 	}
 
+	/**
+	 * Get the server associated with the message if the command represents a message with a server argument. 
+	 * @return The server associated with the message. The index is the same as the server index.
+	 * @throws InvalidMessageException Thrown when the command is not associated with a server argument.
+	 */
 	public ServerData getServer() throws InvalidMessageException {
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
