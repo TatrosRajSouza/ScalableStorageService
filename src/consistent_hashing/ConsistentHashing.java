@@ -107,6 +107,21 @@ public class ConsistentHashing {
 		String name = address + ":" + port;
 		hashCircle.put(hashServer(address, port), name);
 	}
+	
+	/**
+	 * Remove a new server, hashing it to the circle
+	 * @param address IP address of the server
+	 * @param port Remote port number of the server
+	 */
+	public void removeServer(String address, int port) {
+		String name = address + ":" + port;
+
+		for (BigInteger hash : hashCircle.keySet()) {
+			if (hashCircle.get(hash).equals(name)) {
+				hashCircle.remove(hash);
+			}
+		}
+	}
 
 	/**
 	 * Clear all server hashes from circle and replace with new data provided
