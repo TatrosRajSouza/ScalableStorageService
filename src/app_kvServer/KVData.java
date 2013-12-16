@@ -67,7 +67,7 @@ public class KVData {
 			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
 			key = pairs.getKey();
 			// need modification
-			if(startIndex.compareTo(key) + endIndex.compareTo(key) >0)
+			if(startIndex.compareTo(key)  >= 0  && endIndex.compareTo(key) <= 0 )
 			{
 				movingData.put(key, pairs.getValue());
 			}
