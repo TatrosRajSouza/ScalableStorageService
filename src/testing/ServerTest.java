@@ -91,12 +91,22 @@ public class ServerTest extends TestCase {
 			
 			for (ServerData sd : client.getMetadata().getServers())
 			{
-				System.out.println("server " + sd.getPort());
+				System.out.println("client " + sd.getPort());
 			}
 			
 			server1.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 			server2.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 	
+			for (ServerData sd : server1.getMetaData().getServers())
+			{
+				System.out.println("server1 " + sd.getPort());
+			}
+			
+			for (ServerData sd : server2.getMetaData().getServers())
+			{
+				System.out.println("server2 " + sd.getPort());
+			}
+			
 			client.put(key1, value1);
 			// String value = client.get(key1).getValue();
 		} catch (UnknownHostException ex) {
