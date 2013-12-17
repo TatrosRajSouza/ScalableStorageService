@@ -2,6 +2,7 @@ package common.messages;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
@@ -18,6 +19,7 @@ public class ECSMessage {
 	private BigInteger startIndex;
 	private BigInteger endIndex;
 	private ServerData server;
+	private HashMap<BigInteger, String> movingData;
 
 	private static Logger logger = Logger.getRootLogger();
 
@@ -43,7 +45,7 @@ public class ECSMessage {
 			switch (arguments.length) {
 			case 1:
 				if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA) {
+				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_DATA_INTERNAL) {
 					throw new InvalidMessageException("Incorrect number of arguments or command.");
 				}
 				metadata = null;
@@ -52,10 +54,15 @@ public class ECSMessage {
 				server = null;
 				break;
 			case 2:
-				if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
+				if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
+					metadata = new InfrastructureMetadata(arguments[1]);
+					movingData = null;
+				} else if (command == ECSStatusType.MOVE_DATA_INTERNAL){
+					createMovingData(arguments[1]);
+					metadata = null;
+				} else {
 					throw new InvalidMessageException("Incorrect number of arguments or command.");
 				}
-				metadata = new InfrastructureMetadata(arguments[1]);
 				startIndex = null;
 				endIndex = null;
 				server = null;
@@ -85,7 +92,7 @@ public class ECSMessage {
 	public ECSMessage(ECSStatusType command)
 			throws InvalidMessageException {
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
-				|| command == ECSStatusType.MOVE_DATA) {
+				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_DATA_INTERNAL) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
@@ -95,7 +102,7 @@ public class ECSMessage {
 	 * Construct a message with metadata.
 	 * @param command The type of the message.
 	 * @param metadata The metadata that will be sent to the server. 
-	 * @throws InvalidMessageException Thrown when the command requires no arguments or more arguments is entered. 
+	 * @throws InvalidMessageException Thrown when the command is not associated with the metadata. 
 	 */
 	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata)
 			throws InvalidMessageException {
@@ -104,6 +111,21 @@ public class ECSMessage {
 		}
 		this.command = command;
 		this.metadata = metadata;
+	}
+
+	/**
+	 * Construct a message with the moving data.
+	 * @param command The type of the message.
+	 * @param movingData The data that is being transfered from one server node to the other.
+	 * @throws InvalidMessageException Thrown when the command is not associated with the movingData.
+	 */
+	public ECSMessage(ECSStatusType command, HashMap<BigInteger, String> movingData)
+			throws InvalidMessageException {
+		if (command != ECSStatusType.MOVE_DATA_INTERNAL) {
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
+		}
+		this.command = command;
+		this.movingData = movingData;
 	}
 
 	/**
@@ -125,11 +147,6 @@ public class ECSMessage {
 		this.server = server;
 	}
 
-	public ECSMessage(ECSStatusType moveDataInternal,
-			HashMap<BigInteger, String> movingData) {
-		// TODO Auto-generated constructor stub
-	}
-
 	/**
 	 * Transform the message in an array of bytes to be sent to the ECS or to a server
 	 * @return The message in an array of bytes.
@@ -140,10 +157,13 @@ public class ECSMessage {
 
 		if (command == ECSStatusType.START || command == ECSStatusType.STOP
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
-				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED) {
+				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED
+				|| command == ECSStatusType.MOVE_ERROR) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
+		} else if (command == ECSStatusType.MOVE_DATA_INTERNAL) {
+			message += "\n" + getData() + "\r";
 		} else if (command == ECSStatusType.MOVE_DATA) {
 			message += "\n" + startIndex.toString() + "\n" + endIndex.toString() + "\n"
 					+ server.getName() + "\n" + server.getAddress() + "\n" 
@@ -220,16 +240,40 @@ public class ECSMessage {
 		return server;
 	}
 
+	/**
+	 * Get the data the is being moved from one server to another.
+	 * @return The data the is being moved from one server to another.
+	 * @throws InvalidMessageException Thrown when the command is not associated with a moving data argument.
+	 */
+	public HashMap<BigInteger, String> getMovingData() throws InvalidMessageException {
+		if (command != ECSStatusType.MOVE_DATA_INTERNAL) {
+			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
+		}
+		return movingData;
+	}
+
+	private String getData() {
+		StringBuilder data = new StringBuilder();
+		for (Entry<BigInteger, String> entry : movingData.entrySet()) {
+			data.append(entry.getKey().toString() + "," + entry.getValue() + ";");
+		}
+		return data.toString();
+	}
+	
+	private void createMovingData(String movingData) {
+		this.movingData = new HashMap<BigInteger, String>();
+		String[] data = movingData.split(";");
+		for (String dataStr : data) {
+			String[] dataEntry = dataStr.split(",");
+			this.movingData.put(new BigInteger(dataEntry[0]), dataEntry[1]);
+		}
+	}
+
 	private void setType(String command) throws InvalidMessageException {
 		try {
 			this.command = ECSStatusType.valueOf(command);
 		} catch (Exception ex) {
 			throw new InvalidMessageException("This code does not represent a command.");        
 		}
-	}
-
-	public HashMap<BigInteger, String> getMovingData() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }
