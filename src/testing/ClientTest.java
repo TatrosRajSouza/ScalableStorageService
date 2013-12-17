@@ -2,16 +2,18 @@ package testing;
 
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.UnknownHostException;
 
+import org.apache.log4j.Level;
 import org.junit.Test;
 
+import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
-
 import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
-
 import junit.framework.TestCase;
+import logger.LogSetup;
 
 /**
  * Test Cases for the Client application.
@@ -41,6 +43,14 @@ public class ClientTest extends TestCase {
 		Exception ex = null;
 		
 		try {
+			new LogSetup("logs/client.log", Level.ALL);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			ex = e1;
+		}
+		
+		try {
 			client = new KVClient(); // client instance
 		} catch (Exception e) {
 			ex = e;
@@ -51,22 +61,32 @@ public class ClientTest extends TestCase {
 	
 	@Test
 	public void testConnectToServer() {
+		Exception e = null;
+		
 		try {
 			// connect to first server
 			client.connect(serverAddress, serverPort);
 			// add the second server to the meta data
 			client.getMetadata().addServer(server2Address + ":" + server2Port, server2Address, server2Port);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (UnknownHostException ex) {
+			e = ex;
+			System.out.println("Unknown Host!");
+		} catch (ConnectException ex) {
+			e = ex;
+			System.out.println("Could not establish connection! Reason: " + ex.getMessage());
+		} catch (IOException ex) {
+			e = ex;
+			System.out.println("Could not establish connection! IOException");
+		} catch (InvalidMessageException ex) {
+			e = ex;
+			System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
 		}
 		
+		assertTrue(e.equals(null));
 		assertTrue(client.getConnectionStatus() == SocketStatus.CONNECTED);
 	}
 	
+	/*
 	@Test
 	public void testPut2Servers() {
 		Exception e = null;
@@ -79,11 +99,17 @@ public class ClientTest extends TestCase {
 			// update hash circle with meta data
 			client.getHashCircle().update(client.getMetadata().getServers());
 		} catch (UnknownHostException ex) {
-			// TODO Auto-generated catch block
-			ex.printStackTrace();
+			e = ex;
+			System.out.println("Unknown Host!");
+		} catch (ConnectException ex) {
+			e = ex;
+			System.out.println("Could not establish connection! Reason: " + ex.getMessage());
 		} catch (IOException ex) {
-			// TODO Auto-generated catch block
-			ex.printStackTrace();
+			e = ex;
+			System.out.println("Could not establish connection! IOException");
+		} catch (InvalidMessageException ex) {
+			e = ex;
+			System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
 		}
 		
 		try {
@@ -107,4 +133,5 @@ public class ClientTest extends TestCase {
 		
 		assertNull(e);
 	}
+	*/
 }

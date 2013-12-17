@@ -22,9 +22,9 @@ public class KVServer extends Thread {
 
 
 
-	private final  static boolean DEBUG = true;
+	private final  static boolean DEBUG = false;
 	private  Logger logger = Logger.getRootLogger();
-	private  boolean serveClientRequest = false;
+	private  boolean serveClientRequest = true;
 	private  boolean isWriteLocked = false;
 	private  KVData kvdata = new KVData();
 	private  List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
