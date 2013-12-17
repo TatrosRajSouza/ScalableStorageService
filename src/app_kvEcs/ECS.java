@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.SortedMap;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import common.messages.ECSMessage;
@@ -37,6 +40,11 @@ public class ECS {
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
 		generator = new Random();
+		try {
+			new LogSetup("logs/ecs/ecs.log", Level.ALL);
+		} catch (IOException e) {
+			System.out.println("Erro! Couldn't initialize log");
+		}
 	}
 
 	/**
@@ -84,7 +92,8 @@ public class ECS {
 			node.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.START);
 			node.sendMessage(message.toBytes());
-
+			
+			message = nextNode.receiveMessage();
 			logger.info("Moving the metadata to the added node.");
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
@@ -290,16 +299,12 @@ public class ECS {
 	}
 
 	private void startNode(ECSServerCommunicator node) {
-		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
 
 		logger.info("Starting node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.START);
-			for (ServerData server : storageService.getServers()) {
-				serverCommunicator = (ECSServerCommunicator) server;
-				serverCommunicator.sendMessage(message.toBytes());
-			}
+			node.sendMessage(message.toBytes());
 		} catch (InvalidMessageException e) {
 			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {
@@ -310,16 +315,12 @@ public class ECS {
 	}
 
 	private void stopNode(ECSServerCommunicator node) {
-		ECSServerCommunicator serverCommunicator;
 		ECSMessage message;
 
 		logger.info("Stopping node " + node.getAddress() + ":" + node.getPort());
 		try {
 			message = new ECSMessage(ECSStatusType.STOP);
-			for (ServerData server : storageService.getServers()) {
-				serverCommunicator = (ECSServerCommunicator) server;
-				serverCommunicator.sendMessage(message.toBytes());
-			}
+			node.sendMessage(message.toBytes());
 		} catch (InvalidMessageException e) {
 			logger.error("Problems creating the message. Please check the protocol specification.");
 		} catch (SocketTimeoutException e) {

@@ -19,17 +19,122 @@ import org.apache.log4j.Logger;
 import common.messages.InfrastructureMetadata;
 
 public class KVServer extends Thread {
-	private final static boolean DEBUG = true;
-	private static Logger logger = Logger.getRootLogger();
-	public static boolean serveClientRequest = false;
-	public static boolean isWriteLocked = false;
-	public static KVData kvdata = new KVData();
-	public static List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
-	public static String ip;
-	public static int port;
-	public static ServerSocket serverSocket;
-	public static boolean running;
-	public static InfrastructureMetadata metaData;
+
+
+
+	private final  static boolean DEBUG = true;
+	private  Logger logger = Logger.getRootLogger();
+	private  boolean serveClientRequest = false;
+	private  boolean isWriteLocked = false;
+	private  KVData kvdata = new KVData();
+	private  List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
+	private  String ip;
+	private  int port;
+	private  ServerSocket serverSocket;
+	private  boolean running;
+	private  InfrastructureMetadata metaData;
+	
+	
+
+	public Logger getLogger() {
+		return logger;
+	}
+
+
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+
+
+	public boolean isServeClientRequest() {
+		return serveClientRequest;
+	}
+
+
+	public void setServeClientRequest(boolean serveClientRequest) {
+		this.serveClientRequest = serveClientRequest;
+	}
+
+
+	public boolean isWriteLocked() {
+		return isWriteLocked;
+	}
+
+
+	public void setWriteLocked(boolean isWriteLocked) {
+		this.isWriteLocked = isWriteLocked;
+	}
+
+
+	public KVData getKvdata() {
+		return kvdata;
+	}
+
+
+	public void setKvdata(KVData kvdata) {
+		this.kvdata = kvdata;
+	}
+
+
+	public List<HashMap<BigInteger, String>> getMovedDataList() {
+		return movedDataList;
+	}
+
+
+	public void setMovedDataList(List<HashMap<BigInteger, String>> movedDataList) {
+		this.movedDataList = movedDataList;
+	}
+
+
+	public String getIp() {
+		return ip;
+	}
+
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+
+	public int getPort() {
+		return port;
+	}
+
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+
+	public ServerSocket getServerSocket() {
+		return serverSocket;
+	}
+
+
+	public void setServerSocket(ServerSocket serverSocket) {
+		this.serverSocket = serverSocket;
+	}
+
+
+	public InfrastructureMetadata getMetaData() {
+		return metaData;
+	}
+
+
+	public void setMetaData(InfrastructureMetadata metaData) {
+		this.metaData = metaData;
+	}
+
+
+	public boolean isDEBUG() {
+		return DEBUG;
+	}
+
+
+	public void setRunning(boolean running) {
+		this.running = running;
+	}
+
 
 	/**
 	 * Constructs a Storage Server object which listens to connection attempts 
@@ -58,7 +163,7 @@ public class KVServer extends Thread {
 				try {
 					Socket client = serverSocket.accept();                
 					ClientConnection connection = 
-							new ClientConnection(client);
+							new ClientConnection(client,this);
 					new Thread(connection).start();
 					// store the clients for further accessing
 					
@@ -75,7 +180,7 @@ public class KVServer extends Thread {
 	}
 
 	private boolean isRunning() {
-		return KVServer.running;
+		return this.running;
 	}
 
 	/**
@@ -130,7 +235,7 @@ public class KVServer extends Thread {
 				new LogSetup("logs/server.log", Level.ALL);
 				System.setProperty("file.encoding", "US-ASCII");
 				int port = 50000;
-				serveClientRequest = true;
+				
 				new KVServer(port).start();
 
 			} catch (IOException e) {
