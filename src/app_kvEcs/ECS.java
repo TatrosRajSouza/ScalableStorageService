@@ -27,6 +27,7 @@ public class ECS {
 	private ConsistentHashing hashing;
 	private Random generator;
 
+	private final static boolean DEBUG = false;
 	protected static Logger logger = Logger.getRootLogger();
 
 	/**
@@ -375,14 +376,14 @@ public class ECS {
 
 		for (BigInteger hashValue : hashCircle.keySet()) {
 			if (next) {
-				getServer(hashValue);
+				return getServer(hashValue);
 			} else if (hashCircle.get(hashValue).equals(node.getAddress() + ":" + node.getPort())) {
 				next = true;
 			}
 		}
 
 		if (next) {
-			getServer(hashCircle.firstKey());
+			return getServer(hashCircle.firstKey());
 		}
 
 		return null;
