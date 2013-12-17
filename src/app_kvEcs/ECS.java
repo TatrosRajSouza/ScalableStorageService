@@ -27,7 +27,6 @@ public class ECS {
 	private ConsistentHashing hashing;
 	private Random generator;
 
-	private final static boolean DEBUG = false;
 	protected static Logger logger = Logger.getRootLogger();
 
 	/**
@@ -81,7 +80,7 @@ public class ECS {
 
 		try {
 			logger.info("Initializing the metadata and starting the added server.");
-			message = new ECSMessage(ECSStatusType.INIT, serverRepository);
+			message = new ECSMessage(ECSStatusType.INIT, storageService);
 			node.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.START);
 			node.sendMessage(message.toBytes());
@@ -219,6 +218,13 @@ public class ECS {
 		hashing = new ConsistentHashing();
 	}
 
+	/**
+	 * Define the server repository reading the fileName configuration file.
+	 * @param fileName The name of the configuration file.
+	 * @throws NumberFormatException Thrown when the configuration file does not follow the specification.
+	 * @throws IOException Thrown when there is a problem reading the configuration file.
+	 * @throws IllegalArgumentException Thrown when the configuration file does not follow the specification.
+	 */
 	public void defineServerRepository(String fileName) throws NumberFormatException, IOException, IllegalArgumentException  {
 		BufferedReader br = null;
 		String line;
@@ -238,14 +244,26 @@ public class ECS {
 		br.close();
 	}
 
+	/**
+	 * Get the server repository. The repository with non initialized servers.
+	 * @return The server repository. The repository with non initialized servers.
+	 */
 	public InfrastructureMetadata getServerRepository() {
 		return serverRepository;
 	}
 
+	/**
+	 * Get the storage service. The repository with initialized servers.
+	 * @return The storage service. The repository with on initialized servers.
+	 */
 	public InfrastructureMetadata getStorageService() {
 		return storageService;
 	}
 
+	/**
+	 * Get the server hashing circle.
+	 * @return The hashing circle.
+	 */
 	public ConsistentHashing getHashing() {
 		return hashing;
 	}
