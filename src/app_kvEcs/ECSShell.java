@@ -59,7 +59,7 @@ public class ECSShell {
 		sb.append("\t\t\t\t Remove a node from the storage service at an arbitrary position.\n");
 		sb.append(PROMPT).append("logLevel");
 		sb.append("\t\t\t\t changes the logLevel \n");
-		sb.append(PROMPT).append("\t\t\t\t ");
+		sb.append(PROMPT).append("\t\t\t\t\t ");
 		sb.append("ALL | DEBUG | INFO | WARN | ERROR | FATAL | OFF \n");
 
 		sb.append(PROMPT).append("quit ");
