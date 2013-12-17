@@ -26,49 +26,46 @@ public class EcsConnection {
 	}
 	public String process() throws InvalidMessageException {
 		// TODO Auto-generated method stub
-if(ecsMessage.getCommand() == ECSStatusType.INIT)
-	initKVServer(ecsMessage.getMetadata());
-else if(ecsMessage.getCommand() == ECSStatusType.START)
-	start();
-else if(ecsMessage.getCommand() == ECSStatusType.STOP)
-	stopServer();
-else if(ecsMessage.getCommand() == ECSStatusType.SHUTDOWN)
-shutDown();
-else if(ecsMessage.getCommand() == ECSStatusType.LOCK_WRITE)
-	lockWrite();
-else if(ecsMessage.getCommand() == ECSStatusType.UNLOCK_WRITE)
-UnLockWrite();
-else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
-update(ecsMessage.getMetadata().toString());
-else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA_INTERNAL)
-{
-	moveData(ecsMessage.getMovingData());
-}
-else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
-{
- try {
-	move = moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
-} catch (UnknownHostException e) {
-	logger.error("Error while updation"+e.getMessage());
-} catch (IOException e) {
-	// TODO Auto-generated catch block
-	logger.error("Error while updation"+e.getMessage());
-} catch (InvalidMessageException e) {
-	// TODO Auto-generated catch block
-	logger.error("Error while updation"+e.getMessage());
-}
-}
-else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
-{
-	this.serverInstance.getKvdata().moveData(ecsMessage.getMovingData());
-	move = "moveinternalcompleted";
-	
-}
-return move;
+		if(ecsMessage.getCommand() == ECSStatusType.INIT)
+			initKVServer(ecsMessage.getMetadata());
+		else if(ecsMessage.getCommand() == ECSStatusType.START)
+			start();
+		else if(ecsMessage.getCommand() == ECSStatusType.STOP)
+			stopServer();
+		else if(ecsMessage.getCommand() == ECSStatusType.SHUTDOWN)
+			shutDown();
+		else if(ecsMessage.getCommand() == ECSStatusType.LOCK_WRITE)
+			lockWrite();
+		else if(ecsMessage.getCommand() == ECSStatusType.UNLOCK_WRITE)
+			UnLockWrite();
+		else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
+			update(ecsMessage.getMetadata().toString());
+		else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA_INTERNAL)
+		{
+			move = moveData(ecsMessage.getMovingData());
+		}
+		else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
+		{
+			try {
+				move = moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
+			} catch (UnknownHostException e) {
+				logger.error("Error while updation"+e.getMessage());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				logger.error("Error while updation"+e.getMessage());
+			} catch (InvalidMessageException e) {
+				// TODO Auto-generated catch block
+				logger.error("Error while updation"+e.getMessage());
+			}
+		}
+
+		return move;
 	}
-	private void moveData(HashMap<BigInteger, String> movingData) {
+
+	private String moveData(HashMap<BigInteger, String> movingData) {
 		// TODO Auto-generated method stub
 		this.serverInstance.getKvdata().moveData(movingData);
+		return "moveinternalcompleted";
 	}
 	/**
 	 * Initializes and starts the server but blocked for client requests
@@ -122,15 +119,15 @@ return move;
 		String move = null;
 		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
 
-			KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort());
-			communication.sendMessage(sendMessage.toBytes());
-			byte[] receivedmessage = communication.receiveMessage();
-			ECSMessage receiveMessage = new ECSMessage(receivedmessage);
-			if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS))
-			{
-				move = "movecompleted";
-			}
-					
+		KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort());
+		communication.sendMessage(sendMessage.toBytes());
+		byte[] receivedmessage = communication.receiveMessage();
+		ECSMessage receiveMessage = new ECSMessage(receivedmessage);
+		if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS))
+		{
+			move = "movecompleted";
+		}
+
 		this.serverInstance.getMovedDataList().add(movingData);
 		// need to send message 
 		return move;
