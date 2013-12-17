@@ -7,6 +7,7 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 
 import logger.LogSetup;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -76,8 +77,9 @@ public class Shell {
 				try{
 					serverAddress = tokens[1];
 					serverPort = Integer.parseInt(tokens[2]);
-					if (serverPort > 0 && serverPort <= 65535)
+					if (serverPort > 0 && serverPort <= 65535) {
 						kvClient.connect(serverAddress, serverPort);
+					}
 					else {
 						System.out.println("Invalid Port.");
 						logger.error("Invalid Port Number");
@@ -93,6 +95,9 @@ public class Shell {
 				} catch (IOException e) {
 					// printError("Could not establish connection!");
 					logger.warn("Could not establish connection!");
+				} catch (InvalidMessageException ex) {
+					System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
+					// ex.printStackTrace();
 				}
 			} else {
 				printError("Invalid number of parameters!");
@@ -115,7 +120,9 @@ public class Shell {
 					try {
 						System.out.println("\n>>> Received: " + kvResult.getStatus().toString() + ", key: " + kvResult.getKey() + ", value: " + kvResult.getValue());
 					} catch (InvalidMessageException ex) {
-						System.out.println("Unable to read the return Message. Reason: " + ex.getMessage());
+						logger.error("Unable to read the return Message. Reason: " + ex.getMessage());
+					} catch (NullPointerException ex) {
+						logger.error("Server did not respons to PUT Request.");
 					}
 				} catch (ConnectException ex) {
 					logger.error("Unable to use Put command: " + ex.getMessage());

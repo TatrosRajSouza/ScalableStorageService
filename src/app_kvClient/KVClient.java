@@ -6,7 +6,6 @@ import java.net.UnknownHostException;
 
 import logger.LogSetup;
 
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -70,14 +69,9 @@ public class KVClient {
      * @throws IOException On communication error
      * @throws UnknownHostException When host address cannot be resolved
      */
-	public void connect(String address, int port) throws IOException, UnknownHostException {
+	public void connect(String address, int port) throws IOException, ConnectException, UnknownHostException, InvalidMessageException {
 		this.kvStore = new KVStore(address, port);
-		try {
-			kvStore.connect();
-		} catch (InvalidMessageException ex) {
-			System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
-			// ex.printStackTrace();
-		}
+		kvStore.connect();
 	}
 	
 	/**
