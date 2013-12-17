@@ -3,8 +3,10 @@ package app_kvServer;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -161,7 +163,14 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
-	
+		
+		/*try {
+			String ip = InetAddress.getLocalHost().toString().split("/")[1];
+			serverData = new ServerData(ip+ ":" + port, ip, port);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block1
+			e.printStackTrace();
+		}*/
 	}
 
 	
@@ -179,8 +188,11 @@ public class KVServer extends Thread {
 					Socket client = serverSocket.accept();                
 					ClientConnection connection = 
 							new ClientConnection(client,this);
+					
 					new Thread(connection).start();
 					// store the clients for further accessing
+					String ip = client.getInetAddress().getHostName();
+					serverData = new ServerData(ip+ ":" + port, ip, port);
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());

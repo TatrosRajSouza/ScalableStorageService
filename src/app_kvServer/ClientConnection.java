@@ -278,8 +278,7 @@ public class ClientConnection implements Runnable {
 		BigInteger hashedKey = null;
 	ServerData serverData;
 	try {
-		ServerSocket serv = this.serverInstance.getServerSocket();
-		serverData = new ServerData(this.serverInstance.getServerSocket().getInetAddress().toString()+ ":" + this.serverInstance.getPort(), this.serverInstance.getServerSocket().getInetAddress().toString(), this.serverInstance.getPort());
+	
 		serverData = this.serverInstance.getConsistentHashing().getServerForKey(key);
 		if(serverData.equals(this.serverInstance.getServerData()))
 		{
