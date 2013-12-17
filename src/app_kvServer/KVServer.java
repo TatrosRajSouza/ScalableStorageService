@@ -164,13 +164,16 @@ public class KVServer extends Thread {
 	public KVServer(int port){
 		this.port = port;
 		
+		/*
 		try {
 			String ip = InetAddress.getLocalHost().toString().split("/")[1];
 			serverData = new ServerData(ip+ ":" + port, ip, port);
+			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block1
 			e.printStackTrace();
 		}
+		*/
 	}
 
 	
@@ -189,13 +192,15 @@ public class KVServer extends Thread {
 					ClientConnection connection = 
 							new ClientConnection(client,this);
 					
-					new Thread(connection).start();
+					
 					// store the clients for further accessing
-					//String ip = client.getInetAddress().getHostName();
-					//serverData = new ServerData(ip+ ":" + port, ip, port);
+					String ip = client.getInetAddress().getHostName();
+					serverData = new ServerData(ip+ ":" + port, ip, port);
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());
+					
+					new Thread(connection).start();
 				} catch (IOException e) {
 					logger.error("Error! " +
 							"Unable to establish connection. \n", e);

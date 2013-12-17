@@ -276,16 +276,30 @@ public class ClientConnection implements Runnable {
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
 		BigInteger hashedKey = null;
-	ServerData serverData;
 	try {
 	
-		serverData = this.serverInstance.getConsistentHashing().getServerForKey(key);
-		if(serverData.equals(this.serverInstance.getServerData()))
-		{
-			hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
-		}
-			
+		ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
+		ServerData serverDataServer = this.serverInstance.getServerData();
 		
+		if (serverDataHash != null)
+		{
+			if (serverDataServer != null) {
+				System.out.println("ServerDataServer: " + serverDataServer.getAddress() + ":" + serverDataServer.getPort());
+				System.out.println("ServerDataHash: " + serverDataHash.getAddress() + ":" + serverDataHash.getPort());
+				
+				if(serverDataHash.equals(serverDataServer))
+				{
+					System.out.println("Equals returned true.");
+					hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
+				} else {
+					System.out.println("Equals returned false.");
+				}	
+			} else {
+				System.out.println("ServerDataServer is NULL");
+			}
+		} else {
+			System.out.println("ServerDataHash is NULL");
+		}	
 	} catch (IllegalArgumentException e) {
 		// TODO Auto-generated catch block
 		logger.error("Illegal key" + e.getMessage());

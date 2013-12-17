@@ -3,13 +3,12 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
+import common.messages.ServerData;
 import app_kvClient.KVClient;
 import app_kvServer.KVServer;
 import junit.framework.TestCase;
@@ -22,11 +21,11 @@ import logger.LogSetup;
 public class ServerTest extends TestCase {
 	
 	/* Address of first KVServer */
-	String serverAddress = "192.168.56.1";
+	String serverAddress = "127.0.0.1";
 	int serverPort = 50000;
 	
 	/* Address of second KVServer */
-	String server2Address = "192.168.56.1";
+	String server2Address = "127.0.0.1";
 	int server2Port = 50001;
 	
 	/* Client Instance */
@@ -79,17 +78,27 @@ public class ServerTest extends TestCase {
 			client.connect(server2Address, server2Port);
 			client.disconnect();
 			*/
+			String key1 = "A";
+			String key2 = "ZZZZZ";
+			String value1 = "B";
+			String value2 = "Y";
 			
 			client.connect(serverAddress, serverPort);
+			client.getMetadata().addServer(new ServerData(server2Address + ":" + server2Port, server2Address, server2Port));
 			
 			server1.setServeClientRequest(true);
 			server2.setServeClientRequest(true);
 			
+			for (ServerData sd : client.getMetadata().getServers())
+			{
+				System.out.println("server " + sd.getPort());
+			}
+			
 			server1.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 			server2.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 	
-			client.put("A", "B");
-			String value = client.get("A").getValue();
+			client.put(key1, value1);
+			// String value = client.get(key1).getValue();
 		} catch (UnknownHostException ex) {
 			e = ex;
 			System.out.println("Unknown Host!");
