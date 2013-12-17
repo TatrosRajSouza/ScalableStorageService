@@ -224,7 +224,7 @@ public class KVServer extends Thread {
 			serverSocket = new ServerSocket(port);
 			
 			logger.info("Server listening on port: " 
-					+ serverSocket.getLocalPort() );    
+					+ serverSocket.getLocalPort());    
 			return true;
 
 		} catch (IOException e) {
