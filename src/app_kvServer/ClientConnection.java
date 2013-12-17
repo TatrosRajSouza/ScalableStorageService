@@ -95,9 +95,9 @@ public class ClientConnection implements Runnable {
 								if(hashedKey != null)
 								{
 									//future : check in range or not
-									System.out.println("trying to get key");
+									//System.out.println("trying to get key");
 
-									System.out.println("Key is: " + kvQueryCommand.getKey());
+									//System.out.println("Key is: " + kvQueryCommand.getKey());
 
 
 									logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());

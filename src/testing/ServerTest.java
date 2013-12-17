@@ -22,11 +22,11 @@ import logger.LogSetup;
 public class ServerTest extends TestCase {
 	
 	/* Address of first KVServer */
-	String serverAddress = "127.0.0.1";
+	String serverAddress = "192.168.56.1";
 	int serverPort = 50000;
 	
 	/* Address of second KVServer */
-	String server2Address = "127.0.0.1";
+	String server2Address = "192.168.56.1";
 	int server2Port = 50001;
 	
 	/* Client Instance */
@@ -89,6 +89,7 @@ public class ServerTest extends TestCase {
 			server2.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 	
 			client.put("A", "B");
+			String value = client.get("A").getValue();
 		} catch (UnknownHostException ex) {
 			e = ex;
 			System.out.println("Unknown Host!");
