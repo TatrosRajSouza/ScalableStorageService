@@ -222,10 +222,9 @@ public class KVServer extends Thread {
 		logger.info("Initialize server ...");
 		try {
 			serverSocket = new ServerSocket(port);
-			String ip = serverSocket.getInetAddress().toString();
 			
 			logger.info("Server listening on port: " 
-					+ serverSocket.getLocalPort() + " ip:" + this.getServerData().getAddress());    
+					+ serverSocket.getLocalPort());    
 			return true;
 
 		} catch (IOException e) {

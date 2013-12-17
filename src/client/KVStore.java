@@ -209,7 +209,7 @@ public class KVStore implements KVCommInterface {
 
 				if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
-					if (kvResult.key == "metaData") {
+					if (kvResult.key.equals("metaData")) {
 						/* Update stale local meta data with actual meta data from server */
 						logger.info("Received new MetaData from Server: " + kvResult.value);
 						this.metaData.update(kvResult.value);
@@ -283,7 +283,7 @@ public class KVStore implements KVCommInterface {
 					return kvResult;
 				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
-					if (kvResult.key == "metaData") {
+					if (kvResult.key.equals("metaData")) {
 						/* Update stale local meta data with actual meta data from server */
 						logger.info("Received new MetaData from Server: " + kvResult.value);
 						this.metaData.update(kvResult.value);

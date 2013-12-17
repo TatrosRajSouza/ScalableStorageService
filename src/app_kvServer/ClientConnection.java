@@ -280,7 +280,7 @@ public class ClientConnection implements Runnable {
 	
 		ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
 		ServerData serverDataServer = this.serverInstance.getServerData();
-		
+		System.out.println("Responsible Server for " + key + " is " + serverDataHash.getAddress() + ":" + serverDataHash.getPort());
 		if (serverDataHash != null)
 		{
 			if (serverDataServer != null) {

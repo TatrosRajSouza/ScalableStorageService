@@ -2,6 +2,7 @@ package testing;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 import org.apache.log4j.Level;
 import org.junit.Test;
@@ -9,6 +10,8 @@ import org.junit.Test;
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.ServerData;
+import consistent_hashing.ConsistentHashing;
+import consistent_hashing.EmptyServerDataException;
 import app_kvClient.KVClient;
 import app_kvServer.KVServer;
 import junit.framework.TestCase;
@@ -70,42 +73,26 @@ public class ServerTest extends TestCase {
 	@Test
 	public void testEverything() {
 		Exception e = null;
-		
 		try {
-			/*
-			client.connect(serverAddress, serverPort);
-			client.disconnect();
-			client.connect(server2Address, server2Port);
-			client.disconnect();
-			*/
+			ServerData server1Data = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
+			ServerData server2Data = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
+			ArrayList<ServerData> serverListServer = new ArrayList<ServerData>();
+			ArrayList<ServerData> serverListClient = new ArrayList<ServerData>();
+			serverListServer.add(server1Data);
+			serverListServer.add(server2Data);
+			
 			String key1 = "A";
 			String key2 = "ZZZZZ";
 			String value1 = "B";
 			String value2 = "Y";
 			
+			InfrastructureMetadata clientMetaData = new InfrastructureMetadata();
 			client.connect(serverAddress, serverPort);
-			client.getMetadata().addServer(new ServerData(server2Address + ":" + server2Port, server2Address, server2Port));
 			
 			server1.setServeClientRequest(true);
 			server2.setServeClientRequest(true);
-			
-			for (ServerData sd : client.getMetadata().getServers())
-			{
-				System.out.println("client " + sd.getPort());
-			}
-			
-			server1.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
-			server2.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
-	
-			for (ServerData sd : server1.getMetaData().getServers())
-			{
-				System.out.println("server1 " + sd.getPort());
-			}
-			
-			for (ServerData sd : server2.getMetaData().getServers())
-			{
-				System.out.println("server2 " + sd.getPort());
-			}
+			server1.setMetaData(new InfrastructureMetadata(serverListServer));
+			server2.setMetaData(new InfrastructureMetadata(serverListServer));
 			
 			client.put(key1, value1);
 			// String value = client.get(key1).getValue();
@@ -123,6 +110,28 @@ public class ServerTest extends TestCase {
 			System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
 		}
 		
+		/*
+		for (int i = 0; i < 100; i++)
+		{
+			ServerData server1 = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
+			ServerData server2 = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
+			ArrayList<ServerData> serverList = new ArrayList<ServerData>();
+			serverList.add(server1);
+			serverList.add(server2);
+			
+			ConsistentHashing consHash = new ConsistentHashing(serverList);
+			
+			try {
+				System.out.println(consHash.getServerForKey("A").getPort());
+			} catch (IllegalArgumentException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (EmptyServerDataException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		*/
 		assertNull(e);
 	}
 }
