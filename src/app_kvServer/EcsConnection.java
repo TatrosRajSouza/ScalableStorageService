@@ -16,13 +16,15 @@ import common.messages.ServerData;
 
 public class EcsConnection {
 	private static Logger logger = Logger.getRootLogger();
-	private boolean move = false;
+	private String move;
 	private ECSMessage ecsMessage;
-	public EcsConnection(byte[] latestMsg) throws InvalidMessageException {
+	private KVServer serverInstance;
+	public EcsConnection(byte[] latestMsg,KVServer serverInstance) throws InvalidMessageException {
 		// TODO Auto-generated constructor stub
-		ecsMessage = new ECSMessage(latestMsg);
+		this.ecsMessage = new ECSMessage(latestMsg);
+		this.serverInstance = serverInstance;
 	}
-	public boolean process() throws InvalidMessageException {
+	public String process() throws InvalidMessageException {
 		// TODO Auto-generated method stub
 if(ecsMessage.getCommand() == ECSStatusType.INIT)
 	initKVServer(ecsMessage.getMetadata());
@@ -38,6 +40,10 @@ else if(ecsMessage.getCommand() == ECSStatusType.UNLOCK_WRITE)
 UnLockWrite();
 else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
 update(ecsMessage.getMetadata().toString());
+else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA_INTERNAL)
+{
+	moveData(ecsMessage.getMovingData());
+}
 else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
 {
  try {
@@ -54,10 +60,15 @@ else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
 }
 else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
 {
-	KVServer.kvdata.moveData(ecsMessage.getMovingData());
-	move = true;
+	this.serverInstance.getKvdata().moveData(ecsMessage.getMovingData());
+	move = "moveinternalcompleted";
+	
 }
 return move;
+	}
+	private void moveData(HashMap<BigInteger, String> movingData) {
+		// TODO Auto-generated method stub
+		this.serverInstance.getKvdata().moveData(movingData);
 	}
 	/**
 	 * Initializes and starts the server but blocked for client requests
@@ -65,71 +76,71 @@ return move;
 	// convert with meta data parameter
 	private void initKVServer(InfrastructureMetadata metaData)
 	{
-		KVServer.metaData = metaData;
+		this.serverInstance.setMetaData(metaData);
 	}
 	private  void start()
 	{
 
 		logger.info("Allowing server to serve client requests");
-		KVServer.serveClientRequest = true;
+		this.serverInstance.setServeClientRequest(true);
 
 	}
 	private void stopServer(){		
 		logger.info("Stopping server to serve client requests");
-		KVServer.serveClientRequest =  false;
-
+		this.serverInstance.setServeClientRequest(false);
 	}
 	private void lockWrite()
 	{
 		logger.info("locking server to write requests");
-		KVServer.isWriteLocked = true;
+		this.serverInstance.setWriteLocked(true);
 	}
 	private void UnLockWrite()
 	{
 		logger.info("unlocking server to write requests");
-		KVServer.isWriteLocked = false;
+		this.serverInstance.setWriteLocked(false);
 	}
 
 	private void shutDown(){
-		KVServer.running = false;
+		this.serverInstance.setRunning(false);
 		try {
-			KVServer.serverSocket.close();
+			this.serverInstance.getServerSocket().close();
+			System.exit(1);
 		} catch (IOException e) {
 			logger.error("Error! " +
-					"Unable to close socket on port: " + KVServer.port, e);
+					"Unable to close socket on port: " + this.serverInstance.getPort(), e);
 			System.exit(1);
 		}
 
 	}
 	private void update(String metaDataString)
 	{
-		KVServer.metaData.update(metaDataString);
+		this.serverInstance.getMetaData().update(metaDataString);
 	}
-	private boolean moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
+	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
-		HashMap<BigInteger, String> movingData = KVServer.kvdata.findMovingData(startIndex, endIndex);
-		boolean move = false;
+		HashMap<BigInteger, String> movingData = this.serverInstance.getKvdata().findMovingData(startIndex, endIndex);
+		String move = null;
 		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
 
 			KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort());
 			communication.sendMessage(sendMessage.toBytes());
 			byte[] receivedmessage = communication.receiveMessage();
 			ECSMessage receiveMessage = new ECSMessage(receivedmessage);
-			if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_COMPLETED))
+			if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS))
 			{
-				move = true;
+				move = "movecompleted";
 			}
 					
-		KVServer.movedDataList.add(movingData);
+		this.serverInstance.getMovedDataList().add(movingData);
 		// need to send message 
 		return move;
 
 	}
 	private void removeData(KVServer kvserver)
 	{
-		for(HashMap<BigInteger,String> movedData : KVServer.movedDataList)
+		for(HashMap<BigInteger,String> movedData : this.serverInstance.getMovedDataList())
 		{
-			KVServer.kvdata.remove(movedData);
+			this.serverInstance.getKvdata().remove(movedData);
 		}
 	}
 }

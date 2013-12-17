@@ -27,7 +27,7 @@ import consistent_hashing.EmptyServerDataException;
  * The class also implements the get,put functionality. 
  */
 public class ClientConnection implements Runnable {
-
+	private KVServer serverInstance;
 	private static Logger logger = Logger.getRootLogger();
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
@@ -49,9 +49,10 @@ public class ClientConnection implements Runnable {
 	 * Constructs a new CientConnection object for a given TCP socket.
 	 * @param clientSocket the Socket object for the client connection.
 	 */
-	public ClientConnection(Socket clientSocket) {
+	public ClientConnection(Socket clientSocket,KVServer serverInstance) {
 		this.clientSocket = clientSocket;
 		this.isOpen = true;
+		this.serverInstance = serverInstance;
 	}
 
 	/**
@@ -85,7 +86,7 @@ public class ClientConnection implements Runnable {
 						String key=null,value=null,returnValue=null;
 						String command = kvQueryCommand.getStatus().toString();
 						logger.debug("Received Command is: " + command);
-						if(KVServer.serveClientRequest) //  ECS permission to serve client?
+						if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
 						{
 							if(command.equals("GET"))	{
 								key = kvQueryCommand.getKey();
@@ -98,13 +99,13 @@ public class ClientConnection implements Runnable {
 									System.out.println("Key is: " + kvQueryCommand.getKey());
 
 
-									logger.debug("Num keys in map: " + KVServer.kvdata.dataStore.size());
-									for (BigInteger k : KVServer.kvdata.dataStore.keySet())
+									logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());
+									for (BigInteger k : this.serverInstance.getKvdata().dataStore.keySet())
 									{
 										logger.debug("Key: " + k);
 									}
 
-									returnValue = KVServer.kvdata.get(hashedKey);
+									returnValue = this.serverInstance.getKvdata().get(hashedKey);
 									logger.debug("returnValue: " + returnValue);
 									if(returnValue != null) {
 										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
@@ -121,7 +122,7 @@ public class ClientConnection implements Runnable {
 								else
 								{
 									// send not responsible message with metadata
-									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,KVServer.metaData.toString());
+									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,this.serverInstance.getMetaData().toString());
 									sendMessage(kvQueryNotResponsible.toBytes());
 								}
 
@@ -133,12 +134,12 @@ public class ClientConnection implements Runnable {
 								if(hashedKey != null)
 								{
 									//future : check in range or not
-									if(!KVServer.isWriteLocked)
+									if(!this.serverInstance.isWriteLocked())
 									{
 
 										value = kvQueryCommand.getValue();
 
-										returnValue = KVServer.kvdata.put(hashedKey,value);
+										returnValue = this.serverInstance.getKvdata().put(hashedKey,value);
 										if(!value.equals("null") )
 										{
 											if(returnValue == null)
@@ -215,12 +216,16 @@ public class ClientConnection implements Runnable {
 					}//   not KVMessage
 					catch (InvalidMessageException e) {
 						try{
-							EcsConnection ecsConnection = new EcsConnection(latestMsg);
-							try
-							{
-								if(ecsConnection.process())
+							EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
+							String moveSuccess = ecsConnection.process();
+								if(moveSuccess.equals("movecompleted"))
 								{
 									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
+								else if(moveSuccess.equals("moveinternalcompleted"))
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
 									sendMessage(ecsMoveSuccess.toBytes());
 								}
 								else
@@ -228,29 +233,23 @@ public class ClientConnection implements Runnable {
 									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
 									sendMessage(ecsMoveSuccess.toBytes());
 								}
-							}
-							catch(InvalidMessageException ecs)
-							{
-								logger.error("Invalid message received from ECS");
-							}
+							
+							
 						}
 						catch(InvalidMessageException eEcs)
 						{
-							logger.error("Invalid message received from client");
-							KVQuery kvQueryInvalid;
+							logger.error("Invalid message received from ECS");
 							try {
-								kvQueryInvalid = new KVQuery(KVMessage.StatusType.FAILED,"Invalid command");
-								sendMessage(kvQueryInvalid.toBytes());
+								ECSMessage ecsFailed = new ECSMessage(ECSStatusType.FAILED);
+								sendMessage(ecsFailed.toBytes());
 							} catch (InvalidMessageException e1) {
-								// TODO Auto-generated catch block
-								logger.error("Error in invalid message format:server side");
+								logger.error("Invalid message constructed in server side" + e1.getMessage());
 							}
+							
+							} 
+						}//not KVmessage
 
-						}
-
-					}
-
-				} //connection lost
+					}//connection lost
 				catch (IOException ioe) {
 					logger.error("Error! Connection lost!");
 					isOpen = false;
@@ -274,11 +273,11 @@ public class ClientConnection implements Runnable {
 	}
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
-		ConsistentHashing consistentHashing = new ConsistentHashing(KVServer.metaData.getServers());
+		ConsistentHashing consistentHashing = new ConsistentHashing(this.serverInstance.getMetaData().getServers());
 		BigInteger hashedKey = null;
 		try {
 			ServerData serverData = consistentHashing.getServerForKey(key);
-			if(serverData.getAddress().equals(KVServer.ip))
+			if(serverData.getAddress().equals(this.serverInstance.getIp()))
 			{
 				hashedKey = consistentHashing.hashKey(key);
 				
