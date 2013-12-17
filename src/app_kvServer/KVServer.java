@@ -208,6 +208,12 @@ public class KVServer extends Thread {
 			}
 		}
 		logger.info("Server stopped.");
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error("not able to close the server socket" + e.getMessage());
+		}
 	}
 
 	private boolean isRunning() {
