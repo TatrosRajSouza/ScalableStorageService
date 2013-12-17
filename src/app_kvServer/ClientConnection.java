@@ -81,50 +81,12 @@ public class ClientConnection implements Runnable {
 
 
 					byte[] latestMsg = receiveMessage();
-					KVQuery kvQueryCommand = null;
+					KVQuery kvQueryCommand;
 					try { //   not KVMessage
+						kvQueryCommand = new KVQuery(latestMsg);
 						String key=null,value=null,returnValue=null;
-						String command = null;
-						try{
-						kvQueryCommand = new KVQuery(latestMsg);					
-						command = kvQueryCommand.getStatus().toString();
+						String command = kvQueryCommand.getStatus().toString();
 						logger.debug("Received Command is: " + command);
-						}
-						catch (InvalidMessageException e)
-						{
-							try{
-								EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
-								String moveSuccess = ecsConnection.process();
-									if(moveSuccess.equals("movecompleted"))
-									{
-										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
-										sendMessage(ecsMoveSuccess.toBytes());
-									}
-									else if(moveSuccess.equals("moveinternalcompleted"))
-									{
-										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
-										sendMessage(ecsMoveSuccess.toBytes());
-									}
-									else
-									{
-										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
-										sendMessage(ecsMoveSuccess.toBytes());
-									}
-								
-								
-							}
-							catch(InvalidMessageException eEcs)
-							{
-								logger.error("Invalid message received from ECS");
-								try {
-									ECSMessage ecsFailed = new ECSMessage(ECSStatusType.FAILED);
-									sendMessage(ecsFailed.toBytes());
-								} catch (InvalidMessageException e1) {
-									logger.error("Invalid message constructed in server side" + e1.getMessage());
-								}
-								
-								} 
-						}
 						if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
 						{
 							if(command.equals("GET"))	{
@@ -255,7 +217,33 @@ public class ClientConnection implements Runnable {
 
 					}//   not KVMessage
 					catch (InvalidMessageException e) {
-						logger.error("something serious");
+						try{
+							EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
+							String moveSuccess = ecsConnection.process();
+								if(moveSuccess.equals("movecompleted"))
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
+								else if(moveSuccess.equals("moveinternalcompleted"))
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
+								else
+								{
+									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
+									sendMessage(ecsMoveSuccess.toBytes());
+								}
+							
+							
+						}
+						catch(InvalidMessageException eEcs)
+						{
+							logger.error("Invalid message received from ECS");
+							
+							
+							} 
 						}//not KVmessage
 
 					}//connection lost
@@ -287,7 +275,7 @@ public class ClientConnection implements Runnable {
 	
 		ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
 		ServerData serverDataServer = this.serverInstance.getServerData();
-		System.out.println("Responsible Server for " + key + " is " + serverDataHash.getAddress() + ":" + serverDataHash.getPort());
+		
 		if (serverDataHash != null)
 		{
 			if (serverDataServer != null) {
