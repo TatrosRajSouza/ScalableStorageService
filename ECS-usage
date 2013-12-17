@@ -1,0 +1,35 @@
+How to use the ECS:
+
+1- Running the ECS:
+	Run the ant script.
+	call the ECS from the terminal passing the configuration file as an argument: 'java -jar ms3-ecs.jar ecs.config'
+
+2- Initializing some server nodes:
+	This runs the server node. The server node can't receive client request yet.
+	'initService <numberOfNodes>'
+	
+3- Starting the service
+	After initializing you have to start the server nodes.
+	'start'
+
+4- Adding a new server node
+	It initializes and start the node. If you initialized all the nodes you wanted and started the service there
+	is no need to use this procedure.
+	'addNode'
+	
+5- Removing a server node that is running
+	It stops completely the server node, even the process.
+	'removeNode'	
+	
+6- Stopping the service
+	Make all the servers idle. The servers will not receive client communication until 'start' is called again.
+	'stop' 
+	
+7- Shutting down the service
+	Removes all the servers, shutting them down. It doesn't leave the ECS program.
+	'shutDown'
+
+We don't decide which node will be initialized, started or removed,
+since the specification asked us to make it randomly.
+
+There are also commands that weren't asked like: 'help', 'quit' and 'logLevel'. They work like in the last milestone.
