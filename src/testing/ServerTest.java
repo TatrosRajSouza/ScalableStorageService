@@ -61,6 +61,7 @@ public class ServerTest extends TestCase {
 				client = new KVClient(); // client instance
 			} catch (Exception e) {
 				ex = e;
+				e.printStackTrace();
 			}	
 			
 			assertNull(ex);

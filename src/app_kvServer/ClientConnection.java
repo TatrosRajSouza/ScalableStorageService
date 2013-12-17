@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -184,7 +185,8 @@ public class ClientConnection implements Runnable {
 								}
 								else
 								{
-									// send not responsible error message and meta data	
+									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
+									sendMessage(kvQueryNotResponsible.toBytes());
 								}
 							}
 
@@ -273,22 +275,27 @@ public class ClientConnection implements Runnable {
 	}
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
-		ConsistentHashing consistentHashing = new ConsistentHashing(this.serverInstance.getMetaData().getServers());
 		BigInteger hashedKey = null;
-		try {
-			ServerData serverData = consistentHashing.getServerForKey(key);
-			if(serverData.getAddress().equals(this.serverInstance.getIp()))
-			{
-				hashedKey = consistentHashing.hashKey(key);
-				
-
-			}
-		} catch (IllegalArgumentException e) {
-			logger.error("Error in checkrange" + e.getMessage());
-		} catch (EmptyServerDataException e) {
-			logger.error("Error in checkrange" + e.getMessage());
+	ServerData serverData;
+	try {
+		ServerSocket serv = this.serverInstance.getServerSocket();
+		serverData = new ServerData(this.serverInstance.getServerSocket().getInetAddress().toString()+ ":" + this.serverInstance.getPort(), this.serverInstance.getServerSocket().getInetAddress().toString(), this.serverInstance.getPort());
+		serverData = this.serverInstance.getConsistentHashing().getServerForKey(key);
+		if(serverData.equals(this.serverInstance.getServerData()))
+		{
+			hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
 		}
-		return hashedKey;
+			
+		
+	} catch (IllegalArgumentException e) {
+		// TODO Auto-generated catch block
+		logger.error("Illegal key" + e.getMessage());
+	} catch (EmptyServerDataException e) {
+		// TODO Auto-generated catch block
+		logger.error("no servers in the circle" + e.getMessage());
+
+	}
+	return hashedKey;
 	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {

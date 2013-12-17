@@ -17,6 +17,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import common.messages.InfrastructureMetadata;
+import common.messages.ServerData;
+import consistent_hashing.ConsistentHashing;
 
 public class KVServer extends Thread {
 
@@ -28,11 +30,12 @@ public class KVServer extends Thread {
 	private  boolean isWriteLocked = false;
 	private  KVData kvdata = new KVData();
 	private  List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
-	private  String ip;
+	private  ServerData serverData = null;
 	private  int port;
 	private  ServerSocket serverSocket;
 	private  boolean running;
 	private  InfrastructureMetadata metaData;
+	private ConsistentHashing consistentHashing;
 	
 	
 
@@ -86,16 +89,7 @@ public class KVServer extends Thread {
 	}
 
 
-	public String getIp() {
-		return ip;
-	}
-
-
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
-
-
+	
 	public int getPort() {
 		return port;
 	}
@@ -111,6 +105,16 @@ public class KVServer extends Thread {
 	}
 
 
+	public ConsistentHashing getConsistentHashing() {
+		return consistentHashing;
+	}
+
+
+	public void setConsistentHashing(ConsistentHashing consistentHashing) {
+		this.consistentHashing = consistentHashing;
+	}
+
+
 	public void setServerSocket(ServerSocket serverSocket) {
 		this.serverSocket = serverSocket;
 	}
@@ -123,6 +127,17 @@ public class KVServer extends Thread {
 
 	public void setMetaData(InfrastructureMetadata metaData) {
 		this.metaData = metaData;
+		if(consistentHashing == null)
+		{
+			
+			consistentHashing = new ConsistentHashing(metaData.getServers());
+			
+		}
+		else
+		{
+			consistentHashing.update(metaData.getServers());
+		}
+	
 	}
 
 
@@ -146,7 +161,7 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
-
+	
 	}
 
 	
@@ -166,7 +181,6 @@ public class KVServer extends Thread {
 							new ClientConnection(client,this);
 					new Thread(connection).start();
 					// store the clients for further accessing
-					
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());
@@ -191,7 +205,8 @@ public class KVServer extends Thread {
 		logger.info("Initialize server ...");
 		try {
 			serverSocket = new ServerSocket(port);
-			ip = serverSocket.getInetAddress().toString();
+			String ip = serverSocket.getInetAddress().toString();
+			
 			logger.info("Server listening on port: " 
 					+ serverSocket.getLocalPort());    
 			return true;
@@ -203,6 +218,16 @@ public class KVServer extends Thread {
 			}
 			return false;
 		}
+	}
+
+
+	public ServerData getServerData() {
+		return serverData;
+	}
+
+
+	public void setServerData(ServerData serverData) {
+		this.serverData = serverData;
 	}
 
 

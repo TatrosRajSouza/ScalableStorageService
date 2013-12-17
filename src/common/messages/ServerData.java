@@ -29,6 +29,14 @@ public class ServerData {
 	public String getName() {
 		return name;
 	}
-	
+	@Override
+	public boolean equals(Object otherObj)
+	{
+		ServerData other = (ServerData)otherObj;
+		if(this.address.equals(other.address) && this.port == other.port)
+			return true;
+		else
+			return false;
+	}
 	
 }
