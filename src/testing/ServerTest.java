@@ -72,16 +72,21 @@ public class ServerTest extends TestCase {
 		Exception e = null;
 		
 		try {
+			/*
 			client.connect(serverAddress, serverPort);
 			client.disconnect();
 			client.connect(server2Address, server2Port);
 			client.disconnect();
+			*/
 			
 			client.connect(serverAddress, serverPort);
+			
 			server1.setServeClientRequest(true);
 			server2.setServeClientRequest(true);
+			
 			server1.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
 			server2.setMetaData(new InfrastructureMetadata(client.getMetadata().getServers()));
+	
 			client.put("A", "B");
 		} catch (UnknownHostException ex) {
 			e = ex;
