@@ -93,6 +93,7 @@ public class KVQuery implements KVMessage {
 				&& command != StatusType.PUT			&& command != StatusType.PUT_SUCCESS
 				&& command != StatusType.PUT_UPDATE		&& command != StatusType.PUT_ERROR
 				&& command != StatusType.DELETE_SUCCESS && command != StatusType.DELETE_ERROR
+				&& command != StatusType.SERVER_STOPPED && command != StatusType.SERVER_WRITE_LOCK 
 				&& command != StatusType.SERVER_NOT_RESPONSIBLE) {
 			throw new InvalidMessageException("Incorrect number of arguments for the command.");
 		}

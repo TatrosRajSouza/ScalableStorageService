@@ -42,9 +42,11 @@ public class KVData {
 	}
 	public void moveData(HashMap<BigInteger,String> movingData)
 	{
-		if(dataStore.size() > 0)
+		if(!movingData.isEmpty())
 		{
-			Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
+		if(!dataStore.isEmpty())
+		{
+			Iterator<Entry<BigInteger, String>> it = movingData.entrySet().iterator();
 			while (it.hasNext()) {
 				Entry<BigInteger, String> pairs = (Map.Entry<BigInteger,String>)it.next();
 				dataStore.put(pairs.getKey(), pairs.getValue());
@@ -52,6 +54,7 @@ public class KVData {
 		}
 		else
 			dataStore.putAll(movingData);
+		}
 
 	}
 
@@ -65,28 +68,45 @@ public class KVData {
 		BigInteger key;
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
 		// iterate over the range or hashmap?
+		if(!dataStore.isEmpty())
+		{
 		Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
 			key = pairs.getKey();
 			// need modification
-			if(startIndex.compareTo(key)  >= 0  && endIndex.compareTo(key) <= 0 )
+			//int a = startIndex.compareTo(key);
+			//int b = endIndex.compareTo(key);
+			if(startIndex.compareTo(endIndex) <= 0)
+			{
+			if(startIndex.compareTo(key)  <= 0  && endIndex.compareTo(key) >= 0 )
 			{
 				movingData.put(key, pairs.getValue());
 			}
+			}
+			else
+			{
+				if(startIndex.compareTo(key)  >= 0  && endIndex.compareTo(key) <= 0 )
+				{
+					movingData.put(key, pairs.getValue());
+				}
+			}
+		}
 		}
 		return movingData;
 	}
 
 	public void remove(HashMap<BigInteger, String> movedData) {
 		// TODO Auto-generated method stub
+		if(!movedData.isEmpty())
+		{
 		Iterator<Entry<BigInteger, String>> it = movedData.entrySet().iterator();
 		while(it.hasNext())
 		{
 			Map.Entry<BigInteger, String> pairs = (Map.Entry<BigInteger, String>)it.next();
 			dataStore.remove(pairs.getKey(), pairs.getValue());
 		}
-		
+		}
 	}
 
 
