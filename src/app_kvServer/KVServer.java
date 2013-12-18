@@ -159,7 +159,7 @@ public class KVServer extends Thread {
 	 * 
 	 * @param port a port number which the Server is listening to in order to 
 	 * 		establish a socket connection to a client. The port number should 
-	 * 		reside in the range of dynamic ports, i.e 49152 – 65535.
+	 * 		reside in the range of dynamic ports, i.e 49152 ï¿½ 65535.
 	 */
 	public KVServer(int port){
 		this.port = port;
@@ -250,14 +250,15 @@ public class KVServer extends Thread {
 		if (!DEBUG) {
 			try {
 				new LogSetup("logs/server.log", Level.ALL);
-				if(args.length != 1) {
+				System.setProperty("file.encoding", "US-ASCII");
+				/*if(args.length != 1) {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
-				} else {
-					int port = Integer.parseInt(args[0]);
+				} else {*/
+					int port = 50000;//Integer.parseInt(args[0]);
 					new KVServer(port).start();
-					
-				}
+					//System.exit(0);
+				//}
 			} catch (IOException e) {
 				System.out.println("Error! Unable to initialize logger!");
 				e.printStackTrace();

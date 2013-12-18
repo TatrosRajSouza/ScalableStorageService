@@ -93,7 +93,6 @@ public class ECS {
 			message = new ECSMessage(ECSStatusType.START);
 			node.sendMessage(message.toBytes());
 			
-			message = nextNode.receiveMessage();
 			logger.info("Moving the metadata to the added node.");
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
@@ -285,7 +284,7 @@ public class ECS {
 		}
 		logger.info("Initializing server node " + node.getAddress() + ":" + node.getPort());
 
-		sendSSHCall(node.getAddress(), node.getPort());
+		//sendSSHCall(node.getAddress(), node.getPort());
 		hashing.addServer(node.getAddress(), node.getPort());
 		try {
 			node.connect();

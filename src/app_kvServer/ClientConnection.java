@@ -347,11 +347,11 @@ public class ClientConnection implements Runnable {
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		output.write(msgBytes, 0, msgBytes.length);
 		output.flush();
-		/*
+		
 		logger.info("SEND \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
-				+ new String(msgBytes) +"'");*/
+				+ new String(msgBytes) +"'");
 	}
 
 
@@ -409,12 +409,12 @@ public class ClientConnection implements Runnable {
 
 		/* build final String */
 
-		/*
+		
 		logger.info("RECEIVE \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
 				+ new String(msgBytes) + "'");
-		 */
+		
 		return msgBytes;
 	}
 
