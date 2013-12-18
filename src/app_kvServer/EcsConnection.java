@@ -141,9 +141,19 @@ public class EcsConnection {
 	}
 	private void removeData(KVServer kvserver)
 	{
+		if(this.serverInstance.getMovedDataList() != null)
+		{
 		for(HashMap<BigInteger,String> movedData : this.serverInstance.getMovedDataList())
 		{
+			try
+			{
 			this.serverInstance.getKvdata().remove(movedData);
+			}
+			catch(Exception e)
+			{
+				logger.error("Error while removing data" + e.getMessage());
+			}
+		}
 		}
 	}
 }

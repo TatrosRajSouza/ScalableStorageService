@@ -255,7 +255,7 @@ public class KVServer extends Thread {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
 				} else {*/
-					int port = 50000;//Integer.parseInt(args[0]);
+					int port = 50001;//Integer.parseInt(args[0]);
 					new KVServer(port).start();
 					//System.exit(0);
 				//}
