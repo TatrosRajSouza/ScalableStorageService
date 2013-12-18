@@ -20,6 +20,7 @@ public class ECSMessage {
 	private BigInteger endIndex;
 	private ServerData server;
 	private HashMap<BigInteger, String> movingData;
+	private final String movingDataEmpty = "EMPTY"; 
 
 	private static Logger logger = Logger.getRootLogger();
 
@@ -158,7 +159,8 @@ public class ECSMessage {
 		if (command == ECSStatusType.START || command == ECSStatusType.STOP
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
 				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED
-				|| command == ECSStatusType.MOVE_ERROR) {
+				|| command == ECSStatusType.MOVE_ERROR || command == ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS
+				|| command == ECSStatusType.FAILED) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
@@ -254,18 +256,24 @@ public class ECSMessage {
 
 	private String getData() {
 		StringBuilder data = new StringBuilder();
-		for (Entry<BigInteger, String> entry : movingData.entrySet()) {
-			data.append(entry.getKey().toString() + "," + entry.getValue() + ";");
+		if (movingData.isEmpty()) {
+			return movingDataEmpty;
+		} else {
+			for (Entry<BigInteger, String> entry : movingData.entrySet()) {
+				data.append(entry.getKey().toString() + "," + entry.getValue() + ";");
+			}
 		}
 		return data.toString();
 	}
-	
+
 	private void createMovingData(String movingData) {
 		this.movingData = new HashMap<BigInteger, String>();
-		String[] data = movingData.split(";");
-		for (String dataStr : data) {
-			String[] dataEntry = dataStr.split(",");
-			this.movingData.put(new BigInteger(dataEntry[0]), dataEntry[1]);
+		if (!movingData.equals(movingDataEmpty)) {
+			String[] data = movingData.split(";");
+			for (String dataStr : data) {
+				String[] dataEntry = dataStr.split(",");
+				this.movingData.put(new BigInteger(dataEntry[0]), dataEntry[1]);
+			}
 		}
 	}
 

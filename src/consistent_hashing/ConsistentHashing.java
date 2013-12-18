@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -30,7 +31,7 @@ public class ConsistentHashing {
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
-		hashCircle =  new TreeMap<BigInteger, String>();
+		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
 		logger = Logger.getRootLogger();
 
 		try {
@@ -46,7 +47,7 @@ public class ConsistentHashing {
 	 * @param servers An ArrayList of ServerData that should be hashed to the circle
 	 */
 	public ConsistentHashing(ArrayList<ServerData> servers) {
-		hashCircle =  new TreeMap<BigInteger, String>();
+		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
 		logger = Logger.getRootLogger();
 
 		try {
@@ -130,8 +131,13 @@ public class ConsistentHashing {
 	public void update(ArrayList<ServerData> servers) {
 		hashCircle.clear();
 
-		for (ServerData server : servers) {
-			addServer(server.getAddress(), server.getPort());
+		if (servers != null && servers.size() > 0)
+		{
+			for (ServerData server : servers) {
+				addServer(server.getAddress(), server.getPort());
+			}
+		} else {
+			logger.warn("The meta-data that was supplied to the consistent hash update has no servers, resulting in an empty HashCircle!");
 		}
 	}
 

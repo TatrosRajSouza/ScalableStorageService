@@ -251,14 +251,14 @@ public class KVServer extends Thread {
 			try {
 				new LogSetup("logs/server.log", Level.ALL);
 				System.setProperty("file.encoding", "US-ASCII");
-				/*if(args.length != 1) {
+				if(args.length != 1) {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
-				} else {*/
-					int port = 50001;//Integer.parseInt(args[0]);
+				} else {
+					int port = Integer.parseInt(args[0]);
 					new KVServer(port).start();
 					//System.exit(0);
-				//}
+				}
 			} catch (IOException e) {
 				System.out.println("Error! Unable to initialize logger!");
 				e.printStackTrace();

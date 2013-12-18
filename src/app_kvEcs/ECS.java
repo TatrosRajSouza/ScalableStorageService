@@ -284,7 +284,7 @@ public class ECS {
 		}
 		logger.info("Initializing server node " + node.getAddress() + ":" + node.getPort());
 
-		//sendSSHCall(node.getAddress(), node.getPort());
+		sendSSHCall(node.getAddress(), node.getPort());
 		hashing.addServer(node.getAddress(), node.getPort());
 		try {
 			node.connect();
@@ -333,6 +333,9 @@ public class ECS {
 		ECSServerCommunicator node;		
 
 		node = getRandomNode(from);
+		if (node == null) {
+			return null;
+		}
 		to.addServer(node);
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
@@ -420,7 +423,8 @@ public class ECS {
 	}
 
 	private void sendSSHCall(String address, int port) {
-		String[] args = {"./script.sh", address, Integer.toString(port)};
+		String currentDirectory = System.getProperty("user.dir");
+		String[] args = {"./script.sh", address, currentDirectory, Integer.toString(port)};
 
 		Runtime run = Runtime.getRuntime();
 		try {
