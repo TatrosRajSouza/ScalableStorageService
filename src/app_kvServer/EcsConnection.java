@@ -107,7 +107,7 @@ public class EcsConnection {
 		this.serverInstance.setRunning(false);
 		try {
 			this.serverInstance.getServerSocket().close();
-			System.exit(1);
+			System.exit(0);
 		} catch (IOException e) {
 			logger.error("Error! " +
 					"Unable to close socket on port: " + this.serverInstance.getPort(), e);
