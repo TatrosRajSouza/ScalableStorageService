@@ -333,6 +333,9 @@ public class ECS {
 		ECSServerCommunicator node;		
 
 		node = getRandomNode(from);
+		if (node == null) {
+			return null;
+		}
 		to.addServer(node);
 		from.removeServer(node.getAddress(), node.getPort());
 		return node;
