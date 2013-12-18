@@ -18,12 +18,16 @@ public class ECSServerCommunicator extends ServerData {
 	}
 	
 	public void connect() throws UnknownHostException, IOException {
-		//solves problem of the delay of initializing the nodes with a ssh connection
 		try {
 			communication = new KVCommunication(getAddress(), getPort());
 		} catch (UnknownHostException e) {
-			connect();
+			ECS.logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
 		} catch (IOException e) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e1) {
+				ECS.logger.warn("Warn! Thread interrupted by other thread.");
+			}
 			connect();
 		}
 	}
