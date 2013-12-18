@@ -212,7 +212,7 @@ public class ClientConnection implements Runnable {
 						{
 							KVQuery kvQueryNoService;
 							try {
-								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,"Server is stopped");
+								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED);
 								sendMessage(kvQueryNoService.toBytes());
 							} catch (InvalidMessageException e1) {
 								// TODO Auto-generated catch block
@@ -265,7 +265,8 @@ public class ClientConnection implements Runnable {
 		catch (IOException ioe) {
 			logger.error("Error! Connection could not be established!", ioe);
 
-		} finally {
+		}
+		finally {
 			try {
 				if (clientSocket != null) {
 					input.close();
@@ -324,6 +325,10 @@ public class ClientConnection implements Runnable {
 			// TODO Auto-generated catch block
 			logger.error("no servers in the circle" + e.getMessage());
 
+		}
+		catch(Exception e)
+		{
+			logger.error("unknown exception in check range" + e.getMessage());
 		}
 		return hashedKey;
 	}
