@@ -10,6 +10,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -19,17 +20,22 @@ import app_kvClient.KVClient;
 
 public class Evaluator {
 	public static final int NUM_CLIENTS = 1;
+	// Keywords specify which lines we look for in a file from the enron dataset.
+	// Most enron files have a Date and Subject tag. So we use the Date as the key and the Subject as the value.
 	public static final String LINE_KEYWORD_KEY = "Date: ";
 	public static final String LINE_KEYWORD_VALUE = "Subject: ";
+	
+	private int numKVPairs = 20000;
 	private String enronPath = "";
 	private String enronFileCachePath = "enronFiles.cache";
 	
 	private ArrayList<KVClient> clients;	// list of clients
-	private HashMap<String, String> kvMap;	// key value map with data from enron dataset
-	private HashMap<Integer, String> enronFiles;
+	private HashMap<String, String> kvMap;	// key value map with data from enron dataset, keyString -> valueString
+	private HashMap<Integer, String> enronFiles; // map: enronfileIDs --> file path
 	
-	public Evaluator(String enronPath) {
+	public Evaluator(String enronPath, int numDataPairs) {
 		this.enronPath = enronPath;
+		this.numKVPairs = numDataPairs;
 		
 		clients = new ArrayList<KVClient>();
 		kvMap = new HashMap<String, String>();
@@ -109,55 +115,72 @@ public class Evaluator {
 		}
 	}
 	
+	/**
+	 * Initializes Enron files for processing and obtains the specified number of key-value data of specified format from the Enron dataset.
+	 */
 	public void initEnron() {
 		
 		try {
-			getEnronFiles(enronPath);
+			getEnronFiles(enronPath); // initialize filepath cache
 		} catch (IllegalArgumentException ex) {
 			System.out.println("Unable to initialize enron filepath cache. The program will now exit.");
 			System.exit(1);
 		}
+	
 		
-		/*
+		BufferedReader contents;
+		
+		System.out.println("Processing Enron Dataset and generating " + numKVPairs + " data request pairs.");
+		System.out.println("Line keyword for keys: " + LINE_KEYWORD_KEY);
+		System.out.println("Line keyword for Values: " + LINE_KEYWORD_VALUE);
+		System.out.print("Please wait...  ");
+		// Iterate over enron file paths
 		for (int i = 0; i < enronFiles.size(); i++) {
-			System.out.println(i + ": " + enronFiles.get(i));
-		}*/
-		
-		/*
-		BufferedReader input;
-		try {
-			
-			input = new BufferedReader (new FileReader(ENRON_DATA));
-			
 			try {
-				String line = null;
-				String valKey = "";
-				String valValue = "";
+				if (kvMap.size() >= numKVPairs)
+					break; // If maximum number of KV Pairs in set, stop processing enron data here.
 				
-				while ((line = input.readLine()) != null) {
-					if (line.startsWith(LINE_KEYWORD_KEY) && valKey.equals("")) {
-						valKey = line.substring(LINE_KEYWORD_KEY.length());
-					} else if (line.startsWith(LINE_KEYWORD_VALUE) && valValue.equals("")) {
-						valValue = line.substring(LINE_KEYWORD_VALUE.length());
+				// Obtain enron file contents for current file in set
+				File enronFile = new File(enronFiles.get(i));
+				contents = new BufferedReader (new FileReader(enronFile));
+				
+				try { // read the file and try to obtain the specified key->value data.
+					String line = null;
+					String valKey = "";
+					String valValue = "";
+					
+					while ((line = contents.readLine()) != null) {
+						if (line.startsWith(LINE_KEYWORD_KEY) && valKey.equals("")) {
+							valKey = line.substring(LINE_KEYWORD_KEY.length());
+						} else if (line.startsWith(LINE_KEYWORD_VALUE) && valValue.equals("")) {
+							valValue = line.substring(LINE_KEYWORD_VALUE.length());
+						}
+						
+						if (!valKey.equals("") && !valValue.equals(""))
+							break; // If we found both key and value, stop reading lines from the file.
 					}
 					
-					if (!valKey.equals("") && !valValue.equals(""))
-						break;
-				}
-				
-				if (!valKey.equals("") && !valValue.equals("")) {
-					if (!kvMap.containsKey(valKey)) {
-						kvMap.put(valKey, valValue);
+					// If we obtained Key-Value data from the file, add it to the KVMap
+					if (!valKey.equals("") && !valValue.equals("")) {
+						if (!kvMap.containsKey(valKey)) {
+							kvMap.put(valKey, valValue);
+						}
 					}
+				} finally {
+					contents.close();
 				}
-			} finally {
-				input.close();
+			} catch (IOException ex) {
+				System.out.println("IOException occured while trying to read from enron file: " + enronFiles.get(i));
 			}
-		} catch (IOException ex) {
-			System.out.println("IOException occured while trying to initialize enron dataset. (outer)");
 		}
 		
+		/* DEBUG
+		for (Entry<String, String> entry : kvMap.entrySet()) {
+			System.out.println("key: " + entry.getKey() + "\nvalue: " + entry.getValue());
+		}
 		*/
+		
+		System.out.println("Finished Processing Enron Dataset.\nGenerated KV-Request Pairs: " + kvMap.size());
 	}
 	
 	public void start() {
@@ -170,8 +193,9 @@ public class Evaluator {
 			System.exit(1);
 		}
 		
-		Evaluator eval = new Evaluator(args[0]);
+		// Create new Evaluator, first argument is the path to the maildir of enron data
+		// second argument is the number of dataPairs read from the dataset.
+		Evaluator eval = new Evaluator(args[0], 20000);
 		eval.initEnron();
-		
 	}
 }
