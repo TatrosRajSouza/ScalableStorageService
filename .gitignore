@@ -9,3 +9,4 @@ SERVER_MANIFEST.MF
 ms3-client.jar
 ms3-ecs.jar
 ms3-server.jar
+enronFiles.cache
