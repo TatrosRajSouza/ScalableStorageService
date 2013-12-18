@@ -420,7 +420,8 @@ public class ECS {
 	}
 
 	private void sendSSHCall(String address, int port) {
-		String[] args = {"./script.sh", address, Integer.toString(port)};
+		String currentDirectory = System.getProperty("user.dir");
+		String[] args = {"./script.sh", address, currentDirectory, Integer.toString(port)};
 
 		Runtime run = Runtime.getRuntime();
 		try {

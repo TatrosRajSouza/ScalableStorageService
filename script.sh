@@ -1,1 +1,1 @@
-ssh -n $1 nohup java -jar /home/claynon/git/ScalableStorageService/ms3-server.jar $2 &
+ssh -n $1 nohup java -jar $2/ms3-server.jar $3 &
