@@ -130,8 +130,13 @@ public class ConsistentHashing {
 	public void update(ArrayList<ServerData> servers) {
 		hashCircle.clear();
 
-		for (ServerData server : servers) {
-			addServer(server.getAddress(), server.getPort());
+		if (servers != null && servers.size() > 0)
+		{
+			for (ServerData server : servers) {
+				addServer(server.getAddress(), server.getPort());
+			}
+		} else {
+			logger.warn("The meta-data that was supplied to the consistent hash update has no servers, resulting in an empty HashCircle!");
 		}
 	}
 
