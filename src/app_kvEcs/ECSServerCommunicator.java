@@ -35,7 +35,7 @@ public class ECSServerCommunicator extends ServerData {
 			ECS.logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
 		} catch (IOException e) {
 			try {
-				Thread.sleep(200);
+				Thread.sleep(100);
 			} catch (InterruptedException e1) {
 				ECS.logger.warn("Warn! Thread interrupted by other thread.");
 			}
