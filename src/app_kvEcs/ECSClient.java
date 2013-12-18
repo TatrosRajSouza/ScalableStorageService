@@ -13,11 +13,11 @@ public class ECSClient {
 			
 			try {
 				ecs.defineServerRepository("./" + fileName);
-				/*ECSShell shell = new ECSShell();
-				shell.display();*/
-				ecs.initService(1);
+				ECSShell shell = new ECSShell();
+				shell.display();
+				/*ecs.initService(1);
 				ecs.start();
-				ecs.addNode();
+				ecs.addNode();*/
 			} catch (NumberFormatException e) {
 				System.out.println("Error! Configuration file does not follow the specification.");
 			} catch (IllegalArgumentException e) {

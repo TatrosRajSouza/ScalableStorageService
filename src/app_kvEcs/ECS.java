@@ -284,7 +284,7 @@ public class ECS {
 		}
 		logger.info("Initializing server node " + node.getAddress() + ":" + node.getPort());
 
-		//sendSSHCall(node.getAddress(), node.getPort());
+		sendSSHCall(node.getAddress(), node.getPort());
 		hashing.addServer(node.getAddress(), node.getPort());
 		try {
 			node.connect();
