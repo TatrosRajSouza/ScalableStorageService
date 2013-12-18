@@ -31,7 +31,7 @@ public class ConsistentHashing {
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
-		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
+		hashCircle =  new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
 
 		try {
@@ -47,7 +47,7 @@ public class ConsistentHashing {
 	 * @param servers An ArrayList of ServerData that should be hashed to the circle
 	 */
 	public ConsistentHashing(ArrayList<ServerData> servers) {
-		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
+		hashCircle =  new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
 
 		try {
@@ -108,7 +108,7 @@ public class ConsistentHashing {
 		String name = address + ":" + port;
 		hashCircle.put(hashServer(address, port), name);
 	}
-	
+
 	/**
 	 * Remove a new server, hashing it to the circle
 	 * @param address IP address of the server
@@ -116,10 +116,10 @@ public class ConsistentHashing {
 	 */
 	public void removeServer(String address, int port) {
 		String name = address + ":" + port;
-
 		for (BigInteger hash : hashCircle.keySet()) {
 			if (hashCircle.get(hash).equals(name)) {
 				hashCircle.remove(hash);
+				break;
 			}
 		}
 	}
@@ -159,7 +159,7 @@ public class ConsistentHashing {
 		// logger.debug("Key " + key + " hashed to " + keyHash);
 
 		if (!hashCircle.containsKey(keyHash)) { // hash of key not in circle? -> Find next larger server hash in clock-wise direction
-			SortedMap<BigInteger, String> tailMap = hashCircle.tailMap(keyHash); // Obtain the tailMap for the key hash
+			SortedMap<BigInteger, String> tailMap = Collections.synchronizedSortedMap(hashCircle.tailMap(keyHash)); // Obtain the tailMap for the key hash
 
 			if (tailMap.isEmpty()) { // TailMap was empty, hence Wrap-around and return the first server in the map
 				try {

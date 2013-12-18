@@ -83,7 +83,13 @@ public class ECS {
 	public void addNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = initNode();
+		if (node == null) {
+			return;
+		}
 		ECSServerCommunicator nextNode = getNextNode(node);
+		if (nextNode == null) {
+			return;
+		}
 		ECSServerCommunicator auxNode;
 
 
@@ -134,7 +140,13 @@ public class ECS {
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
+		if (node == null) {
+			return;
+		}
 		ECSServerCommunicator nextNode = getNextNode(node);
+		if (nextNode == null) {
+			return;
+		}
 		BigInteger startIndex = getStartIndex(node);
 		BigInteger endIndex = getEndIndex(node);
 
