@@ -188,6 +188,8 @@ public class Evaluator {
 	}
 	
 	public static void main(String[] args) {
+		
+		/*
 		if (args.length != 1) {
 			System.out.println("Usage: java perf_eval.Evaluator <PATH_TO_ENRON_DATA>\nThe path must lead to the directory with the names (default: C:\\enron\\maildir\\)");
 			System.exit(1);
@@ -197,5 +199,6 @@ public class Evaluator {
 		// second argument is the number of dataPairs read from the dataset.
 		Evaluator eval = new Evaluator(args[0], 20000);
 		eval.initEnron();
+		*/
 	}
 }
