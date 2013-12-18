@@ -59,6 +59,8 @@ public class KVStore implements KVCommInterface {
 	@Override
 	public void connect() throws UnknownHostException, IOException, InvalidMessageException, ConnectException {
 		kvComm = new KVCommunication(address, port);
+		KVQuery kvQueryConnectMessage = new KVQuery(KVMessage.StatusType.CONNECT);
+		kvComm.sendMessage(kvQueryConnectMessage.toBytes());
 		byte[] connectResponse = kvComm.receiveMessage();
 		KVQuery kvQueryMessage = new KVQuery(connectResponse);
 		

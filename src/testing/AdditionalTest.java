@@ -2,13 +2,20 @@ package testing;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import app_kvEcs.ECSServerCommunicator;
+import client.KVCommunication;
 import client.KVStore;
+import common.messages.ECSMessage;
+import common.messages.ECSStatusType;
+import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
+import common.messages.ServerData;
 import junit.framework.TestCase;
 
 /*        To the person that is going to grade this assignment.
@@ -24,6 +31,20 @@ public class AdditionalTest extends TestCase {
 
         @Test
         public void testMultiplePut() throws UnknownHostException, IOException, InvalidMessageException {
+        	ServerData server1Data = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
+			//ServerData server2Data = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
+			ArrayList<ServerData> serverListServer = new ArrayList<ServerData>();		
+			serverListServer.add(server1Data);
+			//serverListServer.add(server2Data);
+			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
+			ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
+			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
+			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+			comm.sendMessage(initMessage.toBytes());
+			
+			ECSMessage message = new ECSMessage(ECSStatusType.START);
+			comm.sendMessage(message.toBytes());
+			
                 KVStore kvClient1 = new KVStore("localhost", 50000);
                 kvClient1.connect();
                 KVStore kvClient2 = new KVStore("localhost", 50000);
@@ -45,8 +66,21 @@ public class AdditionalTest extends TestCase {
                 assertTrue(ex == null );
         }
 
-        @Test
+       @Test
         public void testMultipleGet() throws UnknownHostException, IOException, InvalidMessageException {
+    	   ServerData server1Data = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
+			//ServerData server2Data = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
+			ArrayList<ServerData> serverListServer = new ArrayList<ServerData>();		
+			serverListServer.add(server1Data);
+			//serverListServer.add(server2Data);
+			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
+			//ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
+			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
+			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+			comm.sendMessage(initMessage.toBytes());
+			
+			ECSMessage message = new ECSMessage(ECSStatusType.START);
+			comm.sendMessage(message.toBytes());
                 KVStore kvClient1 = new KVStore("localhost", 50000);
                 kvClient1.connect();
                 KVStore kvClient2 = new KVStore("localhost", 50000);
@@ -73,6 +107,19 @@ public class AdditionalTest extends TestCase {
         }
         @Test
         public void testMultipleUpdate() throws UnknownHostException, IOException, InvalidMessageException {
+        	ServerData server1Data = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
+			//ServerData server2Data = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
+			ArrayList<ServerData> serverListServer = new ArrayList<ServerData>();		
+			serverListServer.add(server1Data);
+			//serverListServer.add(server2Data);
+			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
+			//ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
+			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
+		KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+			comm.sendMessage(initMessage.toBytes());
+			
+			ECSMessage message = new ECSMessage(ECSStatusType.START);
+			comm.sendMessage(message.toBytes());
                 KVStore kvClient1 = new KVStore("localhost", 50000);
                 kvClient1.connect();
                 KVStore kvClient2 = new KVStore("localhost", 50000);

@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-
+/**
+ * The KVData stores data which is sent by clients in a key -> value fashion . 
+ * @author Udhayaraj Sivalingam
+ */
 
 public class KVData {
 	public ConcurrentHashMap<BigInteger, String> dataStore = new ConcurrentHashMap<BigInteger, String>();

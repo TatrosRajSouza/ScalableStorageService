@@ -13,7 +13,11 @@ import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.ServerData;
-
+/**
+ * Represents a connection end point for a particular ECS that is 
+ * connected to the server. It provides server admin interface like start,stop,setwritelock etc
+ * @author Udhayaraj Sivalingam 
+ */
 public class EcsConnection {
 	private static Logger logger = Logger.getRootLogger();
 	private String move;
@@ -26,27 +30,29 @@ public class EcsConnection {
 	}
 	public String process() throws InvalidMessageException {
 		// TODO Auto-generated method stub
-		if(ecsMessage.getCommand() == ECSStatusType.INIT)
+		if(ecsMessage.getCommand().equals(ECSStatusType.INIT))
 			initKVServer(ecsMessage.getMetadata());
-		else if(ecsMessage.getCommand() == ECSStatusType.START)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.START))
 			start();
-		else if(ecsMessage.getCommand() == ECSStatusType.STOP)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.STOP))
 			stopServer();
-		else if(ecsMessage.getCommand() == ECSStatusType.SHUTDOWN)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.SHUTDOWN))
 			shutDown();
-		else if(ecsMessage.getCommand() == ECSStatusType.LOCK_WRITE)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.LOCK_WRITE))
 			lockWrite();
-		else if(ecsMessage.getCommand() == ECSStatusType.UNLOCK_WRITE)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.UNLOCK_WRITE))
 			UnLockWrite();
-		else if(ecsMessage.getCommand() == ECSStatusType.UPDATE)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.UPDATE))
 			update(ecsMessage.getMetadata().toString());
-		else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA_INTERNAL)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
 		{
+			move = "error";
 			move = moveData(ecsMessage.getMovingData());
 		}
-		else if(ecsMessage.getCommand() == ECSStatusType.MOVE_DATA)
+		else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA))
 		{
 			try {
+				move = "error";
 				move = moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
 			} catch (UnknownHostException e) {
 				logger.error("Error while updation"+e.getMessage());

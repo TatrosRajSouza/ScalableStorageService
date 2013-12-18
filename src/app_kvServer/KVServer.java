@@ -21,11 +21,11 @@ import org.apache.log4j.Logger;
 import common.messages.InfrastructureMetadata;
 import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
-
+/**
+ * The KVServer program which will handle multiple client request . 
+ * @author Udhayaraj Sivalingam
+ */
 public class KVServer extends Thread {
-
-
-
 	private final  static boolean DEBUG = false;
 	private  Logger logger = Logger.getRootLogger();
 	private  boolean serveClientRequest = true;
@@ -38,8 +38,8 @@ public class KVServer extends Thread {
 	private  boolean running;
 	private  InfrastructureMetadata metaData;
 	private ConsistentHashing consistentHashing;
-	
-	
+
+
 
 	public Logger getLogger() {
 		return logger;
@@ -91,7 +91,7 @@ public class KVServer extends Thread {
 	}
 
 
-	
+
 	public int getPort() {
 		return port;
 	}
@@ -131,15 +131,15 @@ public class KVServer extends Thread {
 		this.metaData = metaData;
 		if(consistentHashing == null)
 		{
-			
+
 			consistentHashing = new ConsistentHashing(metaData.getServers());
-			
+
 		}
 		else
 		{
 			consistentHashing.update(metaData.getServers());
 		}
-	
+
 	}
 
 
@@ -163,20 +163,9 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
-		
-		/*
-		try {
-			String ip = InetAddress.getLocalHost().toString().split("/")[1];
-			serverData = new ServerData(ip+ ":" + port, ip, port);
-			
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block1
-			e.printStackTrace();
-		}
-		*/
 	}
 
-	
+
 	/**
 	 * Initializes and starts the server. 
 	 * Loops until the the server should be closed.
@@ -191,15 +180,15 @@ public class KVServer extends Thread {
 					Socket client = serverSocket.accept();                
 					ClientConnection connection = 
 							new ClientConnection(client,this);
-					
-					
+
+
 					// store the clients for further accessing
 					String ip = client.getInetAddress().getHostName();
 					serverData = new ServerData(ip+ ":" + port, ip, port);
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());
-					
+
 					new Thread(connection).start();
 				} catch (IOException e) {
 					logger.error("Error! " +
@@ -228,7 +217,7 @@ public class KVServer extends Thread {
 		logger.info("Initialize server ...");
 		try {
 			serverSocket = new ServerSocket(port);
-			
+
 			logger.info("Server listening on port: " 
 					+ serverSocket.getLocalPort());    
 			return true;
@@ -282,7 +271,7 @@ public class KVServer extends Thread {
 				new LogSetup("logs/server.log", Level.ALL);
 				System.setProperty("file.encoding", "US-ASCII");
 				int port = 50000;
-				
+
 				new KVServer(port).start();
 
 			} catch (IOException e) {

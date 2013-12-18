@@ -25,7 +25,7 @@ import consistent_hashing.EmptyServerDataException;
  * Represents a connection end point for a particular client that is 
  * connected to the server. This class is responsible for message reception 
  * and sending. 
- * The class also implements the get,put functionality. 
+ * @author Udhayaraj Sivalingam 
  */
 public class ClientConnection implements Runnable {
 	private KVServer serverInstance;
@@ -66,20 +66,9 @@ public class ClientConnection implements Runnable {
 			input = clientSocket.getInputStream();
 			String connectSuccess = "Connection to MSRG Echo server established: " 
 					+ clientSocket.getLocalAddress() + " / "
-					+ clientSocket.getLocalPort();
-			//need to be edited
-			KVQuery kvQueryConnect;
-			try {
-				kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
-				sendMessage(kvQueryConnect.toBytes());
-			} catch (InvalidMessageException e) {
-				// TODO Auto-generated catch block
-				logger.error("Invalid connect message");
-			}
+					+ clientSocket.getLocalPort();		
 			while(isOpen) { // until connection open
 				try { //connection lost
-
-
 					byte[] latestMsg = receiveMessage();
 					KVQuery kvQueryCommand;
 					try { //   not KVMessage
@@ -89,17 +78,13 @@ public class ClientConnection implements Runnable {
 						logger.debug("Received Command is: " + command);
 						if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
 						{
-							if(command.equals("GET"))	{
+							if(command.equals("GET"))	{ //get block
+								
 								key = kvQueryCommand.getKey();
+								logger.info("SERVER: Get operation Key:" + key);
 								BigInteger hashedKey = checkRange(key);
 								if(hashedKey != null)
 								{
-									//future : check in range or not
-									//System.out.println("trying to get key");
-
-									//System.out.println("Key is: " + kvQueryCommand.getKey());
-
-
 									logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());
 									for (BigInteger k : this.serverInstance.getKvdata().dataStore.keySet())
 									{
@@ -123,14 +108,15 @@ public class ClientConnection implements Runnable {
 								else
 								{
 									// send not responsible message with metadata
-									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,this.serverInstance.getMetaData().toString());
+									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
 									sendMessage(kvQueryNotResponsible.toBytes());
 								}
 
-							}
-							else if(command.equals("PUT"))
+							}// get block
+							else if(command.equals("PUT")) //put block
 							{
 								key = kvQueryCommand.getKey();
+								
 								BigInteger hashedKey = checkRange(key);
 								if(hashedKey != null)
 								{
@@ -139,7 +125,7 @@ public class ClientConnection implements Runnable {
 									{
 
 										value = kvQueryCommand.getValue();
-
+										logger.info("SERVER: Put operation Key: " + key + " and Value: " + value);
 										returnValue = this.serverInstance.getKvdata().put(hashedKey,value);
 										if(!value.equals("null") )
 										{
@@ -188,22 +174,41 @@ public class ClientConnection implements Runnable {
 									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
 									sendMessage(kvQueryNotResponsible.toBytes());
 								}
-							}
+							}//put block
 
-							else if(command.equals("DISCONNECT"))
+							else if(command.equals("DISCONNECT")) //disconnect block
 							{
 								KVQuery kvQueryDisconnect;
 								try {
 									kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
 									sendMessage(kvQueryDisconnect.toBytes());
+									try {
+										if (clientSocket != null) {
+											input.close();
+											output.close();
+											clientSocket.close();
+										}
+									} catch (IOException ioe) {
+										logger.error("Error! Unable to tear down connection!", ioe);
+									}
 								} catch (InvalidMessageException e) {
 									// TODO Auto-generated catch block
 									logger.error("Error in sending disconnect message");
 								}
-							}
+							} //disconnect block
+							else if(command.equals("CONNECT")) // connect block only for clients not for ECS
+							{
+								sendConnectSuccess(connectSuccess);
+								
+								}// connect block only for clients not for ECS
 
 						} // ECS permission to serve clients?
-						else
+						else if(command.equals("CONNECT")) // connect block only for clients not for ECS
+						{
+							sendConnectSuccess(connectSuccess);
+
+						} // connect block only for clients not for ECS
+						else // server stopped block
 						{
 							KVQuery kvQueryNoService;
 							try {
@@ -213,40 +218,44 @@ public class ClientConnection implements Runnable {
 								// TODO Auto-generated catch block
 								logger.error("Error in invalid message format:server side:");
 							}
-						}
+						} //server stopped block
 
 					}//   not KVMessage
-					catch (InvalidMessageException e) {
+					catch (InvalidMessageException e) {//ECS block
 						try{
 							EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
-							String moveSuccess = ecsConnection.process();
-								if(moveSuccess.equals("movecompleted"))
-								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
-									sendMessage(ecsMoveSuccess.toBytes());
-								}
-								else if(moveSuccess.equals("moveinternalcompleted"))
-								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
-									sendMessage(ecsMoveSuccess.toBytes());
-								}
-								else
-								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
-									sendMessage(ecsMoveSuccess.toBytes());
-								}
+							String ecsMessage = ecsConnection.process();
+							if(ecsMessage != null)
+							{
+							if(ecsMessage.equals("movecompleted"))
+							{
+								ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+								sendMessage(ecsMoveSuccess.toBytes());
+							}
+							else if(ecsMessage.equals("moveinternalcompleted"))
+							{
+								ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
+								sendMessage(ecsMoveSuccess.toBytes());
+							}
+							else
+							{
+								ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
+								sendMessage(ecsMoveSuccess.toBytes());
+							}
+							}
 							
-							
+
+
 						}
 						catch(InvalidMessageException eEcs)
 						{
 							logger.error("Invalid message received from ECS");
-							
-							
-							} 
-						}//not KVmessage
 
-					}//connection lost
+
+						} 
+					}//ECS block
+
+				}//connection lost
 				catch (IOException ioe) {
 					logger.error("Error! Connection lost!");
 					isOpen = false;
@@ -268,42 +277,55 @@ public class ClientConnection implements Runnable {
 			}
 		}
 	}
+	
+	private void sendConnectSuccess(String connectSuccess) {
+		// TODO Auto-generated method stub
+		KVQuery kvQueryConnect;
+		try {
+			kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
+			sendMessage(kvQueryConnect.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			logger.error("Invalid connect message");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error("Error in sending connect success" + e.getMessage());;
+		}
+	}
+
+	/***
+	 * 
+	 * @param key
+	 * @return hashedkey
+	 * checks whether this server is responsible for incoming key
+	 */
 	private BigInteger checkRange(String key) {
 		// TODO Auto-generated method stub
 		BigInteger hashedKey = null;
-	try {
-	
-		ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
-		ServerData serverDataServer = this.serverInstance.getServerData();
-		
-		if (serverDataHash != null)
-		{
-			if (serverDataServer != null) {
-				System.out.println("ServerDataServer: " + serverDataServer.getAddress() + ":" + serverDataServer.getPort());
-				System.out.println("ServerDataHash: " + serverDataHash.getAddress() + ":" + serverDataHash.getPort());
-				
-				if(serverDataHash.equals(serverDataServer))
-				{
-					System.out.println("Equals returned true.");
-					hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
-				} else {
-					System.out.println("Equals returned false.");
-				}	
-			} else {
-				System.out.println("ServerDataServer is NULL");
-			}
-		} else {
-			System.out.println("ServerDataHash is NULL");
-		}	
-	} catch (IllegalArgumentException e) {
-		// TODO Auto-generated catch block
-		logger.error("Illegal key" + e.getMessage());
-	} catch (EmptyServerDataException e) {
-		// TODO Auto-generated catch block
-		logger.error("no servers in the circle" + e.getMessage());
+		try {
 
-	}
-	return hashedKey;
+			ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
+			ServerData serverDataServer = this.serverInstance.getServerData();
+
+			if (serverDataHash != null && serverDataServer != null)
+			{
+				
+					if(serverDataHash.equals(serverDataServer))
+					{
+						
+						hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
+					} 
+				
+			}
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			logger.error("Illegal key" + e.getMessage());
+		} catch (EmptyServerDataException e) {
+			// TODO Auto-generated catch block
+			logger.error("no servers in the circle" + e.getMessage());
+
+		}
+		return hashedKey;
 	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {
@@ -325,10 +347,11 @@ public class ClientConnection implements Runnable {
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		output.write(msgBytes, 0, msgBytes.length);
 		output.flush();
+		/*
 		logger.info("SEND \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
-				+ new String(msgBytes) +"'");
+				+ new String(msgBytes) +"'");*/
 	}
 
 
@@ -391,7 +414,7 @@ public class ClientConnection implements Runnable {
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
 				+ new String(msgBytes) + "'");
-				*/
+		 */
 		return msgBytes;
 	}
 
