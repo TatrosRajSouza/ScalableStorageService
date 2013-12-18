@@ -10,14 +10,10 @@ public class ECSClient {
 
 		if (args.length == 1) {
 			String fileName = args[0];
-			
 			try {
 				ecs.defineServerRepository("./" + fileName);
-				/*ECSShell shell = new ECSShell();
-				shell.display();*/
-				ecs.initService(1);
-				ecs.start();
-				ecs.addNode();
+				ECSShell shell = new ECSShell();
+				shell.display();
 			} catch (NumberFormatException e) {
 				System.out.println("Error! Configuration file does not follow the specification.");
 			} catch (IllegalArgumentException e) {

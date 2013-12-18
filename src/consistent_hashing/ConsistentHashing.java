@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -30,7 +31,7 @@ public class ConsistentHashing {
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
-		hashCircle =  new TreeMap<BigInteger, String>();
+		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());//new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
 
 		try {

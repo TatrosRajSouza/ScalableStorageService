@@ -22,7 +22,7 @@ public class ECSTests extends TestCase {
 		} catch (Exception e) {
 			ex = e;
 		}
-		
+
 		for (ServerData server : ecs.getServerRepository().getServers()) {
 			if (server.getName().equals("node1")
 					&& server.getAddress().equals("127.0.0.1")
@@ -74,7 +74,8 @@ public class ECSTests extends TestCase {
 		} catch (Exception e) {
 			ex = e;
 		}
-		
+
+		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
 	}
@@ -105,6 +106,7 @@ public class ECSTests extends TestCase {
 		} catch (Exception e) {
 			ex = e;
 		}
+		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
 	}
@@ -136,8 +138,9 @@ public class ECSTests extends TestCase {
 			ex = e;
 		}
 
+		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
 	}
-	
+
 }
