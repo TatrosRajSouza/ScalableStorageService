@@ -22,6 +22,7 @@ public class Evaluator {
 	public static final String LINE_KEYWORD_KEY = "Date: ";
 	public static final String LINE_KEYWORD_VALUE = "Subject: ";
 	private String enronPath = "";
+	private String enronFileCachePath = "enronFiles.cache";
 	
 	private ArrayList<KVClient> clients;	// list of clients
 	private HashMap<String, String> kvMap;	// key value map with data from enron dataset
@@ -39,29 +40,33 @@ public class Evaluator {
 		}
 	}
 	
-	private void getEnronFiles(String enronPath) {
-		File fileCache = new File("enronFiles.cache");
+	/**
+	 * Build and read a cache of filepaths of enron dataset.
+	 * @param enronPath path to the maildir directory of the enron dataset
+	 * @throws IllegalArgumentException Thrown if the path is invalid or the cache file cannot be written/accessed. 
+	 */
+	private void getEnronFiles(String enronPath) throws IllegalArgumentException {
+		File fileCache = new File(enronFileCachePath);
 		
-	    if (fileCache == null) {
-	        throw new IllegalArgumentException("File should not be null.");
-	    }
-	    
 	    if (fileCache.exists() && !fileCache.isFile()) {
-	        throw new IllegalArgumentException("Should not be a directory: " + fileCache);
+	        throw new IllegalArgumentException("The path enronFiles.cache is a directory. Please delete it and retry.");
 	    }
-	    
-
 	    
 		if (!fileCache.exists()) { // build the enron file cache if it doesn't exist
+			System.out.println("The Enron filepath cache was not found at " + enronFileCachePath);
+			
 			try {
 				fileCache.createNewFile();
 			    if (!fileCache.canWrite()) {
-			        throw new IllegalArgumentException("File cannot be written: " + fileCache);
+			        throw new IllegalArgumentException("Unable to create filepath cache. File cannot be written: " + enronFileCachePath);
 			    }
+			    
+			    System.out.println("Obtaining Enron filepath data from provided path: " + enronPath + ". Please wait...");
 			    
 				File baseDir = new File(enronPath);
 				Collection<File> enronFileList = FileUtils.listFiles(baseDir, null, true);
 			
+				System.out.println("Building new filepath cache. Please Wait, this can take a while...");
 				Writer output = new BufferedWriter(new FileWriter(fileCache));
 			
 				try {
@@ -72,9 +77,9 @@ public class Evaluator {
 				} finally {
 				      output.close();
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ex) {
+				System.out.println("IOException while trying to create filepath cache.\nEnronPath: " + enronPath + "\nFileCachePath: " + enronFileCachePath + "\n" + ex.getMessage());
+				ex.printStackTrace();
 			}
 		}
 		
@@ -83,6 +88,7 @@ public class Evaluator {
 		try {
 			BufferedReader enronCachedPaths = new BufferedReader(new FileReader(fileCache));
 		
+			System.out.println("Reading filepaths from file cache. Please Wait, this can take a while...");
 			try {
 				String line = null;
 				
@@ -92,20 +98,30 @@ public class Evaluator {
 						i++;
 				}
 				
+				System.out.println("Enron filepaths initialized. There are " + enronFiles.size() + " files in the set.");
+				
 			} finally {
 				enronCachedPaths.close();
 			}
 		} catch (IOException ex) {
-			
+			System.out.println("IOException while trying to read filepath cache.\nEnronPath: " + enronPath + "\nFileCachePath: " + enronFileCachePath + "\n" + ex.getMessage());
+			ex.printStackTrace();
 		}
 	}
 	
 	public void initEnron() {
-		getEnronFiles(enronPath);
 		
+		try {
+			getEnronFiles(enronPath);
+		} catch (IllegalArgumentException ex) {
+			System.out.println("Unable to initialize enron filepath cache. The program will now exit.");
+			System.exit(1);
+		}
+		
+		/*
 		for (int i = 0; i < enronFiles.size(); i++) {
 			System.out.println(i + ": " + enronFiles.get(i));
-		}
+		}*/
 		
 		/*
 		BufferedReader input;
