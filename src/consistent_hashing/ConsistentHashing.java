@@ -31,7 +31,7 @@ public class ConsistentHashing {
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
-		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());//new TreeMap<BigInteger, String>();
+		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
 		logger = Logger.getRootLogger();
 
 		try {
@@ -47,7 +47,7 @@ public class ConsistentHashing {
 	 * @param servers An ArrayList of ServerData that should be hashed to the circle
 	 */
 	public ConsistentHashing(ArrayList<ServerData> servers) {
-		hashCircle =  new TreeMap<BigInteger, String>();
+		hashCircle =  Collections.synchronizedSortedMap(new TreeMap<BigInteger, String>());
 		logger = Logger.getRootLogger();
 
 		try {
