@@ -176,7 +176,7 @@ public class KVServer extends Thread {
 					// store the clients for further accessing
 					String ip = client.getInetAddress().getHostAddress();
 					serverData = new ServerData(ip+ ":" + port, ip, port);
-					Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
+					Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getLocalPort());
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());

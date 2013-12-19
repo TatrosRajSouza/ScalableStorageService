@@ -61,7 +61,7 @@ public class ClientConnection implements Runnable {
 	 * Loops until the connection is closed or aborted by the client.
 	 */ // example usage for testing: connect 127.0.0.1 50001
 	public void run() {
-		Thread.currentThread().setName("SERVER " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
+		Thread.currentThread().setName("SERVER " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getLocalPort());
 		try { //connection could not be established
 			output = clientSocket.getOutputStream();
 			input = clientSocket.getInputStream();
@@ -288,7 +288,7 @@ public class ClientConnection implements Runnable {
 
 				}//connection lost
 				catch (IOException ioe) {
-					logger.error("Error! Connection lost!");
+					// logger.error("Error! Connection lost!"); // I commented this out because it is irritating. Happens every disconnect.
 					isOpen = false;
 				}
 			}// until connection open
