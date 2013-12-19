@@ -27,8 +27,8 @@ import consistent_hashing.ConsistentHashing;
  */
 public class KVServer extends Thread {
 	private final  static boolean DEBUG = false;
-	private  Logger logger = Logger.getRootLogger();
-	private  boolean serveClientRequest = true;
+	private  static Logger logger = Logger.getRootLogger();
+	private  boolean serveClientRequest = false;
 	private  boolean isWriteLocked = false;
 	private  KVData kvdata = new KVData();
 	private  List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
@@ -41,14 +41,6 @@ public class KVServer extends Thread {
 
 
 
-	public Logger getLogger() {
-		return logger;
-	}
-
-
-	public void setLogger(Logger logger) {
-		this.logger = logger;
-	}
 
 
 	public boolean isServeClientRequest() {
@@ -183,7 +175,7 @@ public class KVServer extends Thread {
 
 
 					// store the clients for further accessing
-					String ip = client.getInetAddress().getHostName();
+					String ip = client.getInetAddress().getHostAddress();
 					serverData = new ServerData(ip+ ":" + port, ip, port);
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
@@ -249,8 +241,9 @@ public class KVServer extends Thread {
 	public static void main(String[] args) {
 		if (!DEBUG) {
 			try {
-				new LogSetup("logs/server.log", Level.ALL);
+				
 				System.setProperty("file.encoding", "US-ASCII");
+				new LogSetup("logs/server.log", Level.ALL);
 				if(args.length != 1) {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
