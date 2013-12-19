@@ -212,7 +212,7 @@ public class ClientConnection implements Runnable {
 						{
 							KVQuery kvQueryNoService;
 							try {
-								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED);
+								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,key,value);
 								sendMessage(kvQueryNoService.toBytes());
 							} catch (InvalidMessageException e1) {
 								// TODO Auto-generated catch block

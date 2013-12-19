@@ -26,9 +26,9 @@ import consistent_hashing.ConsistentHashing;
  * @author Udhayaraj Sivalingam
  */
 public class KVServer extends Thread {
-	private final  static boolean DEBUG = true;
+	private final  static boolean DEBUG = false;
 	private  static Logger logger = Logger.getRootLogger();
-	private  boolean serveClientRequest = true;
+	private  boolean serveClientRequest = false;
 	private  boolean isWriteLocked = false;
 	private  KVData kvdata = new KVData();
 	private  List<HashMap<BigInteger,String>> movedDataList = new ArrayList<HashMap<BigInteger,String>>();
@@ -243,7 +243,7 @@ public class KVServer extends Thread {
 			try {
 				
 				System.setProperty("file.encoding", "US-ASCII");
-				new LogSetup("logs/client.log", Level.ALL);
+				new LogSetup("logs/server.log", Level.ALL);
 				if(args.length != 1) {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
