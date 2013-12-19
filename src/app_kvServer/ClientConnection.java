@@ -357,11 +357,13 @@ logger.info("key is: " + key + "value: " + value);
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		output.write(msgBytes, 0, msgBytes.length);
 		output.flush();
-		
+		if(this.serverInstance.isDEBUG())
+		{
 		logger.info("SEND \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
 				+ new String(msgBytes) +"'");
+		}
 	}
 
 
@@ -419,12 +421,13 @@ logger.info("key is: " + key + "value: " + value);
 
 		/* build final String */
 
-		
-		/*logger.info("RECEIVE \t<" 
+		if(this.serverInstance.isDEBUG())
+		{
+		logger.info("RECEIVE \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
 				+ new String(msgBytes) + "'");
-		*/
+		}
 		return msgBytes;
 	}
 
