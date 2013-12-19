@@ -171,7 +171,7 @@ public class KVServer extends Thread {
 	 * Loops until the the server should be closed.
 	 */
 	public void run() {
-
+		Thread.currentThread().setName("SERVER");
 		running = initializeServer();
 
 		if(serverSocket != null) {

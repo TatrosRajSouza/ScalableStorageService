@@ -25,8 +25,16 @@ public class KVClient {
 	private static Logger logger = Logger.getRootLogger();
 	private KVStore kvStore = null;
 	KVCommunication connection = null;
+	String name = "";
+		
+	public KVClient() { }
 	
-    /**
+	public KVClient(String name) {
+		this.name = name;
+    	Thread.currentThread().setName("CLIENT");
+	}
+	
+	/**
      * Main entry point for the KVClient application. 
      */
     public static void main(String[] args) {
@@ -70,7 +78,7 @@ public class KVClient {
      * @throws UnknownHostException When host address cannot be resolved
      */
 	public void connect(String address, int port) throws IOException, ConnectException, UnknownHostException, InvalidMessageException {
-		this.kvStore = new KVStore(address, port);
+		this.kvStore = new KVStore(address, port, this.name);
 		kvStore.connect();
 	}
 	
@@ -82,7 +90,7 @@ public class KVClient {
 		if (kvStore != null)
 			kvStore.disconnect();
 		else
-			throw new ConnectException("Not connected to a KVStore.");
+			throw new ConnectException(this.name + ": Not connected to a KVStore.");
 	}
 	
 	/**
@@ -96,7 +104,7 @@ public class KVClient {
 		if (kvStore != null)
 			return kvStore.put(key, value);
 		else
-			throw new ConnectException("Not connected to a KVStore.");
+			throw new ConnectException(this.name + ": Not connected to a KVStore.");
 	}
 	
 	/**
@@ -109,7 +117,7 @@ public class KVClient {
 		if (kvStore !=null)
 			return kvStore.get(key);
 		else
-			throw new ConnectException("Not connected to a KVStore.");
+			throw new ConnectException(this.name + ": Not connected to a KVStore.");
 		
 	}
 	
@@ -121,7 +129,7 @@ public class KVClient {
 		if (kvStore != null) {
 			return this.kvStore.getMetadata();
 		} else {
-			logger.error("Cannot obtain meta data from client.");
+			logger.error(this.name + ": Cannot obtain meta data from client.");
 			return null;
 		}
 	}
@@ -134,7 +142,7 @@ public class KVClient {
 		if (kvStore != null) {
 			return this.kvStore.getHashCircle();
 		} else {
-			logger.error("Cannot obtain hash-circle data from client.");
+			logger.error(this.name + ": Cannot obtain hash-circle data from client.");
 			return null;
 		}
 	}
@@ -145,5 +153,21 @@ public class KVClient {
 	 */
 	public SocketStatus getConnectionStatus() {
 		return this.kvStore.getConnectionStatus();
+	}
+	
+	/**
+	 * Optional: get the name of this client, empty if not set before
+	 * @return clients name
+	 */
+    public String getName() {
+		return name;
+	}
+
+    /**
+     * Optional: set the name of this client
+     * @param name clients name
+     */
+	public void setName(String name) {
+		this.name = name;
 	}
 }

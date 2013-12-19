@@ -69,8 +69,8 @@ public class MetadataTests extends TestCase {
 		/* Create new meta data from server list */
 		InfrastructureMetadata newMetaData = new InfrastructureMetadata(servers);
 		
-		/* Update initial metaData to this new version using the byte representation */
-		metaData.update(newMetaData.getBytes());
+		/* Update initial metaData to this new version using the String representation */
+		metaData.update(newMetaData.toString());
 		
 		assertTrue(metaData.toString().equals(newMetaData.toString()));
 	}
