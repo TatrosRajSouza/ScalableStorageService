@@ -211,7 +211,7 @@ public class KVStore implements KVCommInterface {
 				byte[] putResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(putResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(), kvQueryMessage.getValue());
-				System.out.println(kvResult.getStatus());
+				//System.out.println(kvResult.getStatus());
 				if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
 					if (kvResult.key.equals("metaData")) {
@@ -230,10 +230,11 @@ public class KVStore implements KVCommInterface {
 							return null;
 						}
 						/* Retry PUT */
-						this.put(key, value);
+						return this.put(key, value);
 					}
 				}
 				
+				// System.out.println(kvResult.getStatus());
 				// PUT_SUCCESS or PUT_UPDATE
 				return kvResult;
 			} catch (InvalidMessageException ex) {

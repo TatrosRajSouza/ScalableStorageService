@@ -287,7 +287,7 @@ public class Evaluator {
 		KVMessage result = client.put(nextEntry.getKey(), nextEntry.getValue());
 		numSent++;
 		
-		System.out.println(result.getStatus());
+		// System.out.println(result.getStatus());
 		if (result.getStatus().equals(StatusType.PUT_SUCCESS)) {
 			numSuccess++;
 		} else { 
