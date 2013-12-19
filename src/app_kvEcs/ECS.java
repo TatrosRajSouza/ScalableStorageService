@@ -139,7 +139,7 @@ public class ECS {
 	 */
 	public void removeNode() {
 		ECSMessage message;
-		ECSServerCommunicator node = getRandomNode(storageService);
+		ECSServerCommunicator node = moveRandomNode(storageService, serverRepository);
 		if (node == null) {
 			return;
 		}
