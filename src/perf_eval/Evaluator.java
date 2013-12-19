@@ -281,6 +281,7 @@ public class Evaluator {
 		clientThreads = new ArrayList<Thread>();
 		
 		for (ClientWrapper client : clients) {
+			client.setRequestMap(requestMap.get(client));
 			Thread t = new Thread(client);
 			t.setName(client.getName() + " " + t.getName());
 			clientThreads.add(t);

@@ -77,7 +77,12 @@ public class ClientConnection implements Runnable {
 						String key=null,value=null,returnValue=null;
 						String command = kvQueryCommand.getStatus().toString();
 						
-							logger.debug("SERVER:Received Command is: " + command);
+						if (command != null && kvQueryCommand.getKey() != null && kvQueryCommand.getValue() != null)
+							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ", " + kvQueryCommand.getValue() + ">");
+						else if (command != null && kvQueryCommand.getKey() != null)
+							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ">");
+						else if (command != null)
+							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command);
 						
 						if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
 						{
@@ -145,7 +150,8 @@ public class ClientConnection implements Runnable {
 											{
 												KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
 												sendMessage(kvQueryPut.toBytes());
-												logger.debug("SERVER:put success");
+												logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+														+ kvQueryPut.getStatus() + " <" + kvQueryPut.getKey() + ", " + kvQueryPut.getValue() + ">");
 
 											}
 											else if(returnValue == value)
@@ -190,9 +196,9 @@ public class ClientConnection implements Runnable {
 								else
 								{
 									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
+									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+											+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
 									sendMessage(kvQueryNotResponsible.toBytes());
-									logger.debug("SERVER:Not responsible");
-
 								}
 							}//put block
 
@@ -202,7 +208,8 @@ public class ClientConnection implements Runnable {
 								try {
 									kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
 									sendMessage(kvQueryDisconnect.toBytes());
-									logger.debug("SERVER:Disconnect success");
+									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+											+ kvQueryDisconnect.getStatus());
 
 									try {
 										if (clientSocket != null) {
@@ -221,7 +228,7 @@ public class ClientConnection implements Runnable {
 							else if(command.equals("CONNECT")) // connect block only for clients not for ECS
 							{
 								sendConnectSuccess(connectSuccess);
-								logger.debug("SERVER:Connect success");
+								// logger.debug("SERVER:Connect success");
 
 
 							}// connect block only for clients not for ECS
@@ -315,6 +322,10 @@ public class ClientConnection implements Runnable {
 		KVQuery kvQueryConnect;
 		try {
 			kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
+			
+			if (kvQueryConnect.getStatus() != null)
+				logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + kvQueryConnect.getStatus());
+			
 			sendMessage(kvQueryConnect.toBytes());
 		} catch (InvalidMessageException e) {
 			// TODO Auto-generated catch block
