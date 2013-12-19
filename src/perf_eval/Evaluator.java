@@ -182,6 +182,7 @@ public class Evaluator {
 						if (!kvMap.containsKey(valKey)) {
 							indexMap.put(kvMap.size(), valKey);
 							kvMap.put(valKey, valValue);
+							// System.out.println(kvMap.size());
 						}
 					}
 				} finally {
@@ -273,10 +274,6 @@ public class Evaluator {
 		Random rand = new Random();
 		// choose a random client
 		int clientIndex = rand.nextInt(clients.size());
-		
-		
-		
-		
 	}
 	
 	public void startServers(int numberOfServers) {
@@ -331,7 +328,7 @@ public class Evaluator {
 		
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of dataPairs read from the dataset.
-		Evaluator eval = new Evaluator(args[0], 2, 20000);
+		Evaluator eval = new Evaluator(args[0], 2, 2000);
 		eval.initEnron();
 		eval.startServers(3);
 		
