@@ -21,7 +21,7 @@ import client.KVStore;
  * which in turn uses KVCommunication in order to communicate with the KVServer. 
  * @author Elias Tatros
  */
-public class KVClient {
+public class KVClient extends Thread {
 	private static Logger logger = Logger.getRootLogger();
 	private KVStore kvStore = null;
 	KVCommunication connection = null;
@@ -35,9 +35,10 @@ public class KVClient {
 	}
 	
 	/**
-     * Main entry point for the KVClient application. 
-     */
-    public static void main(String[] args) {
+	 * Initializes and starts the server. 
+	 * Loops until the the server should be closed.
+	 */
+	public void run() {
     	try {
     		System.setProperty("file.encoding", "US-ASCII");
 			new LogSetup("logs/client.log", Level.ALL);
@@ -59,6 +60,16 @@ public class KVClient {
     		ex.printStackTrace();
     		System.exit(1);
     	}
+	}
+	
+	/**
+     * Main entry point for the KVClient application. 
+     */
+    public static void main(String[] args) {
+    	KVClient client = new KVClient();
+    	Thread t = new Thread(client);
+    	t.setName("Client " + t.getName());
+    	t.start();
     }
     
     /**
@@ -159,7 +170,7 @@ public class KVClient {
 	 * Optional: get the name of this client, empty if not set before
 	 * @return clients name
 	 */
-    public String getName() {
+    public String getClientName() {
 		return name;
 	}
 
@@ -167,7 +178,7 @@ public class KVClient {
      * Optional: set the name of this client
      * @param name clients name
      */
-	public void setName(String name) {
+	public void setClientName(String name) {
 		this.name = name;
 	}
 }
