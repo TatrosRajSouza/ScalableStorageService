@@ -83,7 +83,7 @@ public class ClientConnection implements Runnable {
 								
 								key = kvQueryCommand.getKey();
 								logger.info("SERVER: Get operation Key:" + key);
-								BigInteger hashedKey = checkRange(key);
+								BigInteger hashedKey = checkRange(key,value);
 								if(hashedKey != null)
 								{
 									logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());
@@ -118,7 +118,7 @@ public class ClientConnection implements Runnable {
 							{
 								key = kvQueryCommand.getKey();
 								
-								BigInteger hashedKey = checkRange(key);
+								BigInteger hashedKey = checkRange(key,value);
 								if(hashedKey != null)
 								{
 									//future : check in range or not
@@ -298,16 +298,20 @@ public class ClientConnection implements Runnable {
 	/***
 	 * 
 	 * @param key
+	 * @param value 
 	 * @return hashedkey
 	 * checks whether this server is responsible for incoming key
 	 */
-	private BigInteger checkRange(String key) {
+	private BigInteger checkRange(String key, String value) {
 		// TODO Auto-generated method stub
 		BigInteger hashedKey = null;
 		try {
 
 			ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
 			ServerData serverDataServer = this.serverInstance.getServerData();
+logger.info("Check Range adress" + serverDataHash.getAddress().toString() + serverDataServer.getAddress().toString() );
+logger.info("Check Range port" + serverDataHash.getPort() + serverDataServer.getPort() );
+logger.info("key is: " + key + "value: " + value);
 
 			if (serverDataHash != null && serverDataServer != null)
 			{
@@ -416,11 +420,11 @@ public class ClientConnection implements Runnable {
 		/* build final String */
 
 		
-		logger.info("RECEIVE \t<" 
+		/*logger.info("RECEIVE \t<" 
 				+ clientSocket.getInetAddress().getHostAddress() + ":" 
 				+ clientSocket.getPort() + ">: '" 
 				+ new String(msgBytes) + "'");
-		
+		*/
 		return msgBytes;
 	}
 
