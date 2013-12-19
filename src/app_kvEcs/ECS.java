@@ -449,7 +449,7 @@ public class ECS {
 				/* Ignoring ssh for now... since you have to enter password and also confirm a few warnings on windows */
 				StringBuilder sb = new StringBuilder();
 				sb.append("java -jar ");
-				sb.append(ECS.class.getProtectionDomain().getCodeSource().getLocation().getPath() + "ms3-server.jar ");
+				sb.append(System.getProperty("user.dir") + "\\ms3-server.jar ");
 				sb.append(port);
 				
 				String cmd = sb.toString();

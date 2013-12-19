@@ -18,8 +18,6 @@ import java.util.Random;
 import logger.LogSetup;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.log4j.Level;
 
 import common.messages.InfrastructureMetadata;
@@ -27,7 +25,6 @@ import common.messages.InvalidMessageException;
 import common.messages.ServerData;
 
 import app_kvClient.KVClient;
-import app_kvEcs.ECS;
 import app_kvServer.KVServer;
 
 public class Evaluator {
@@ -61,7 +58,7 @@ public class Evaluator {
 		requestMap = new HashMap<KVClient, HashMap<String, String>>();
 		enronFiles = new HashMap<Integer, String>();
 		
-		for (int i = 0; i < numClients; i++) {
+		for (int i = 0; i < this.numClients; i++) {
 			clients.add(new KVClient("CLIENT " + i));
 		}
 	}
@@ -323,7 +320,7 @@ public class Evaluator {
 		try {
 			new LogSetup("logs/client.log", Level.ALL);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
 		
