@@ -142,8 +142,27 @@ public class ECSTests extends TestCase {
 	}
 	
 	@Test
-	public void testAddNode() {
+	public void testAddRemoveNode() {
+		Exception ex = null;
+		try {
+			ecs.defineServerRepository("ecs.config");
+			ecs.initService(4);
+			ecs.start();
+			ecs.addNode();
+			ecs.addNode();
+			ecs.addNode();
+			ecs.addNode();
+			ecs.addNode();
+			ecs.removeNode();
+			ecs.removeNode();
+			ecs.addNode();
+			ecs.addNode();
+		} catch (Exception e) {
+			ex = e;
+		}
 		
+		ecs.shutDown();
+		assertNull(ex);
 	}
 
 }
