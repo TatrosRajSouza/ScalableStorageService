@@ -12,11 +12,19 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import logger.LogSetup;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.log4j.Level;
+
+import common.messages.InfrastructureMetadata;
+import common.messages.ServerData;
 
 import app_kvClient.KVClient;
+import app_kvEcs.ECS;
+import app_kvServer.KVServer;
 
 public class Evaluator {
 	public static final int NUM_CLIENTS = 1;
@@ -28,6 +36,7 @@ public class Evaluator {
 	private int numKVPairs = 20000;
 	private String enronPath = "";
 	private String enronFileCachePath = "enronFiles.cache";
+	private ArrayList<KVServer> servers;
 	
 	private ArrayList<KVClient> clients;	// list of clients
 	private HashMap<String, String> kvMap;	// key value map with data from enron dataset, keyString -> valueString
@@ -187,7 +196,51 @@ public class Evaluator {
 		
 	}
 	
+	public void startServers(int numberOfServers) {
+		int currentPort = 50000;
+		this.servers = new ArrayList<KVServer>();
+		ArrayList<ServerData> serverData = new ArrayList<ServerData>();
+		
+		
+		// for number of servers
+		for (int i = 0; i < numberOfServers; i++) {
+			
+			/* Create Server Data */
+			serverData.add(new ServerData("127.0.0.1:" + currentPort, "127.0.0.1", currentPort));
+			
+			KVServer server = new KVServer(currentPort);
+			server.start();
+			server.setServeClientRequest(true);
+			servers.add(server);
+			currentPort++;
+		}
+		
+		System.out.println("Server Data: ");
+		for (ServerData sd : serverData) {
+			System.out.println("Name: " + sd.getName() + ", Address: " + sd.getAddress() + ", Port: " + sd.getPort());
+		}
+		
+		for (KVServer server : servers) {
+			server.setMetaData(new InfrastructureMetadata(serverData));
+		}
+	}
+	
+	public void stopServers() {
+		for (KVServer server : servers) {
+			server.setRunning(false);
+			server.interrupt();
+		}
+	}
+	
 	public static void main(String[] args) {
+		
+		try {
+			new LogSetup("logs/client.log", Level.ALL);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		if (args.length != 1) {
 			System.out.println("Usage: java perf_eval.Evaluator <PATH_TO_ENRON_DATA>\nThe path must lead to the directory with the names (default: C:\\enron\\maildir\\)");
 			System.exit(1);
@@ -197,5 +250,7 @@ public class Evaluator {
 		// second argument is the number of dataPairs read from the dataset.
 		Evaluator eval = new Evaluator(args[0], 20000);
 		eval.initEnron();
+		eval.startServers(3);
+		eval.stopServers();
 	}
 }

@@ -13,6 +13,7 @@ import java.util.SortedMap;
 
 import logger.LogSetup;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -82,7 +83,13 @@ public class ECS {
 	public void addNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = initNode();
+		if (node == null) {
+			return;
+		}
 		ECSServerCommunicator nextNode = getNextNode(node);
+		if (nextNode == null) {
+			return;
+		}
 		ECSServerCommunicator auxNode;
 
 
@@ -133,7 +140,13 @@ public class ECS {
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = getRandomNode(storageService);
+		if (node == null) {
+			return;
+		}
 		ECSServerCommunicator nextNode = getNextNode(node);
+		if (nextNode == null) {
+			return;
+		}
 		BigInteger startIndex = getStartIndex(node);
 		BigInteger endIndex = getEndIndex(node);
 
@@ -423,13 +436,30 @@ public class ECS {
 	}
 
 	private void sendSSHCall(String address, int port) {
-		String currentDirectory = System.getProperty("user.dir");
-		String[] args = {"./script.sh", address, currentDirectory, Integer.toString(port)};
-
 		Runtime run = Runtime.getRuntime();
 		try {
-			run.exec(args);
+			// This it the original Linux/Unix command
+			if (SystemUtils.IS_OS_LINUX) { // Use SSH Command for Linux
+				String currentDirectory = System.getProperty("user.dir");
+				String[] cmd = {"./script.sh", address, currentDirectory, Integer.toString(port)};
+				run.exec(cmd);
+			} else { // Otherwise Assume Windows
+				/* Build the Command String */
+				/* We want java -jar <PROGRAM_DIR>\ms3-server.jar port */
+				/* Ignoring ssh for now... since you have to enter password and also confirm a few warnings on windows */
+				StringBuilder sb = new StringBuilder();
+				sb.append("java -jar ");
+				sb.append(ECS.class.getProtectionDomain().getCodeSource().getLocation().getPath() + "ms3-server.jar ");
+				sb.append(port);
+				
+				String cmd = sb.toString();
+				System.out.println();
+				System.out.println("Command: " + cmd);
+				System.out.println();
+				run.exec(cmd);
+			}
 		} catch (IOException e) {
+			System.out.println(e.getMessage());
 			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		}
 	}
