@@ -163,7 +163,6 @@ public class KVServer extends Thread {
 	 * Loops until the the server should be closed.
 	 */
 	public void run() {
-		Thread.currentThread().setName("SERVER " + Thread.currentThread().getName());
 		running = initializeServer();
 
 		if(serverSocket != null) {
@@ -177,6 +176,7 @@ public class KVServer extends Thread {
 					// store the clients for further accessing
 					String ip = client.getInetAddress().getHostAddress();
 					serverData = new ServerData(ip+ ":" + port, ip, port);
+					Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
 					logger.info("Connected to " 
 							+ client.getInetAddress().getHostName() 
 							+  " on port " + client.getPort());

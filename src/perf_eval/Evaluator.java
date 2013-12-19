@@ -43,8 +43,9 @@ public class Evaluator {
 	private String enronFileCachePath = "enronFiles.cache";
 	
 	private ArrayList<KVServer> servers;	// list of servers
-	private ArrayList<KVClient> clients;	// list of clients
-	private HashMap<KVClient, HashMap<String, String>> requestMap; // contains clients and their corresponding request maps, client -> kvMap
+	private ArrayList<ClientWrapper> clients;	// list of clients
+	private ArrayList<Thread> clientThreads;
+	private HashMap<ClientWrapper, HashMap<String, String>> requestMap; // contains clients and their corresponding request maps, client -> kvMap
 	private HashMap<Integer, String> indexMap; // contains IDs and their keys, ID -> key
 	private HashMap<String, String> kvMap;	// key value map with data from enron dataset, keyString -> valueString
 	private HashMap<Integer, String> enronFiles; // map: enronfileIDs --> file path
@@ -54,14 +55,14 @@ public class Evaluator {
 		this.numKVPairs = numDataPairs;
 		this.numClients = numClients;
 		
-		clients = new ArrayList<KVClient>();
+		clients = new ArrayList<ClientWrapper>();
 		kvMap = new HashMap<String, String>();
 		indexMap = new HashMap<Integer, String>();
-		requestMap = new HashMap<KVClient, HashMap<String, String>>();
+		requestMap = new HashMap<ClientWrapper, HashMap<String, String>>();
 		enronFiles = new HashMap<Integer, String>();
 		
 		for (int i = 0; i < this.numClients; i++) {
-			clients.add(new KVClient("CLIENT " + i));
+			clients.add(new ClientWrapper("CLIENT " + i));
 		}
 	}
 	
@@ -212,7 +213,7 @@ public class Evaluator {
 			return;
 		}
 		
-		for (KVClient client : clients) {
+		for (ClientWrapper client : clients) {
 			// If client not in request table, then insert it
 			if (!requestMap.containsKey(client)) {
 				requestMap.put(client, new HashMap<String, String>());
@@ -252,7 +253,7 @@ public class Evaluator {
 		
 		/* DEBUG */
 		int i = 0;
-		for (KVClient client : clients) {
+		for (ClientWrapper client : clients) {
 			i++;
 			System.out.println("\nCLIENT " + i + ", REQUEST TABLE:");
 			
@@ -264,17 +265,28 @@ public class Evaluator {
 		
 	}
 	
-	public void clientsConnect(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
-		for (KVClient client : clients) {
+	/*
+	public void clientsRun(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
+		for (ClientWrapper client : clients) {
 			client.connect(address, port);
 		}
 	}
+	*/
 	
 	public void start(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
 		int numSent = 0;
 		int numSuccess = 0;
 		int numFail = 0;
 		
+		clientThreads = new ArrayList<Thread>();
+		
+		for (ClientWrapper client : clients) {
+			Thread t = new Thread(client);
+			t.setName(client.getName() + " " + t.getName());
+			clientThreads.add(t);
+			t.start();
+		}
+		/*
 		clientsConnect(address, port);
 		
 		Random rand = new Random();
@@ -293,6 +305,8 @@ public class Evaluator {
 		} else { 
 			numFail++;
 		}
+		*/
+		
 		
 		System.out.println("SENT: " + numSent + ", SUCCESS: " + numSuccess + ", FAIL: " + numFail);
 	}

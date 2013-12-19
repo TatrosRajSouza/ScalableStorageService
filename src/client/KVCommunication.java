@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import org.apache.log4j.Logger;
+
+import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
 
 /**
@@ -51,20 +53,24 @@ public class KVCommunication {
 		clientSocket = new Socket(address, port);
 		clientSocket.setSoTimeout(TIMEOUT_MS);
 		setSocketStatus(SocketStatus.CONNECTED);
-		logger.info(this.name + moduleName + ": Connection established");
+		
+		if(KVClient.DEBUG)
+			logger.info(this.name + moduleName + ": Connection established");
 	}
 	
 	/**
 	 * Gracefully closes the connection to the KVServer.
 	 */
 	public void closeConnection() {
-		logger.info(this.name + moduleName + ": try to close connection ...");
+		if(KVClient.DEBUG)
+			logger.info(this.name + moduleName + ": try to close connection ...");
 		
 		try {
 			tearDownConnection();
 			setSocketStatus(SocketStatus.DISCONNECTED);
 		} catch (IOException ioe) {
-			logger.error(this.name + moduleName + ": Unable to close connection!");
+			if(KVClient.DEBUG)
+				logger.error(this.name + moduleName + ": Unable to close connection!");
 		}
 	}
 	
@@ -73,7 +79,9 @@ public class KVCommunication {
 	 * @throws IOException
 	 */
 	private void tearDownConnection() throws IOException {
-		logger.info(this.name + moduleName + ": tearing down the connection ...");
+		if(KVClient.DEBUG)
+			logger.info(this.name + moduleName + ": tearing down the connection ...");
+		
 		if (clientSocket != null) {
 			if (input != null)
 				input.close();
@@ -82,7 +90,9 @@ public class KVCommunication {
 			
 			clientSocket.close();
 			clientSocket = null;
-			logger.info(this.name + moduleName + ": Connection closed by communication module!");
+			
+			if(KVClient.DEBUG)
+				logger.info(this.name + moduleName + ": Connection closed by communication module!");
 		}
 	}
 	
@@ -93,13 +103,15 @@ public class KVCommunication {
 	 */
 	public void sendMessage(byte[] msgBytes) throws IOException, SocketTimeoutException {
 		if (msgBytes != null) {
-		output = clientSocket.getOutputStream();
-		output.write(msgBytes, 0, msgBytes.length);
-		output.flush();
-		logger.info(this.name + moduleName + ": SEND \t<" 
-				+ clientSocket.getInetAddress().getHostAddress() + ":" 
-				+ clientSocket.getPort() + ">: '" 
-				+ new String(msgBytes) +"'");
+			output = clientSocket.getOutputStream();
+			output.write(msgBytes, 0, msgBytes.length);
+			output.flush();
+			if(KVClient.DEBUG) {
+				logger.info(this.name + moduleName + ": SEND \t<" 
+						+ clientSocket.getInetAddress().getHostAddress() + ":" 
+						+ clientSocket.getPort() + ">: '" 
+						+ new String(msgBytes) +"'");
+			}
 		} else {
 			throw new IOException(this.name + moduleName + ": Unable to transmit message, the message was null.");
 		}
@@ -164,11 +176,12 @@ public class KVCommunication {
 		msgBytes = tmp;
 
 		/* build final String */
-
-		logger.info(this.name + moduleName + ": RECEIVE \t<" 
-				+ clientSocket.getInetAddress().getHostAddress() + ":" 
-				+ clientSocket.getPort() + ">: '" 
-				+ new String(msgBytes) + "'");
+		if(KVClient.DEBUG) {
+			logger.info(this.name + moduleName + ": RECEIVE \t<" 
+					+ clientSocket.getInetAddress().getHostAddress() + ":" 
+					+ clientSocket.getPort() + ">: '" 
+					+ new String(msgBytes) + "'");
+		}
 		return msgBytes;
 	}
 
