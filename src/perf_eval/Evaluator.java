@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import logger.LogSetup;
 
@@ -22,8 +23,9 @@ import org.apache.log4j.Level;
 
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
+import common.messages.KVMessage;
+import common.messages.KVMessage.StatusType;
 import common.messages.ServerData;
-
 import app_kvClient.KVClient;
 import app_kvServer.KVServer;
 
@@ -269,11 +271,30 @@ public class Evaluator {
 	}
 	
 	public void start(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
+		int numSent = 0;
+		int numSuccess = 0;
+		int numFail = 0;
+		
 		clientsConnect(address, port);
 		
 		Random rand = new Random();
 		// choose a random client
 		int clientIndex = rand.nextInt(clients.size());
+		
+		KVClient client = clients.get(clientIndex);
+		Set<Entry<String, String>> clientRequests = requestMap.get(client).entrySet();
+		Entry<String, String> nextEntry = clientRequests.iterator().next();
+		KVMessage result = client.put(nextEntry.getKey(), nextEntry.getValue());
+		numSent++;
+		
+		System.out.println(result.getStatus());
+		if (result.getStatus().equals(StatusType.PUT_SUCCESS)) {
+			numSuccess++;
+		} else { 
+			numFail++;
+		}
+		
+		System.out.println("SENT: " + numSent + ", SUCCESS: " + numSuccess + ", FAIL: " + numFail);
 	}
 	
 	public void startServers(int numberOfServers) {
