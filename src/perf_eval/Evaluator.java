@@ -7,10 +7,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import logger.LogSetup;
 
@@ -20,6 +23,7 @@ import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.log4j.Level;
 
 import common.messages.InfrastructureMetadata;
+import common.messages.InvalidMessageException;
 import common.messages.ServerData;
 
 import app_kvClient.KVClient;
@@ -27,31 +31,38 @@ import app_kvEcs.ECS;
 import app_kvServer.KVServer;
 
 public class Evaluator {
-	public static final int NUM_CLIENTS = 1;
+	
 	// Keywords specify which lines we look for in a file from the enron dataset.
 	// Most enron files have a Date and Subject tag. So we use the Date as the key and the Subject as the value.
 	public static final String LINE_KEYWORD_KEY = "Date: ";
 	public static final String LINE_KEYWORD_VALUE = "Subject: ";
 	
+	private int numClients;
 	private int numKVPairs = 20000;
+	private int numRequestsPerClient = 10;
 	private String enronPath = "";
 	private String enronFileCachePath = "enronFiles.cache";
-	private ArrayList<KVServer> servers;
 	
+	private ArrayList<KVServer> servers;	// list of servers
 	private ArrayList<KVClient> clients;	// list of clients
+	private HashMap<KVClient, HashMap<String, String>> requestMap; // contains clients and their corresponding request maps, client -> kvMap
+	private HashMap<Integer, String> indexMap; // contains IDs and their keys, ID -> key
 	private HashMap<String, String> kvMap;	// key value map with data from enron dataset, keyString -> valueString
 	private HashMap<Integer, String> enronFiles; // map: enronfileIDs --> file path
 	
-	public Evaluator(String enronPath, int numDataPairs) {
+	public Evaluator(String enronPath, int numClients, int numDataPairs) {
 		this.enronPath = enronPath;
 		this.numKVPairs = numDataPairs;
+		this.numClients = numClients;
 		
 		clients = new ArrayList<KVClient>();
 		kvMap = new HashMap<String, String>();
+		indexMap = new HashMap<Integer, String>();
+		requestMap = new HashMap<KVClient, HashMap<String, String>>();
 		enronFiles = new HashMap<Integer, String>();
 		
-		for (int i = 0; i < NUM_CLIENTS; i++) {
-			clients.add(new KVClient());
+		for (int i = 0; i < numClients; i++) {
+			clients.add(new KVClient("CLIENT " + i));
 		}
 	}
 	
@@ -172,6 +183,7 @@ public class Evaluator {
 					// If we obtained Key-Value data from the file, add it to the KVMap
 					if (!valKey.equals("") && !valValue.equals("")) {
 						if (!kvMap.containsKey(valKey)) {
+							indexMap.put(kvMap.size(), valKey);
 							kvMap.put(valKey, valValue);
 						}
 					}
@@ -190,9 +202,83 @@ public class Evaluator {
 		*/
 		
 		System.out.println("Finished Processing Enron Dataset.\nGenerated KV-Request Pairs: " + kvMap.size());
+		populateRequestTables();
 	}
 	
-	public void start() {
+	private void populateRequestTables() {
+		System.out.println("Populating Request Tables for all " + clients.size() + " Clients.");
+		if (kvMap == null || kvMap.size() <= 0) {
+			System.out.println("Unable to populate request tables, since request map does not contain any entries.");
+			return;
+		}
+		
+		for (KVClient client : clients) {
+			// If client not in request table, then insert it
+			if (!requestMap.containsKey(client)) {
+				requestMap.put(client, new HashMap<String, String>());
+			}
+			
+			// get number of entries from request map
+			int numRequestPairs = kvMap.size();
+			Random rand = new Random();
+			
+			
+			for (int i = 0; i < numRequestsPerClient; i++) {
+				// get a random request pair from request map
+				int randomPair = rand.nextInt(numRequestPairs);
+				
+				// Obtain key for this index
+				String key = indexMap.get(randomPair);
+				
+				// make sure key is valid
+				if (key != null && !key.equals("")) {
+					// Obtain value for key
+					String value = kvMap.get(key);
+					
+					// add the key value pair to the clients request map
+					HashMap<String, String> clientRequests = requestMap.get(client);
+					if (clientRequests != null) {
+						clientRequests.put(key, value);
+					} else {
+						System.out.println("Unable to add Request with key: \"" + key + "\" and value \"" + value + "\" to\n" +
+								"request table for client. The Clients request table was null.");
+					}
+				} else {
+					System.out.println("Unable to add random pair with ID: " + randomPair + ". Unable to obtain key\n" +
+							"from index map. Size of index map: " + indexMap.size() + ", size of kvMap: " + kvMap.size()); 
+				}
+			} // end for number of requests
+		} // end foreach client
+		
+		/* DEBUG */
+		int i = 0;
+		for (KVClient client : clients) {
+			i++;
+			System.out.println("\nCLIENT " + i + ", REQUEST TABLE:");
+			
+			for (Entry<String, String> requestEntry : requestMap.get(client).entrySet()) {
+				System.out.println("Key: " + requestEntry.getKey() + ", Value: " + requestEntry.getValue());
+			}
+			System.out.println("_______________________________________");
+		}
+		
+	}
+	
+	public void clientsConnect(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
+		for (KVClient client : clients) {
+			client.connect(address, port);
+		}
+	}
+	
+	public void start(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
+		clientsConnect(address, port);
+		
+		Random rand = new Random();
+		// choose a random client
+		int clientIndex = rand.nextInt(clients.size());
+		
+		
+		
 		
 	}
 	
@@ -248,9 +334,26 @@ public class Evaluator {
 		
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of dataPairs read from the dataset.
-		Evaluator eval = new Evaluator(args[0], 20000);
+		Evaluator eval = new Evaluator(args[0], 2, 20000);
 		eval.initEnron();
 		eval.startServers(3);
-		eval.stopServers();
+		
+		try {
+			eval.start("127.0.0.1", 50000);
+		} catch (ConnectException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		} catch (UnknownHostException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		} catch (InvalidMessageException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		
+		// eval.stopServers();
 	}
 }

@@ -69,7 +69,7 @@ public class Shell {
 			kvClient.disconnect();
 			System.out.println(PROMPT + "Application exit!");
 			} catch (ConnectException ex) {
-				logger.error("Connection Error: " + ex.getMessage());
+				logger.error(kvClient.getClientName() + ": Connection Error: " + ex.getMessage());
 			}
 		
 		} else if (tokens[0].equals("connect")){
@@ -81,26 +81,26 @@ public class Shell {
 						kvClient.connect(serverAddress, serverPort);
 					}
 					else {
-						System.out.println("Invalid Port.");
-						logger.error("Invalid Port Number");
+						System.out.println(kvClient.getClientName() + ": Invalid Port.");
+						logger.error(kvClient.getClientName() + ": Invalid Port Number");
 					}
 				} catch(NumberFormatException nfe) {
 					// printError("No valid address. Port must be a number!");
-					logger.warn("Unable to parse argument <port>");
+					logger.warn(kvClient.getClientName() + ": Unable to parse argument <port>");
 				} catch (UnknownHostException e) {
 					// printError("Unknown Host!");
-					logger.warn("Unknown Host!");
+					logger.warn(kvClient.getClientName() + ": Unknown Host!");
 				} catch (ConnectException ex) {
-					logger.warn("Could not establish connection! Reason: " + ex.getMessage());
+					logger.warn(kvClient.getClientName() + ": Could not establish connection! Reason: " + ex.getMessage());
 				} catch (IOException e) {
 					// printError("Could not establish connection!");
-					logger.warn("Could not establish connection!");
+					logger.warn(kvClient.getClientName() + ": Could not establish connection!");
 				} catch (InvalidMessageException ex) {
-					System.out.println("Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
+					System.out.println(kvClient.getClientName() + ": Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
 					// ex.printStackTrace();
 				}
 			} else {
-				printError("Invalid number of parameters!");
+				printError(kvClient.getClientName() + ": Invalid number of parameters!");
 			}
 			
 		} else  if (tokens[0].equals("put")) {
@@ -115,21 +115,21 @@ public class Shell {
 				}	
 				
 				try {
-					System.out.println("\n>>>> Sending PUT request for <" + key + ", " + value + ">\n");
+					System.out.println(kvClient.getClientName() + ": \n>>>> Sending PUT request for <" + key + ", " + value + ">\n");
 					KVMessage kvResult = kvClient.put(key, value.toString());
 					try {
-						System.out.println("\n>>> Received: " + kvResult.getStatus().toString() + ", key: " + kvResult.getKey() + ", value: " + kvResult.getValue());
+						System.out.println(kvClient.getClientName() + ": \n>>> Received: " + kvResult.getStatus().toString() + ", key: " + kvResult.getKey() + ", value: " + kvResult.getValue());
 					} catch (InvalidMessageException ex) {
-						logger.error("Unable to read the return Message. Reason: " + ex.getMessage());
+						logger.error(kvClient.getClientName() + ": Unable to read the return Message. Reason: " + ex.getMessage());
 					} catch (NullPointerException ex) {
-						logger.error("Server did not respons to PUT Request.");
+						logger.error(kvClient.getClientName() + ": Server did not respons to PUT Request.");
 					}
 				} catch (ConnectException ex) {
-					logger.error("Unable to use Put command: " + ex.getMessage());
+					logger.error(kvClient.getClientName() + ": Unable to use Put command: " + ex.getMessage());
 				}
 				
 			} else {
-					printError("Invalid number of arguments for put operation.");
+					printError(kvClient.getClientName() + ": Invalid number of arguments for put operation.");
 			}
 			
 		} else  if (tokens[0].equals("get")) {
@@ -137,22 +137,22 @@ public class Shell {
 				String key = tokens[1];
 				
 				try {
-					System.out.println("\n>>> Sending GET request for key " + key);
+					System.out.println(kvClient.getClientName() + ": \n>>> Sending GET request for key " + key);
 					KVMessage kvResult = kvClient.get(key);
 					try {
 						if (kvResult != null)
-							System.out.println("\n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getValue());
+							System.out.println(kvClient.getClientName() + ": \n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getValue());
 						else
-							System.out.println("Unexpected error: The kvResult was null");
+							System.out.println(kvClient.getClientName() + ": Unexpected error: The kvResult was null");
 					} catch (InvalidMessageException ex) {
-						System.out.println("Unable to read the return Message. Reason: " + ex.getMessage());
+						System.out.println(kvClient.getClientName() + ": Unable to read the return Message. Reason: " + ex.getMessage());
 					}
 				} catch (ConnectException ex) {
-					logger.error("Unable to use Put command: " + ex.getMessage());
+					logger.error(kvClient.getClientName() + ": Unable to use Put command: " + ex.getMessage());
 				}
 				
 			} else {
-					printError("Invalid number of arguments for get operation.");
+					printError(kvClient.getClientName() + ": Invalid number of arguments for get operation.");
 			}
 			
 		} else if(tokens[0].equals("disconnect")) {
@@ -160,10 +160,10 @@ public class Shell {
 				if (kvClient != null)
 					kvClient.disconnect();
 				else {
-					System.out.println("You must connect first.");
+					System.out.println(kvClient.getClientName() + ": You must connect first.");
 				}
 			} catch (ConnectException ex) {
-				logger.error("Connection error: " + ex.getMessage());
+				logger.error(kvClient.getClientName() + ": Connection error: " + ex.getMessage());
 			}
 			
 		} else if(tokens[0].equals("logLevel")) {
@@ -183,7 +183,7 @@ public class Shell {
 		} else if(tokens[0].equals("help")) {
 			printHelp();
 		} else {
-			printError("Unknown command");
+			printError(kvClient.getClientName() + ": Unknown command");
 			printHelp();
 		}
 	}

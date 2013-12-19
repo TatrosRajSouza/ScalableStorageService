@@ -39,15 +39,15 @@ public class AdditionalTest extends TestCase {
 			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
 			ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
 			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
-			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000, "commTest");
 			comm.sendMessage(initMessage.toBytes());
 			
 			ECSMessage message = new ECSMessage(ECSStatusType.START);
 			comm.sendMessage(message.toBytes());
 			
-                KVStore kvClient1 = new KVStore("localhost", 50000);
+                KVStore kvClient1 = new KVStore("localhost", 50000, "storeTest");
                 kvClient1.connect();
-                KVStore kvClient2 = new KVStore("localhost", 50000);
+                KVStore kvClient2 = new KVStore("localhost", 50000, "storeTest");
                 kvClient2.connect();
                 String key = "foobar";
                 String value = "bar";
@@ -76,14 +76,14 @@ public class AdditionalTest extends TestCase {
 			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
 			//ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
 			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
-			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000, "commTest");
 			comm.sendMessage(initMessage.toBytes());
 			
 			ECSMessage message = new ECSMessage(ECSStatusType.START);
 			comm.sendMessage(message.toBytes());
-                KVStore kvClient1 = new KVStore("localhost", 50000);
+                KVStore kvClient1 = new KVStore("localhost", 50000, "clientTest 1");
                 kvClient1.connect();
-                KVStore kvClient2 = new KVStore("localhost", 50000);
+                KVStore kvClient2 = new KVStore("localhost", 50000, "clientTest 2");
                 kvClient2.connect();
                 String key = "foobar";
                 String value = "bar";
@@ -115,14 +115,14 @@ public class AdditionalTest extends TestCase {
 			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
 			//ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
 			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
-		KVCommunication comm  = new KVCommunication("127.0.0.1", 50000);
+		KVCommunication comm  = new KVCommunication("127.0.0.1", 50000, "commTest");
 			comm.sendMessage(initMessage.toBytes());
 			
 			ECSMessage message = new ECSMessage(ECSStatusType.START);
 			comm.sendMessage(message.toBytes());
-                KVStore kvClient1 = new KVStore("localhost", 50000);
+                KVStore kvClient1 = new KVStore("localhost", 50000, "clientTest 1");
                 kvClient1.connect();
-                KVStore kvClient2 = new KVStore("localhost", 50000);
+                KVStore kvClient2 = new KVStore("localhost", 50000, "clientTest 2");
                 kvClient2.connect();
                 String key = "foobar";
                 String value = "bar";

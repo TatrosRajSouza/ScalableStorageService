@@ -30,7 +30,7 @@ public class ECSServerCommunicator extends ServerData {
 	 */
 	public void connect() throws UnknownHostException, IOException {
 		try {
-			communication = new KVCommunication(getAddress(), getPort());
+			communication = new KVCommunication(getAddress(), getPort(), "ECS");
 		} catch (UnknownHostException e) {
 			ECS.logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
 		} catch (IOException e) {

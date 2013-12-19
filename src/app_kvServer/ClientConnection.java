@@ -61,6 +61,7 @@ public class ClientConnection implements Runnable {
 	 * Loops until the connection is closed or aborted by the client.
 	 */ // example usage for testing: connect 127.0.0.1 50001
 	public void run() {
+		Thread.currentThread().setName("SERVER " + Thread.currentThread().getName());
 		try { //connection could not be established
 			output = clientSocket.getOutputStream();
 			input = clientSocket.getInputStream();
