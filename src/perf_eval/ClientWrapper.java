@@ -5,6 +5,7 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
@@ -20,6 +21,9 @@ public class ClientWrapper implements Runnable {
 	private String name;
 	private HashMap<String, String> requestMap = null;
 	private ArrayList<String> keys = null;
+	private int putsSent = 0;
+	private int putsSuccess = 0;
+	private int putsFailed = 0;
 	
 	public ClientWrapper(String name) {
 		this.clientInstance = new KVClient(name);
@@ -34,11 +38,25 @@ public class ClientWrapper implements Runnable {
 
 		try {
 			clientInstance.connect(defaultServer, defaultPort);
-			KVMessage result = clientInstance.put(keys.get(0), requestMap.get(keys.get(0)));
-			if (result != null && (result.getStatus().equals(StatusType.PUT_SUCCESS) || result.getStatus().equals(StatusType.PUT_SUCCESS))) {
-				System.out.println(this.name + ": Successfully put <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
+			
+			while (keys.size() > 0) {
+				Random rand = new Random();
+				int value = rand.nextInt(keys.size());
+				
+				KVMessage result = clientInstance.put(keys.get(value), requestMap.get(keys.get(value)));
+				putsSent++;
+				if (result != null && (result.getStatus().equals(StatusType.PUT_SUCCESS) || result.getStatus().equals(StatusType.PUT_SUCCESS))) {
+					System.out.println(this.name + ": Successfully put <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
+					putsSuccess++;
+				} else {
+					putsFailed++;
+				}
+				
+				requestMap.remove(keys.get(value));
+				keys.remove(value);
 			}
 			
+			System.out.println(this.name + " finished. Puts sent: " + putsSent + ", Puts Success: " + putsSuccess + ", Puts failed: " + putsFailed);
 		} catch (ConnectException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
