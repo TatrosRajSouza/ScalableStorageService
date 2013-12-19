@@ -9,14 +9,13 @@ import app_kvEcs.ECS;
 import junit.framework.TestCase;
 
 public class ECSTests extends TestCase {
-	private ECS ecs;
-
+	private ECS ecs = new ECS();
+	
 	@Test
 	public void testDefineServerRepositorySuccess() {
 		Exception ex = null;
 		boolean success = false;
 
-		ecs = new ECS();
 		try {
 			ecs.defineServerRepository("ecs.config");
 		} catch (Exception e) {
@@ -30,6 +29,8 @@ public class ECSTests extends TestCase {
 				success = true;
 			}
 		}
+		
+		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
 	}
@@ -38,7 +39,6 @@ public class ECSTests extends TestCase {
 	public void testDefineServerRepositoryFail() {
 		Exception ex = null;
 
-		ecs = new ECS();
 		try {
 			ecs.defineServerRepository("script.sh");
 		} catch (Exception e) {
@@ -54,7 +54,6 @@ public class ECSTests extends TestCase {
 		boolean success = true;
 		ArrayList<ServerData> servers;
 
-		ecs = new ECS();
 		try {
 			ecs.defineServerRepository("ecs.config");
 			ecs.initService(8);
@@ -86,7 +85,6 @@ public class ECSTests extends TestCase {
 		boolean success = true;
 		ArrayList<ServerData> servers;
 
-		ecs = new ECS();
 		servers = ecs.getStorageService().getServers();
 		try {
 			ecs.defineServerRepository("ecs.config");
@@ -106,6 +104,7 @@ public class ECSTests extends TestCase {
 		} catch (Exception e) {
 			ex = e;
 		}
+		
 		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
@@ -117,7 +116,6 @@ public class ECSTests extends TestCase {
 		boolean success = true;
 		ArrayList<ServerData> servers;
 
-		ecs = new ECS();
 		servers = ecs.getStorageService().getServers();
 		try {
 			ecs.defineServerRepository("ecs.config");
@@ -141,6 +139,11 @@ public class ECSTests extends TestCase {
 		ecs.shutDown();
 		assertNull(ex);
 		assertTrue(success);
+	}
+	
+	@Test
+	public void testAddNode() {
+		
 	}
 
 }
