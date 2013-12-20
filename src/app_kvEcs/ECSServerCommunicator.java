@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import client.KVCommunication;
 import common.messages.ECSMessage;
 import common.messages.InvalidMessageException;
@@ -11,7 +16,7 @@ import common.messages.ServerData;
 
 public class ECSServerCommunicator extends ServerData {
 	KVCommunication communication;
-	
+	private Logger logger;
 	/**
 	 * Creates a new server data with communication.
 	 * @param name The name of the server, used for logging and user I/O
@@ -21,6 +26,9 @@ public class ECSServerCommunicator extends ServerData {
 	public ECSServerCommunicator(String name, String address, int port) {
 		super(name, address, port);
 		communication = null;
+		
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS Comm", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	
 	/**
@@ -32,12 +40,12 @@ public class ECSServerCommunicator extends ServerData {
 		try {
 			communication = new KVCommunication(getAddress(), getPort(), "ECS");
 		} catch (UnknownHostException e) {
-			ECS.logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
+			logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
 		} catch (IOException e) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e1) {
-				ECS.logger.warn("Warn! Thread interrupted by other thread.");
+				logger.warn("Warn! Thread interrupted by other thread.");
 			}
 			connect();
 		}

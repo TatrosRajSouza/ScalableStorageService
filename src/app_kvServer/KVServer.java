@@ -3,15 +3,11 @@ package app_kvServer;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import logger.LogSetup;
 
@@ -27,7 +23,7 @@ import consistent_hashing.ConsistentHashing;
  */
 public class KVServer extends Thread {
 	private final  static boolean DEBUG = false;
-	private  static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	private  boolean serveClientRequest = false;
 	private  boolean isWriteLocked = false;
 	private  KVData kvdata = new KVData();
@@ -155,6 +151,9 @@ public class KVServer extends Thread {
 	 */
 	public KVServer(int port){
 		this.port = port;
+		
+		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 
 
@@ -190,7 +189,6 @@ public class KVServer extends Thread {
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			logger.error("not able to close the server socket" + e.getMessage());
 		}
 	}
@@ -239,9 +237,6 @@ public class KVServer extends Thread {
 	public static void main(String[] args) {
 		if (!DEBUG) {
 			try {
-				
-				System.setProperty("file.encoding", "US-ASCII");
-				new LogSetup("logs/server.log", Level.ALL);
 				if(args.length != 1) {
 					System.out.println("Error! Invalid number of arguments!");
 					System.out.println("Usage: Server <port>!");
@@ -250,10 +245,6 @@ public class KVServer extends Thread {
 					new KVServer(port).start();
 					//System.exit(0);
 				}
-			} catch (IOException e) {
-				System.out.println("Error! Unable to initialize logger!");
-				e.printStackTrace();
-				System.exit(1);
 			} catch (NumberFormatException nfe) {
 				System.out.println("Error! Invalid argument <port>! Not a number!");
 				System.out.println("Usage: Server <port>!");
@@ -261,16 +252,10 @@ public class KVServer extends Thread {
 			}
 		} else {
 			try {
-				new LogSetup("logs/server.log", Level.ALL);
 				System.setProperty("file.encoding", "US-ASCII");
 				int port = 50000;
 
 				new KVServer(port).start();
-
-			} catch (IOException e) {
-				System.out.println("Error! Unable to initialize logger!");
-				e.printStackTrace();
-				System.exit(1);
 			} catch (NumberFormatException nfe) {
 				System.out.println("Error! Invalid argument <port>! Not a number!");
 				System.out.println("Usage: Server <port>!");

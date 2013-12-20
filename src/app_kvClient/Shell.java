@@ -35,7 +35,7 @@ public class Shell {
 	public Shell(KVClient kvClient)
 	{
 		this.kvClient = kvClient;
-		this.logger = KVClient.getLogger();
+		this.logger = kvClient.getLogger();
 	}
 	
 	/**

@@ -10,6 +10,9 @@ import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import app_kvServer.KVData;
@@ -29,7 +32,7 @@ import consistent_hashing.EmptyServerDataException;
  */
 public class ClientConnection implements Runnable {
 	private KVServer serverInstance;
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
 	private Socket clientSocket;
@@ -54,6 +57,9 @@ public class ClientConnection implements Runnable {
 		this.clientSocket = clientSocket;
 		this.isOpen = true;
 		this.serverInstance = serverInstance;
+		
+		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 
 	/**

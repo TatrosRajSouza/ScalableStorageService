@@ -14,7 +14,8 @@ import org.apache.log4j.PatternLayout;
 public class LogSetup {
 
 	public static final String UNKNOWN_LEVEL = "UnknownLevel";
-	private static Logger logger = Logger.getRootLogger();
+	// private static Logger logger = Logger.getRootLogger();
+	private Logger logger = Logger.getRootLogger();
 	private String logdir;
 	
 	/**
@@ -26,19 +27,47 @@ public class LogSetup {
 	 * 		persistent logging information.
 	 * @throws IOException if the log destination could not be found.
 	 */
-	public LogSetup(String logdir, Level level) throws IOException {
+	public LogSetup(String logdir, String name, Level level) {
 		this.logdir = logdir;
-		initialize(level);
+		initLog(name, logdir, level);
 	}
+	
+	/*
+	public LogSetup(String logdir, Level level, String name) throws IOException {
+	}
+	
+	public LogSetup(String logdir, Level level, Logger logger) throws IOException {
+	}
+	*/
+	
+	
+	public void initLog(String name, String dir, Level level) {
+		// create logger
+		logger = Logger.getLogger(name);
 
-	private void initialize(Level level) throws IOException {
-		PatternLayout layout = new PatternLayout( "%d{ISO8601} %-5p [%t] %c: %m%n" );
-		FileAppender fileAppender = new FileAppender( layout, logdir, true );		
-	    
-	    ConsoleAppender consoleAppender = new ConsoleAppender(layout);
-		logger.addAppender(consoleAppender);
-		logger.addAppender(fileAppender);
-		logger.setLevel(level);
+		// create log file, where messages will be sent, 
+		// you can also use console appender
+		FileAppender fileAppender;
+		try {
+			PatternLayout layout = new PatternLayout( "%d{ISO8601} %-5p [%t] %c: %m%n" );
+			fileAppender = new FileAppender(layout, dir);
+
+			// sometimes you can call this if you reuse this logger 
+			// to avoid useless traces
+			logger.removeAllAppenders();
+	
+			// tell to logger where to write
+			logger.addAppender(fileAppender);
+			logger.addAppender(new ConsoleAppender(layout));
+			logger.setLevel(level);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public Logger getLogger() {
+		return this.logger;
 	}
 	
 	public static boolean isValidLevel(String levelString) {

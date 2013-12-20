@@ -5,15 +5,12 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Level;
 import org.junit.Test;
 
 import common.messages.InvalidMessageException;
-import common.messages.KVMessage;
 import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
 import junit.framework.TestCase;
-import logger.LogSetup;
 
 /**
  * Test Cases for the Client application.
@@ -41,14 +38,6 @@ public class ClientTest extends TestCase {
 	public void setUp() {
 		
 		Exception ex = null;
-		
-		try {
-			new LogSetup("logs/client.log", Level.ALL);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			ex = e1;
-		}
 		
 		try {
 			client = new KVClient(); // client instance

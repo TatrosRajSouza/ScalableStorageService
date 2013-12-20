@@ -6,6 +6,9 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import app_kvClient.KVClient;
@@ -27,7 +30,7 @@ import consistent_hashing.EmptyServerDataException;
 public class KVStore implements KVCommInterface {
 	public static final boolean DEBUG = false;
 	private KVCommunication kvComm;
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	private String address;
 	private int port;
 	private int currentRetries = 0;
@@ -48,12 +51,19 @@ public class KVStore implements KVCommInterface {
 		this.port = port;
 		this.name = name;
 		
+		initLog();
+		
 		/* Create empty meta data and add the user-specified server */
 		this.metaData = new InfrastructureMetadata();
 		this.metaData.addServer("Initial User-Specified Server", address, port);
 
 		/* Initialize the consistent Hashing */
 		this.consHash = new ConsistentHashing(metaData.getServers());
+	}
+	
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs\\client.log", name, Level.ALL);
+		this.logger = ls.getLogger();
 	}
 
 	/**

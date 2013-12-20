@@ -31,7 +31,7 @@ public class ECS {
 	private ConsistentHashing hashing;
 	private Random generator;
 
-	protected static Logger logger = Logger.getRootLogger();
+	protected Logger logger;
 
 	/**
 	 * Initialize a new ECS.
@@ -41,11 +41,9 @@ public class ECS {
 		storageService = new InfrastructureMetadata();
 		hashing = new ConsistentHashing();
 		generator = new Random();
-		try {
-			new LogSetup("logs/ecs/ecs.log", Level.ALL);
-		} catch (IOException e) {
-			System.out.println("Erro! Couldn't initialize log");
-		}
+
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 
 	/**

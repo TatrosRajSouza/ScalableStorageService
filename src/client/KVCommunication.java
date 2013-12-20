@@ -6,6 +6,10 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import app_kvClient.KVClient;
@@ -17,7 +21,7 @@ import app_kvClient.SocketStatus;
  *
  */
 public class KVCommunication {
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	private Socket clientSocket;
 	private SocketStatus socketStatus;
 	private OutputStream output;
@@ -38,6 +42,12 @@ public class KVCommunication {
 	public KVCommunication(String address, int port, String name) throws UnknownHostException, IOException {
 		this.name = name;
 		connect(address, port);
+		initLog();
+	}
+	
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs\\client.log", name, Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	
 	/**

@@ -7,13 +7,20 @@ import java.io.InputStreamReader;
 import logger.LogSetup;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 public class ECSShell {
 
 	private BufferedReader stdin;
 	private static final String PROMPT = "ECS> ";
 	private boolean stop = false;
+	private Logger logger;
 
+	public ECSShell() {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS Shell", Level.ALL);
+		this.logger = ls.getLogger();
+	}
+	
 	/**
 	 * Shell main loop, calls handleCommand on user-input
 	 */
@@ -117,25 +124,25 @@ public class ECSShell {
 
 	private String setLevel(String levelString) {
 		if(levelString.equals(Level.ALL.toString())) {
-			ECS.logger.setLevel(Level.ALL);
+			logger.setLevel(Level.ALL);
 			return Level.ALL.toString();
 		} else if(levelString.equals(Level.DEBUG.toString())) {
-			ECS.logger.setLevel(Level.DEBUG);
+			logger.setLevel(Level.DEBUG);
 			return Level.DEBUG.toString();
 		} else if(levelString.equals(Level.INFO.toString())) {
-			ECS.logger.setLevel(Level.INFO);
+			logger.setLevel(Level.INFO);
 			return Level.INFO.toString();
 		} else if(levelString.equals(Level.WARN.toString())) {
-			ECS.logger.setLevel(Level.WARN);
+			logger.setLevel(Level.WARN);
 			return Level.WARN.toString();
 		} else if(levelString.equals(Level.ERROR.toString())) {
-			ECS.logger.setLevel(Level.ERROR);
+			logger.setLevel(Level.ERROR);
 			return Level.ERROR.toString();
 		} else if(levelString.equals(Level.FATAL.toString())) {
-			ECS.logger.setLevel(Level.FATAL);
+			logger.setLevel(Level.FATAL);
 			return Level.FATAL.toString();
 		} else if(levelString.equals(Level.OFF.toString())) {
-			ECS.logger.setLevel(Level.OFF);
+			logger.setLevel(Level.OFF);
 			return Level.OFF.toString();
 		} else {
 			return LogSetup.UNKNOWN_LEVEL;

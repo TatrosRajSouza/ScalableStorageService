@@ -1,14 +1,11 @@
 package testing;
 
-import java.io.IOException;
 
-import org.apache.log4j.Level;
 import org.junit.BeforeClass;
 
 import app_kvServer.KVServer;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import logger.LogSetup;
 
 
 public class AllTests {
@@ -21,12 +18,7 @@ public class AllTests {
               }
       }
 	static {
-		try {
-			new LogSetup("logs/testing/test.log", Level.ERROR);
-			new KVServer(50000);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		new KVServer(50000);
 	}
 	
 	

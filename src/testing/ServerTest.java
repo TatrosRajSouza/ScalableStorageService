@@ -46,14 +46,6 @@ public class ServerTest extends TestCase {
 			Exception ex = null;
 			
 			try {
-				new LogSetup("logs/client.log", Level.ALL);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				ex = e1;
-			}
-			
-			try {
 				server1 = new KVServer(serverPort);
 				server1.start();
 				

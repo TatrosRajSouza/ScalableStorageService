@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import logger.LogSetup;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVMessage.StatusType;
@@ -17,6 +21,7 @@ public class ClientWrapper implements Runnable {
 	public static String defaultServer = "127.0.0.1";
 	public static int defaultPort = 50000;
 	
+	Evaluator evalInstance;
 	KVClient clientInstance;
 	private String name;
 	private HashMap<String, String> requestMap = null;
@@ -24,10 +29,15 @@ public class ClientWrapper implements Runnable {
 	private int putsSent = 0;
 	private int putsSuccess = 0;
 	private int putsFailed = 0;
+	public Logger logger;
 	
-	public ClientWrapper(String name) {
+	public ClientWrapper(String name, Evaluator instance) {
+		this.evalInstance = instance;
 		this.clientInstance = new KVClient(name);
 		this.name = name;
+		
+		LogSetup ls = new LogSetup("logs\\wrapper.log", "Wrapper " + name, Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	
 	public void run() {
@@ -45,18 +55,19 @@ public class ClientWrapper implements Runnable {
 				
 				KVMessage result = clientInstance.put(keys.get(value), requestMap.get(keys.get(value)));
 				putsSent++;
-				if (result != null && (result.getStatus().equals(StatusType.PUT_SUCCESS) || result.getStatus().equals(StatusType.PUT_SUCCESS))) {
-					System.out.println(this.name + ": Successfully put <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
+				if (result != null && (result.getStatus().equals(StatusType.PUT_SUCCESS) || result.getStatus().equals(StatusType.PUT_UPDATE))) {
+					logger.info("Successfully put <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
 					putsSuccess++;
 				} else {
 					putsFailed++;
+					logger.info("Put Failed <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
 				}
 				
 				requestMap.remove(keys.get(value));
 				keys.remove(value);
 			}
 			
-			System.out.println(this.name + " finished. Puts sent: " + putsSent + ", Puts Success: " + putsSuccess + ", Puts failed: " + putsFailed);
+			evalInstance.getLogger().info(this.name + " finished. Puts sent: " + putsSent + ", Puts Success: " + putsSuccess + ", Puts failed: " + putsFailed);
 		} catch (ConnectException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();

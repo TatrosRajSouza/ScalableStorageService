@@ -23,40 +23,37 @@ import client.KVStore;
  */
 public class KVClient {
 	public static final boolean DEBUG = false;
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
+	// private static Logger rootLogger = Logger.getRootLogger();
 	private KVStore kvStore = null;
 	KVCommunication connection = null;
 	String name = "";
 		
-	public KVClient() { }
+	public KVClient() {
+		initLog();
+	}
 	
 	public KVClient(String name) {
 		this.name = name;
-    	// Thread.currentThread().setName("CLIENT");
+		initLog();
+	}
+	
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs\\client.log", name, Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	
 	/**
      * Main entry point for the KVClient application. 
      */
     public static void main(String[] args) {
-    	try {
-    		System.setProperty("file.encoding", "US-ASCII");
-			new LogSetup("logs/client.log", Level.ALL);
-		} catch (IOException e) {
-			System.out.println("Error! Unable to initialize logger!");
-			// e.printStackTrace();
-			System.exit(1); 
-		} catch (SecurityException ex) {
-			System.out.println("Error! Unable to set enconding to ASCII.");
-			// ex.printStackTrace();
-			System.exit(1);
-		}
+    	System.setProperty("file.encoding", "US-ASCII");
     	
     	try {
     		Shell shell = new Shell(new KVClient());
     		shell.display();
     	} catch (Exception ex)	{
-    		logger.error("A fatal error occured. The program will now exit.");
+    		System.out.println("A fatal error occured. The program will now exit.");
     		ex.printStackTrace();
     		System.exit(1);
     	}
@@ -66,7 +63,7 @@ public class KVClient {
      * Obtains the logger for the client application
      * @return Logger the logger
      */
-    public static Logger getLogger()
+    public Logger getLogger()
     {
     	return logger;
     }
