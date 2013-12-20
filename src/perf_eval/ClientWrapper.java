@@ -9,7 +9,6 @@ import java.util.Random;
 
 import logger.LogSetup;
 
-import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -55,6 +54,7 @@ public class ClientWrapper implements Runnable {
 	public void run() {
 		if (requestMap == null) {
 			evalInstance.getLogger().warn(this.getName() + " has an empty request map. Exiting.");
+			System.exit(1);
 		}
 
 		try {
@@ -63,7 +63,6 @@ public class ClientWrapper implements Runnable {
 			long startTime = 0;
 			long elapsedTime = 0;
 			while (keys.size() > 0) {
-				System.out.println(name + " keys.Size > 0");
 				/* Put a random key value pair from the clients kv map */
 				Random rand = new Random();
 				int value = rand.nextInt(keys.size());
@@ -124,6 +123,7 @@ public class ClientWrapper implements Runnable {
 					
 					if (randomKey == null) {
 						evalInstance.getLogger().error(name + " TRIED TO GET INVALID KEY: " + value);
+						System.exit(1);
 					}
 					
 					startTime = System.nanoTime();
