@@ -322,7 +322,7 @@ public class Evaluator {
 			} // end for number of requests
 		} // end foreach client
 		
-		/* DEBUG */
+		/* DEBUG 
 		int i = 0;
 		for (ClientWrapper client : clients) {
 			i++;
@@ -333,7 +333,7 @@ public class Evaluator {
 			}
 			logger.debug("_______________________________________");
 		}
-		
+		*/
 	}
 	
 	public void start(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {	
@@ -416,7 +416,7 @@ public class Evaluator {
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of clients, third the number of servers, fourth the number of Key/Value Datapairs read from the dataset
 		// and fifth argument is the number of requests each client thread receives.
-		Evaluator eval = new Evaluator(args[0], 15, 10, 40000, 2000);
+		Evaluator eval = new Evaluator(args[0], 1, 10, 50000, 2000);
 		
 		try {
 			eval.start("127.0.0.1", 50000);
@@ -445,6 +445,53 @@ public class Evaluator {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
+		/*
+		Evaluator eval;
+		
+		for (int numClients = 0; numClients <= 10; numClients += 5)
+		{
+			int clients = numClients;
+			if (clients == 0)
+				clients = 1;
+			
+			for (int numServers = 0; numServers <= 10; numServers += 5) {
+				int servers = numServers;
+				if (servers == 0)
+					servers = 1;
+				
+				 eval = new Evaluator(args[0], clients, servers, 50000, 2000);
+			
+				try {
+				
+					eval.start("127.0.0.1", 50000);
+					
+					// wait for all threads to conclude
+					for (Thread t : eval.clientThreads) {
+						try {
+							t.join();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					
+					// output performance data to file
+					eval.processPerfData();
+				} catch (ConnectException e) {
+					System.out.println(e.getMessage());
+					e.printStackTrace();
+				} catch (UnknownHostException e) {
+					System.out.println(e.getMessage());
+					e.printStackTrace();
+				} catch (IOException e) {
+					System.out.println(e.getMessage());
+					e.printStackTrace();
+				} catch (InvalidMessageException e) {
+					System.out.println(e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		}
+		*/
 		
 		/*
 		for (int numClients = 0; numClients < 21; numClients += 5) {

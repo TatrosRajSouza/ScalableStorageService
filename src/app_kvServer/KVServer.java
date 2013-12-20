@@ -162,34 +162,37 @@ public class KVServer extends Thread {
 	 * Loops until the the server should be closed.
 	 */
 	public void run() {
-		running = initializeServer();
-
-		if(serverSocket != null) {
-			while(isRunning()){
-				try {
-					Socket client = serverSocket.accept();                
-					ClientConnection connection = 
-							new ClientConnection(client,this);
-
-
-					// store the clients for further accessing
-					String ip = client.getInetAddress().getHostAddress();
-					serverData = new ServerData(ip+ ":" + port, ip, port);
-					Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getLocalPort());
-					logger.info("Client Connected  [" + client.getInetAddress().getHostAddress() + ":" + client.getPort() + "]");
-
-					new Thread(connection).start();
-				} catch (IOException e) {
-					logger.error("Error! " +
-							"Unable to establish connection. \n", e);
+		if (!Thread.interrupted()) {
+			running = initializeServer();
+	
+			if(serverSocket != null) {
+				while(isRunning()){
+					try {
+						Socket client = serverSocket.accept();                
+						ClientConnection connection = 
+								new ClientConnection(client,this);
+	
+	
+						// store the clients for further accessing
+						String ip = client.getInetAddress().getHostAddress();
+						serverData = new ServerData(ip+ ":" + port, ip, port);
+						Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getLocalPort());
+						logger.info("Client Connected  [" + client.getInetAddress().getHostAddress() + ":" + client.getPort() + "]");
+	
+						new Thread(connection).start();
+					} catch (IOException e) {
+						logger.error("Error! " +
+								"Unable to establish connection. \n", e);
+					}
 				}
 			}
-		}
-		logger.info("Server stopped.");
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			logger.error("not able to close the server socket" + e.getMessage());
+			logger.info("Server stopped.");
+			try {
+				if (serverSocket != null)
+					serverSocket.close();
+			} catch (IOException e) {
+				logger.error("not able to close the server socket" + e.getMessage());
+			}
 		}
 	}
 

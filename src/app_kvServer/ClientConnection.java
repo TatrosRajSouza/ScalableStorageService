@@ -67,260 +67,262 @@ public class ClientConnection implements Runnable {
 	 * Loops until the connection is closed or aborted by the client.
 	 */ // example usage for testing: connect 127.0.0.1 50001
 	public void run() {
-		Thread.currentThread().setName("SERVER " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getLocalPort());
-		try { //connection could not be established
-			output = clientSocket.getOutputStream();
-			input = clientSocket.getInputStream();
-			String connectSuccess = "Connection to MSRG Echo server established: " 
-					+ clientSocket.getLocalAddress() + " / "
-					+ clientSocket.getLocalPort();		
-			while(isOpen) { // until connection open
-				try { //connection lost
-					byte[] latestMsg = receiveMessage();
-					KVQuery kvQueryCommand;
-					try { //   not KVMessage
-						kvQueryCommand = new KVQuery(latestMsg);
-						String key=null,value=null,returnValue=null;
-						String command = kvQueryCommand.getStatus().toString();
-						
-						if (command != null && kvQueryCommand.getKey() != null && kvQueryCommand.getValue() != null)
-							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ", " + kvQueryCommand.getValue() + ">");
-						else if (command != null && kvQueryCommand.getKey() != null)
-							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ">");
-						else if (command != null)
-							logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command);
-						
-						if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
-						{
-							if(command.equals("GET"))	{ //get block
-
-								key = kvQueryCommand.getKey();
-								if(this.serverInstance.isDEBUG())
-								{
-									logger.info("SERVER: Get operation Key:" + key);
-								}
-								BigInteger hashedKey = checkRange(key,value);
-								if(hashedKey != null)
-								{
+		if (!Thread.interrupted()) {
+			Thread.currentThread().setName("SERVER " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getLocalPort());
+			try { //connection could not be established
+				output = clientSocket.getOutputStream();
+				input = clientSocket.getInputStream();
+				String connectSuccess = "Connection to MSRG Echo server established: " 
+						+ clientSocket.getLocalAddress() + " / "
+						+ clientSocket.getLocalPort();		
+				while(isOpen) { // until connection open
+					try { //connection lost
+						byte[] latestMsg = receiveMessage();
+						KVQuery kvQueryCommand;
+						try { //   not KVMessage
+							kvQueryCommand = new KVQuery(latestMsg);
+							String key=null,value=null,returnValue=null;
+							String command = kvQueryCommand.getStatus().toString();
+							
+							if (command != null && kvQueryCommand.getKey() != null && kvQueryCommand.getValue() != null)
+								logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ", " + kvQueryCommand.getValue() + ">");
+							else if (command != null && kvQueryCommand.getKey() != null)
+								logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command + " <" + kvQueryCommand.getKey() + ">");
+							else if (command != null)
+								logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + command);
+							
+							if(this.serverInstance.isServeClientRequest()) //  ECS permission to serve client?
+							{
+								if(command.equals("GET"))	{ //get block
+	
+									key = kvQueryCommand.getKey();
 									if(this.serverInstance.isDEBUG())
 									{
-										logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());
-										for (BigInteger k : this.serverInstance.getKvdata().dataStore.keySet())
-										{
-											logger.debug("Key: " + k);
-										}
+										logger.info("SERVER: Get operation Key:" + key);
 									}
-									returnValue = this.serverInstance.getKvdata().get(hashedKey);
-									//logger.debug("returnValue: " + returnValue);
-									if(returnValue != null) {
-										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
-										sendMessage(kvQueryGet.toBytes());
-										logger.debug("SERVER:Get success");
-									}
-									else
+									BigInteger hashedKey = checkRange(key,value);
+									if(hashedKey != null)
 									{
-										String errorMsg = "Error in get operation for the key/Key is not present <key>: " + "<" + key + ">";
-										logger.error(errorMsg);
-										KVQuery kvQueryGeterror = new KVQuery(KVMessage.StatusType.GET_ERROR,errorMsg);
-										sendMessage(kvQueryGeterror.toBytes());
-									}
-								}
-								else
-								{
-									// send not responsible message with metadata
-									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
-									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
-											+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
-									sendMessage(kvQueryNotResponsible.toBytes());
-								}
-
-							}// get block
-							else if(command.equals("PUT")) //put block
-							{
-								key = kvQueryCommand.getKey();
-
-								BigInteger hashedKey = checkRange(key,value);
-								if(hashedKey != null)
-								{
-									//future : check in range or not
-									if(!this.serverInstance.isWriteLocked())
-									{
-
-										value = kvQueryCommand.getValue();
 										if(this.serverInstance.isDEBUG())
 										{
-											logger.info("SERVER: Put operation Key: " + key + " and Value: " + value);
-										}
-										returnValue = this.serverInstance.getKvdata().put(hashedKey,value);
-										if(!value.equals("null") )
-										{
-											if(returnValue == null)
+											logger.debug("Num keys in map: " + this.serverInstance.getKvdata().dataStore.size());
+											for (BigInteger k : this.serverInstance.getKvdata().dataStore.keySet())
 											{
-												KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
-												sendMessage(kvQueryPut.toBytes());
-												logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
-														+ kvQueryPut.getStatus() + " <" + kvQueryPut.getKey() + ", " + kvQueryPut.getValue() + ">");
-
-											}
-											else if(returnValue == value)
-											{
-												KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
-												sendMessage(kvQueryUpdate.toBytes());
-												logger.debug("SERVER:put update success");
-
-											}
-											else
-											{
-												String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
-												logger.error(errorMsg);
-												sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+												logger.debug("Key: " + k);
 											}
 										}
-
-										if(value.equals("null"))
+										returnValue = this.serverInstance.getKvdata().get(hashedKey);
+										//logger.debug("returnValue: " + returnValue);
+										if(returnValue != null) {
+											KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
+											sendMessage(kvQueryGet.toBytes());
+											logger.debug("SERVER:Get success");
+										}
+										else
 										{
-											if(returnValue != null)
-											{
-												KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
-												sendMessage(kvQueryDelete.toBytes());
-												logger.debug("SERVER:put delete success");
-
-											}
-											else
-											{
-												String errorMsg = "Error in Delete operation for Key:"+key  ;
-												logger.error(errorMsg);
-												sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
-											}
-
+											String errorMsg = "Error in get operation for the key/Key is not present <key>: " + "<" + key + ">";
+											logger.error(errorMsg);
+											KVQuery kvQueryGeterror = new KVQuery(KVMessage.StatusType.GET_ERROR,errorMsg);
+											sendMessage(kvQueryGeterror.toBytes());
 										}
 									}
 									else
 									{
-										KVQuery kvQueryWriteLock = new KVQuery(KVMessage.StatusType.SERVER_WRITE_LOCK);
-										sendMessage(kvQueryWriteLock.toBytes());
+										// send not responsible message with metadata
+										KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
+										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+												+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
+										sendMessage(kvQueryNotResponsible.toBytes());
 									}
-								}
-								else
+	
+								}// get block
+								else if(command.equals("PUT")) //put block
 								{
-									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
-									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
-											+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
-									sendMessage(kvQueryNotResponsible.toBytes());
-								}
-							}//put block
-
-							else if(command.equals("DISCONNECT")) //disconnect block
-							{
-								KVQuery kvQueryDisconnect;
-								try {
-									kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
-									sendMessage(kvQueryDisconnect.toBytes());
-									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
-											+ kvQueryDisconnect.getStatus());
-
-									try {
-										if (clientSocket != null) {
-											input.close();
-											output.close();
-											clientSocket.close();
+									key = kvQueryCommand.getKey();
+	
+									BigInteger hashedKey = checkRange(key,value);
+									if(hashedKey != null)
+									{
+										//future : check in range or not
+										if(!this.serverInstance.isWriteLocked())
+										{
+	
+											value = kvQueryCommand.getValue();
+											if(this.serverInstance.isDEBUG())
+											{
+												logger.info("SERVER: Put operation Key: " + key + " and Value: " + value);
+											}
+											returnValue = this.serverInstance.getKvdata().put(hashedKey,value);
+											if(!value.equals("null") )
+											{
+												if(returnValue == null)
+												{
+													KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
+													sendMessage(kvQueryPut.toBytes());
+													logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+															+ kvQueryPut.getStatus() + " <" + kvQueryPut.getKey() + ", " + kvQueryPut.getValue() + ">");
+	
+												}
+												else if(returnValue == value)
+												{
+													KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
+													sendMessage(kvQueryUpdate.toBytes());
+													logger.debug("SERVER:put update success");
+	
+												}
+												else
+												{
+													String errorMsg = "Error in put operation for Key:"+key + "and value:" + value ;
+													logger.error(errorMsg);
+													sendError(KVMessage.StatusType.PUT_ERROR,key,value);
+												}
+											}
+	
+											if(value.equals("null"))
+											{
+												if(returnValue != null)
+												{
+													KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
+													sendMessage(kvQueryDelete.toBytes());
+													logger.debug("SERVER:put delete success");
+	
+												}
+												else
+												{
+													String errorMsg = "Error in Delete operation for Key:"+key  ;
+													logger.error(errorMsg);
+													sendError(KVMessage.StatusType.DELETE_ERROR,key,value);
+												}
+	
+											}
 										}
-									} catch (IOException ioe) {
-										logger.error("Error! Unable to tear down connection!", ioe);
+										else
+										{
+											KVQuery kvQueryWriteLock = new KVQuery(KVMessage.StatusType.SERVER_WRITE_LOCK);
+											sendMessage(kvQueryWriteLock.toBytes());
+										}
 									}
-								} catch (InvalidMessageException e) {
-									// TODO Auto-generated catch block
-									logger.error("Error in sending disconnect message");
-								}
-							} //disconnect block
+									else
+									{
+										KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
+										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+												+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
+										sendMessage(kvQueryNotResponsible.toBytes());
+									}
+								}//put block
+	
+								else if(command.equals("DISCONNECT")) //disconnect block
+								{
+									KVQuery kvQueryDisconnect;
+									try {
+										kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
+										sendMessage(kvQueryDisconnect.toBytes());
+										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+												+ kvQueryDisconnect.getStatus());
+	
+										try {
+											if (clientSocket != null) {
+												input.close();
+												output.close();
+												clientSocket.close();
+											}
+										} catch (IOException ioe) {
+											logger.error("Error! Unable to tear down connection!", ioe);
+										}
+									} catch (InvalidMessageException e) {
+										// TODO Auto-generated catch block
+										logger.error("Error in sending disconnect message");
+									}
+								} //disconnect block
+								else if(command.equals("CONNECT")) // connect block only for clients not for ECS
+								{
+									sendConnectSuccess(connectSuccess);
+									// logger.debug("SERVER:Connect success");
+	
+	
+								}// connect block only for clients not for ECS
+	
+							} // ECS permission to serve clients?
 							else if(command.equals("CONNECT")) // connect block only for clients not for ECS
 							{
 								sendConnectSuccess(connectSuccess);
-								// logger.debug("SERVER:Connect success");
-
-
-							}// connect block only for clients not for ECS
-
-						} // ECS permission to serve clients?
-						else if(command.equals("CONNECT")) // connect block only for clients not for ECS
-						{
-							sendConnectSuccess(connectSuccess);
-							logger.debug("SERVER:Connect success");
-
-
-						} // connect block only for clients not for ECS
-						else // server stopped block
-						{
-							KVQuery kvQueryNoService;
-							try {
-								kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,key,value);
-								sendMessage(kvQueryNoService.toBytes());
-								logger.debug("SERVER:Stopped");
-
-							} catch (InvalidMessageException e1) {
-								// TODO Auto-generated catch block
-								logger.error("Error in invalid message format:server side:");
-							}
-						} //server stopped block
-
-					}//   not KVMessage
-					catch (InvalidMessageException e) {//ECS block
-						try{
-							EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
-							String ecsMessage = ecsConnection.process();
-							if(ecsMessage != null)
+								logger.debug("SERVER:Connect success");
+	
+	
+							} // connect block only for clients not for ECS
+							else // server stopped block
 							{
-								if(ecsMessage.equals("movecompleted"))
-								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
-									sendMessage(ecsMoveSuccess.toBytes());
-									logger.debug("SERVER:ECS move completed");
+								KVQuery kvQueryNoService;
+								try {
+									kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,key,value);
+									sendMessage(kvQueryNoService.toBytes());
+									logger.debug("SERVER:Stopped");
+	
+								} catch (InvalidMessageException e1) {
+									// TODO Auto-generated catch block
+									logger.error("Error in invalid message format:server side:");
 								}
-								else if(ecsMessage.equals("moveinternalcompleted"))
+							} //server stopped block
+	
+						}//   not KVMessage
+						catch (InvalidMessageException e) {//ECS block
+							try{
+								EcsConnection ecsConnection = new EcsConnection(latestMsg,this.serverInstance);
+								String ecsMessage = ecsConnection.process();
+								if(ecsMessage != null)
 								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
-									sendMessage(ecsMoveSuccess.toBytes());
-									logger.debug("SERVER:ECS movinternale completed");
+									if(ecsMessage.equals("movecompleted"))
+									{
+										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
+										sendMessage(ecsMoveSuccess.toBytes());
+										logger.debug("SERVER:ECS move completed");
+									}
+									else if(ecsMessage.equals("moveinternalcompleted"))
+									{
+										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
+										sendMessage(ecsMoveSuccess.toBytes());
+										logger.debug("SERVER:ECS movinternale completed");
+									}
+									else
+									{
+										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
+										sendMessage(ecsMoveSuccess.toBytes());
+										logger.debug("SERVER:ECS move error");
+									}
 								}
-								else
-								{
-									ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
-									sendMessage(ecsMoveSuccess.toBytes());
-									logger.debug("SERVER:ECS move error");
-								}
+	
+	
+	
 							}
-
-
-
-						}
-						catch(InvalidMessageException eEcs)
-						{
-							logger.error("Invalid message received from ECS");
-
-
-						} 
-					}//ECS block
-
-				}//connection lost
-				catch (IOException ioe) {
-					// logger.error("Error! Connection lost!"); // I commented this out because it is irritating. Happens every disconnect.
-					isOpen = false;
+							catch(InvalidMessageException eEcs)
+							{
+								logger.error("Invalid message received from ECS");
+	
+	
+							} 
+						}//ECS block
+	
+					}//connection lost
+					catch (IOException ioe) {
+						// logger.error("Error! Connection lost!"); // I commented this out because it is irritating. Happens every disconnect.
+						isOpen = false;
+					}
+				}// until connection open
+			}//connection could not be established
+			catch (IOException ioe) {
+				logger.error("Error! Connection could not be established!", ioe);
+	
+			}
+			finally {
+				try {
+					if (clientSocket != null) {
+						input.close();
+						output.close();
+						clientSocket.close();
+					}
+				} catch (IOException ioe) {
+					logger.error("Error! Unable to tear down connection!", ioe);
 				}
-			}// until connection open
-		}//connection could not be established
-		catch (IOException ioe) {
-			logger.error("Error! Connection could not be established!", ioe);
-
-		}
-		finally {
-			try {
-				if (clientSocket != null) {
-					input.close();
-					output.close();
-					clientSocket.close();
-				}
-			} catch (IOException ioe) {
-				logger.error("Error! Unable to tear down connection!", ioe);
 			}
 		}
 	}
