@@ -30,7 +30,7 @@ public class KVCommunication {
  	private String moduleName = "<KVComm Module>";
  	private static final int TIMEOUT_MS = 200;
 	private static final int BUFFER_SIZE = 1024;
-	private static final int DROP_SIZE = 1024 * BUFFER_SIZE;
+	private static final int DROP_SIZE = 4096 * BUFFER_SIZE;
 	
 	/**
 	 * Initializes communication by establishing a connection to the given address and port

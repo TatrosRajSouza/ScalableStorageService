@@ -416,7 +416,7 @@ public class Evaluator {
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of clients, third the number of servers, fourth the number of Key/Value Datapairs read from the dataset
 		// and fifth argument is the number of requests each client thread receives.
-		Evaluator eval = new Evaluator(args[0], 1, 1, 40000, 2000);
+		Evaluator eval = new Evaluator(args[0], 15, 10, 40000, 2000);
 		
 		try {
 			eval.start("127.0.0.1", 50000);

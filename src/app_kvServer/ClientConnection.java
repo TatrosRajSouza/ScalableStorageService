@@ -34,7 +34,7 @@ public class ClientConnection implements Runnable {
 	private KVServer serverInstance;
 	private Logger logger;
 	private static final int BUFFER_SIZE = 1024;
-	private static final int DROP_SIZE = 128 * BUFFER_SIZE;
+	private static final int DROP_SIZE = 44096 * BUFFER_SIZE;
 	private Socket clientSocket;
 	private InputStream input;
 	private OutputStream output;

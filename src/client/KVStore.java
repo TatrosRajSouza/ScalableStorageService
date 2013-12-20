@@ -85,13 +85,17 @@ public class KVStore implements KVCommInterface {
 		}
 		
 		else if (kvQueryMessage.getStatus() == StatusType.CONNECT_ERROR) {
-			if (DEBUG)
+			if (DEBUG) {
+				System.out.println(moduleName + ": Unable to connect to KVServer.");
 				logger.error(moduleName + ": Unable to connect to KVServer.");
+			}
 		}
 		
 		else {
-			if (DEBUG)
+			if (DEBUG) {
 				logger.error(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
+				System.out.println(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
+			}
 		}
 	}
 
@@ -190,7 +194,7 @@ public class KVStore implements KVCommInterface {
 				} catch (UnknownHostException ex) {
 					logger.warn(moduleName + ": Put Request Failed. Responsible Server is Unknown Host!");
 				} catch (IOException ex) {
-					logger.warn(moduleName + ": Put Request Failed. Could not establish connection due to an IOError!");
+					logger.warn(moduleName + ": Put Request Failed. Could not establish connection due to an IOError!" + ex.getMessage());
 				} catch (InvalidMessageException ex) {
 					logger.warn(moduleName + ": Put Request Failed. Unable to connect to responsible server. Received an invalid message: \n" + ex.getMessage());
 				}
@@ -290,7 +294,7 @@ public class KVStore implements KVCommInterface {
 			} catch (UnknownHostException e) {
 				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). UnknownHost " + address + ":" + port);
 			} catch (IOException e) {
-				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). IO Failure " + address + ":" + port);
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). IO Failure " + address + ":" + port + ", message: " + e.getMessage());
 			} catch (InvalidMessageException e) {
 				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). Invalid Message " + address + ":" + port);
 			}
@@ -334,6 +338,7 @@ public class KVStore implements KVCommInterface {
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
 				
 				if (kvResult.getStatus() == StatusType.GET_SUCCESS || kvResult.getStatus() == StatusType.GET_ERROR) {
+					logger.info("Received GET_SUCCESS for key " + key);
 					return kvResult;
 				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
@@ -384,7 +389,7 @@ public class KVStore implements KVCommInterface {
 			} catch (UnknownHostException e) {
 				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). UnknownHost " + address + ":" + port);
 			} catch (IOException e) {
-				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). IO Failure " + address + ":" + port);
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). IO Failure " + address + ":" + port  + ", message: " + e.getMessage());
 			} catch (InvalidMessageException e) {
 				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). Invalid Message " + address + ":" + port);
 			}
