@@ -28,7 +28,7 @@ import consistent_hashing.EmptyServerDataException;
  *
  */
 public class KVStore implements KVCommInterface {
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	private KVCommunication kvComm;
 	private Logger logger;
 	private String address;
@@ -294,6 +294,8 @@ public class KVStore implements KVCommInterface {
 	 */
 	@Override
 	public KVMessage get(String key) throws ConnectException {
+		logger.warn("Trying to get Key <" + key + ">");
+		
 		/* Find & if necessary, connect to responsible Server */
 		ServerData responsibleServer = connectResponsibleServer(key);
 		
@@ -319,7 +321,7 @@ public class KVStore implements KVCommInterface {
 			try {
 				byte[] getResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(getResponse);
-				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getValue(),kvQueryMessage.getKey());
+				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
 				
 				if (kvResult.getStatus() == StatusType.GET_SUCCESS || kvResult.getStatus() == StatusType.GET_ERROR) {
 					return kvResult;
@@ -343,7 +345,7 @@ public class KVStore implements KVCommInterface {
 							return null;
 						}
 						/* Retry GET */
-						this.get(key);
+						return this.get(key);
 					} else {
 						throw new InvalidMessageException(moduleName + ": Invalid Response Message received from Server:\n" +
 								"  Type: " + kvResult.getStatus() + "\n" +

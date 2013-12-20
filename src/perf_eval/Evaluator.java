@@ -343,6 +343,7 @@ public class Evaluator {
 			t.setName(client.getName() + " " + t.getName());
 			clientThreads.add(t);
 			t.start();
+			logger.warn("Started client thread " + t);
 		}
 	}
 	
@@ -391,7 +392,7 @@ public class Evaluator {
 		
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of dataPairs read from the dataset.
-		Evaluator eval = new Evaluator(args[0], 10, 50000, 1000);
+		Evaluator eval = new Evaluator(args[0], 10, 1000, 10);
 		eval.initEnron();
 		eval.startServers(3);
 		

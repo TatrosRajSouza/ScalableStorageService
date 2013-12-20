@@ -129,6 +129,8 @@ public class ClientConnection implements Runnable {
 								{
 									// send not responsible message with metadata
 									KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
+									logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+											+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
 									sendMessage(kvQueryNotResponsible.toBytes());
 								}
 

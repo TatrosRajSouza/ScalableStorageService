@@ -28,6 +28,7 @@ public class ClientWrapper implements Runnable {
 	private String name;
 	private HashMap<String, String> requestMap = null;
 	private ArrayList<String> keys = null;
+	private ArrayList<String> getKeys = new ArrayList<String>();
 	private int putsSent = 0;
 	private int putsSuccess = 0;
 	private int putsFailed = 0;
@@ -53,8 +54,7 @@ public class ClientWrapper implements Runnable {
 	
 	public void run() {
 		if (requestMap == null) {
-			System.out.println(this.getName() + " has an empty request map. Exiting.");
-			return;
+			evalInstance.getLogger().warn(this.getName() + " has an empty request map. Exiting.");
 		}
 
 		try {
@@ -63,15 +63,20 @@ public class ClientWrapper implements Runnable {
 			long startTime = 0;
 			long elapsedTime = 0;
 			while (keys.size() > 0) {
-				
+				System.out.println(name + " keys.Size > 0");
 				/* Put a random key value pair from the clients kv map */
 				Random rand = new Random();
 				int value = rand.nextInt(keys.size());
+				
+
 				
 				startTime = System.nanoTime(); 				
 				KVMessage result = clientInstance.put(keys.get(value), requestMap.get(keys.get(value)));
 				elapsedTime = System.nanoTime() - startTime; // elapsed time in nano seconds
 				double elapsedTimePut = (double)elapsedTime / 1000000; // to ms
+				
+				requestMap.remove(keys.get(value));
+				getKeys.add(keys.remove(value));
 				
 				putsSent++;
 				if (result != null && (result.getStatus().equals(StatusType.PUT_SUCCESS) || result.getStatus().equals(StatusType.PUT_UPDATE))) {
@@ -86,21 +91,43 @@ public class ClientWrapper implements Runnable {
 					perfLog.info("Put latency: " + elapsedTimePut);
 				}
 				
-				requestMap.remove(keys.get(value));
-				keys.remove(value);
+				//evalInstance.getLogger().info(this.name + " processing. Puts sent: " + putsSent + ", Puts Success: " + putsSuccess + ", Puts failed: " + putsFailed);
+				//evalInstance.getLogger().info("                       Gets sent: " + getsSent + ", Gets Success: " + getsSuccess + ", Gets failed: " + getsFailed);
+				
+
 				
 				/* Get a random key from available Data */
+				/*
+				int numKeys = this.getKeys.size();
+				if (numKeys > 0) {
+					Random rand2 = new Random();
+					int value2 = rand2.nextInt(numKeys);
+					
+					String randKey = getKeys.get(value2);
+					KVMessage result2 = clientInstance.get(randKey);
+					
+					if (result2 != null && (result2.getStatus().equals(StatusType.GET_SUCCESS))) {
+						logger.info("Successfully got <" + result2.getKey() + ", " + result2.getValue() + "> (" + result2.getStatus().toString() + ")");
+						perfLog.info("Get latency: ");
+						getsSuccess++;
+					} else {
+						getsFailed++;
+						logger.info("Get Failed <" + result2.getKey() + ", " + result2.getValue() + "> (" + result2.getStatus().toString() + ")");
+						perfLog.info("Get latency: ");
+					}
+				}*/
+				
 				int numAvailableKeys = evalInstance.getNumAvailableKeys();
 				if (numAvailableKeys > 0) {
 					value = rand.nextInt(evalInstance.getNumAvailableKeys());
 					String randomKey = evalInstance.getAvailableKey(value);
 					
 					if (randomKey == null) {
-						perfLog.error("TRIED TO GET INVALID KEY: " + value);
-						System.exit(1);
+						evalInstance.getLogger().error(name + " TRIED TO GET INVALID KEY: " + value);
 					}
 					
 					startTime = System.nanoTime();
+					// evalInstance.getLogger().info("Trying to get " + randomKey);
 					result = clientInstance.get(randomKey);
 					elapsedTime = System.nanoTime() - startTime; // elapsed time in nano seconds
 					double elapsedTimeGet = (double)elapsedTime / 1000000; // to ms
@@ -115,22 +142,23 @@ public class ClientWrapper implements Runnable {
 						logger.info("Get Failed <" + result.getKey() + ", " + result.getValue() + "> (" + result.getStatus().toString() + ")");
 						perfLog.info("Get latency: " + elapsedTimeGet);
 					}
+					
 				}
 			}
+			
 			
 			evalInstance.getLogger().info(this.name + " finished. Puts sent: " + putsSent + ", Puts Success: " + putsSuccess + ", Puts failed: " + putsFailed);
 			evalInstance.getLogger().info("                       Gets sent: " + getsSent + ", Gets Success: " + getsSuccess + ", Gets failed: " + getsFailed);
 		} catch (ConnectException e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
+			evalInstance.getLogger().error("ConnectException: " + e.getMessage());
 		} catch (UnknownHostException e) {
-			System.out.println(e.getMessage());
+			evalInstance.getLogger().error("UnknownHostException: " + e.getMessage());
 			e.printStackTrace();
 		} catch (IOException e) {
-			System.out.println(e.getMessage());
+			evalInstance.getLogger().error("IOException: " + e.getMessage());
 			e.printStackTrace();
 		} catch (InvalidMessageException e) {
-			System.out.println(e.getMessage());
+			evalInstance.getLogger().error("InvalidMessageException: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}

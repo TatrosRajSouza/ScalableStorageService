@@ -28,7 +28,7 @@ public class KVCommunication {
  	private InputStream input;
  	private String name = "";
  	private String moduleName = "<KVComm Module>";
- 	private static final int TIMEOUT_MS = 50000000;
+ 	private static final int TIMEOUT_MS = 200;
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 1024 * BUFFER_SIZE;
 	
