@@ -141,14 +141,16 @@ public class ClientWrapper implements Runnable {
 					
 					startTime = System.nanoTime();
 					// evalInstance.getLogger().info("Trying to get " + randomKey);
-					result = clientInstance.get(randomKey);
+					result = clientInstance.get(randomKey);				
+					elapsedTime = System.nanoTime() - startTime; // elapsed time in nano seconds
 					
 					// retry get
 					if (result.getStatus().equals(StatusType.GET_ERROR)) {
+						startTime = System.nanoTime();
 						result = clientInstance.get(randomKey);
+						elapsedTime = System.nanoTime() - startTime; // elapsed time in nano seconds
 					}
 					
-					elapsedTime = System.nanoTime() - startTime; // elapsed time in nano seconds
 					double elapsedTimeGet = (double)elapsedTime / 1000000; // to ms
 					
 					getsSent++;

@@ -348,6 +348,26 @@ public class Evaluator {
 		}
 	}
 	
+	public void processPerfData() {
+		double avgLatencyGet = 0.0;
+		double avgLatencyPut = 0.0;
+		double avgThroughput = 0.0;
+		
+		for (ClientWrapper client : clients) {
+			PerfInfo perfInfo = perfMap.get(client);
+			
+			avgLatencyGet += perfInfo.getLatencyGet();
+			avgLatencyPut += perfInfo.getLatencyPut();
+			avgThroughput += perfInfo.getThroughpout();
+		}
+		
+		avgLatencyGet /= clients.size();
+		avgLatencyPut /= clients.size();
+		avgThroughput /= clients.size();
+		
+		logger.info("Avg Latency Get: " + avgLatencyGet + ", Avg Latency Put: " + avgLatencyPut + ", Avg Throughput bps: " + avgThroughput);
+	}
+	
 	public void startServers(int numberOfServers) {
 		int currentPort = 50000;
 		this.servers = new ArrayList<KVServer>();
@@ -399,6 +419,19 @@ public class Evaluator {
 		
 		try {
 			eval.start("127.0.0.1", 50000);
+			
+			/* wait for all threads to conclude */
+			for (Thread t : eval.clientThreads) {
+				try {
+					t.join();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			/* output performance data to file */
+			eval.processPerfData();
 		} catch (ConnectException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
