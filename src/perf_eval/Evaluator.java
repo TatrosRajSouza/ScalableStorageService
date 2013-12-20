@@ -82,8 +82,9 @@ public class Evaluator {
 	}
 	
 	public synchronized void updateData(String key) {
-		System.out.println("PUTTING " + availableData.size() + ", key: " + key);
-		availableData.put(availableData.size(), key);
+		if (!availableData.containsKey(key)) {
+			availableData.put(availableData.size(), key);
+		}
 	}
 	
 	public synchronized int getNumAvailableKeys() {
@@ -392,7 +393,7 @@ public class Evaluator {
 		
 		// Create new Evaluator, first argument is the path to the maildir of enron data
 		// second argument is the number of dataPairs read from the dataset.
-		Evaluator eval = new Evaluator(args[0], 10, 1000, 10);
+		Evaluator eval = new Evaluator(args[0], 10, 12000, 500);
 		eval.initEnron();
 		eval.startServers(3);
 		

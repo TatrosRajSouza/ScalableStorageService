@@ -7,12 +7,28 @@ public class PerfInfo {
 	private double throughputBPS = 0.0;
 	
 	int valueCount = 0;
+	int throughputCount = 0;
 	
-	public void update(double throughput, double latencyPutNew, double latencyGetNew) {
+	public void update(double latencyPutNew, double latencyGetNew) {
 		valueCount++;
-		
-		throughputBPS = throughputBPS + ((throughput - throughputBPS) / valueCount);
 		latencyPut = latencyPut + ((latencyPutNew - latencyPut) / valueCount);
 		latencyGet = latencyGet + ((latencyGetNew - latencyGet) / valueCount);
+	}
+	
+	public void updateThroughput (double throughput) {
+		throughputCount++;
+		throughputBPS = throughputBPS + ((throughput - throughputBPS) / throughputCount);
+	}
+	
+	public double getLatencyPut() {
+		return this.latencyPut;
+	}
+	
+	public double getLatencyGet() {
+		return this.latencyGet;
+	}
+	
+	public double getThroughpout() {
+		return this.throughputBPS;
 	}
 }
