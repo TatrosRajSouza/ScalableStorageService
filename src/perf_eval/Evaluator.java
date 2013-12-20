@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import logger.LogSetup;
 
@@ -46,6 +47,8 @@ public class Evaluator {
 	private HashMap<Integer, String> indexMap; // contains IDs and their keys, ID -> key
 	private HashMap<String, String> kvMap;	// key value map with data from enron dataset, keyString -> valueString
 	private HashMap<Integer, String> enronFiles; // map: enronfileIDs --> file path
+	private HashMap<ClientWrapper, PerfInfo> perfMap; // contains clientWrappers and their performance info
+	private ConcurrentHashMap<Integer, String> availableData; // contains ID + key pairs of inserted data on servers
 	public Logger logger;
 	
 	public Evaluator(String enronPath, int numClients, int numDataPairs, int numRequestsPerClient) {
@@ -62,14 +65,57 @@ public class Evaluator {
 		indexMap = new HashMap<Integer, String>();
 		requestMap = new HashMap<ClientWrapper, HashMap<String, String>>();
 		enronFiles = new HashMap<Integer, String>();
+		perfMap = new HashMap<ClientWrapper, PerfInfo>();
+		availableData = new ConcurrentHashMap<Integer, String>();
 		
 		for (int i = 0; i < this.numClients; i++) {
 			clients.add(new ClientWrapper("CLIENT " + i, this));
+		}
+		
+		for (ClientWrapper client : clients) {
+			perfMap.put(client, new PerfInfo());
 		}
 	}
 	
 	public Logger getLogger() {
 		return this.logger;
+	}
+	
+	public synchronized void updateData(String key) {
+		System.out.println("PUTTING " + availableData.size() + ", key: " + key);
+		availableData.put(availableData.size(), key);
+	}
+	
+	public synchronized int getNumAvailableKeys() {
+		return availableData.size();
+	}
+	
+	public synchronized String getAvailableKey(int id) {
+	
+		if (availableData.containsKey(id)) {
+			return availableData.get(id);
+		} else {
+			System.out.println("available Data does not contain " + id);
+			
+			for (Entry<Integer, String> entry : availableData.entrySet()) {
+				System.out.println("ID: " + entry.getKey() + ", Key: " + entry.getValue());
+			}
+			
+			return null;
+		}
+	}
+	
+	/**
+	 * Get the perforamance Info for a wrapper
+	 * @param client the wrapper
+	 * @return the performance info for this wrapper
+	 */
+	public PerfInfo getPerfInfo(ClientWrapper client) {
+		if (perfMap.containsKey(client)) {
+			return perfMap.get(client);
+		} else {
+			return null;
+		}
 	}
 	
 	/**
