@@ -94,6 +94,7 @@ public class ClientWrapper implements Runnable {
 					
 					String dataSent = result.getValue() + result.getKey();
 					bitsSecond += dataSent.getBytes().length * 8;
+					
 					perfLog.info("PUT BPS added: " + dataSent.getBytes().length * 8 + "for: " + dataSent);
 					
 					evalInstance.updateData(result.getKey());

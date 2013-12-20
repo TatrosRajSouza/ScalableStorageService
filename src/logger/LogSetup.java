@@ -32,16 +32,30 @@ public class LogSetup {
 		initLog(name, logdir, level);
 	}
 	
-	/*
-	public LogSetup(String logdir, Level level, String name) throws IOException {
-	}
-	
-	public LogSetup(String logdir, Level level, Logger logger) throws IOException {
-	}
-	*/
-	
+	public LogSetup(String logdir, String name, Level level, boolean simple) {
+		this.logdir = logdir;
+		initLogSimple(name, logdir, level);
+	}	
 	
 	public void initLog(String name, String dir, Level level) {
+		// create logger
+		logger = Logger.getLogger(name);
+
+		FileAppender fileAppender;
+		try {
+			PatternLayout layout = new PatternLayout( "%d{ISO8601} %-5p [%t] %c: %m%n" );
+			fileAppender = new FileAppender(layout, dir);
+			
+			logger.removeAllAppenders();
+			logger.addAppender(fileAppender);
+			// logger.addAppender(new ConsoleAppender(layout));
+			logger.setLevel(level);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void initLogSimple(String name, String dir, Level level) {
 		// create logger
 		logger = Logger.getLogger(name);
 
@@ -49,19 +63,12 @@ public class LogSetup {
 		// you can also use console appender
 		FileAppender fileAppender;
 		try {
-			PatternLayout layout = new PatternLayout( "%d{ISO8601} %-5p [%t] %c: %m%n" );
-			fileAppender = new FileAppender(layout, dir);
-
-			// sometimes you can call this if you reuse this logger 
-			// to avoid useless traces
+			fileAppender = new FileAppender(new PatternLayout(), dir);
+			
 			logger.removeAllAppenders();
-	
-			// tell to logger where to write
 			logger.addAppender(fileAppender);
-			logger.addAppender(new ConsoleAppender(layout));
 			logger.setLevel(level);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

@@ -35,6 +35,7 @@ public class Evaluator {
 	public static final String LINE_KEYWORD_VALUE = "Subject: ";
 	
 	private int numClients;
+	private int numServers;
 	private int numKVPairs = 20000;
 	private int numRequestsPerClient;
 	private String enronPath = "";
@@ -50,15 +51,20 @@ public class Evaluator {
 	private HashMap<ClientWrapper, PerfInfo> perfMap; // contains clientWrappers and their performance info
 	private ConcurrentHashMap<Integer, String> availableData; // contains ID + key pairs of inserted data on servers
 	public Logger logger;
+	public Logger perfLogger;
 	
-	public Evaluator(String enronPath, int numClients, int numDataPairs, int numRequestsPerClient) {
+	public Evaluator(String enronPath, int numClients, int numServers, int numDataPairs, int numRequestsPerClient) {
 		this.enronPath = enronPath;
 		this.numKVPairs = numDataPairs;
 		this.numClients = numClients;
+		this.numServers = numServers;
 		this.numRequestsPerClient = numRequestsPerClient;
 			
 		LogSetup ls = new LogSetup("logs/eval.log", "PE", Level.ALL);
 		this.logger = ls.getLogger();
+		
+		LogSetup ls2 = new LogSetup("logs/perfData-" + numClients + "-" + numServers + "-" + numRequestsPerClient + ".log", "PD", Level.ALL, true);
+		this.perfLogger = ls2.getLogger();
 		
 		clients = new ArrayList<ClientWrapper>();
 		kvMap = new HashMap<String, String>();
@@ -75,6 +81,9 @@ public class Evaluator {
 		for (ClientWrapper client : clients) {
 			perfMap.put(client, new PerfInfo());
 		}
+		
+		initEnron();
+		startServers(numServers);
 	}
 	
 	public Logger getLogger() {
@@ -327,14 +336,6 @@ public class Evaluator {
 		
 	}
 	
-	/*
-	public void clientsRun(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {
-		for (ClientWrapper client : clients) {
-			client.connect(address, port);
-		}
-	}
-	*/
-	
 	public void start(String address, int port) throws ConnectException, UnknownHostException, IOException, InvalidMessageException {	
 		clientThreads = new ArrayList<Thread>();
 		
@@ -363,9 +364,10 @@ public class Evaluator {
 		
 		avgLatencyGet /= clients.size();
 		avgLatencyPut /= clients.size();
-		avgThroughput /= clients.size();
 		
 		logger.info("Avg Latency Get: " + avgLatencyGet + ", Avg Latency Put: " + avgLatencyPut + ", Avg Throughput bps: " + avgThroughput);
+		System.out.println("Avg Latency Get: " + avgLatencyGet + ", Avg Latency Put: " + avgLatencyPut + ", Avg Throughput bps: " + avgThroughput);
+		perfLogger.info(avgLatencyGet + "\t" + avgLatencyPut + "\t" + avgThroughput);
 	}
 	
 	public void startServers(int numberOfServers) {
@@ -412,25 +414,23 @@ public class Evaluator {
 		}
 		
 		// Create new Evaluator, first argument is the path to the maildir of enron data
-		// second argument is the number of dataPairs read from the dataset.
-		Evaluator eval = new Evaluator(args[0], 10, 12000, 500);
-		eval.initEnron();
-		eval.startServers(3);
+		// second argument is the number of clients, third the number of servers, fourth the number of Key/Value Datapairs read from the dataset
+		// and fifth argument is the number of requests each client thread receives.
+		Evaluator eval = new Evaluator(args[0], 1, 1, 40000, 2000);
 		
 		try {
 			eval.start("127.0.0.1", 50000);
 			
-			/* wait for all threads to conclude */
+			// wait for all threads to conclude
 			for (Thread t : eval.clientThreads) {
 				try {
 					t.join();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 			
-			/* output performance data to file */
+			// output performance data to file
 			eval.processPerfData();
 		} catch (ConnectException e) {
 			System.out.println(e.getMessage());
@@ -446,6 +446,43 @@ public class Evaluator {
 			e.printStackTrace();
 		}
 		
-		// eval.stopServers();
+		/*
+		for (int numClients = 0; numClients < 21; numClients += 5) {
+			Evaluator eval;
+			if (numClients == 0)
+				eval = new Evaluator(args[0], 1, 5, 18000, 500);
+			else
+				eval = new Evaluator(args[0], numClients, 5, 18000, 20);
+			
+			try {
+				eval.start("127.0.0.1", 50000);
+				
+				// wait for all threads to conclude
+				for (Thread t : eval.clientThreads) {
+					try {
+						t.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				
+				// output performance data to file
+				eval.processPerfData();
+			} catch (ConnectException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			} catch (UnknownHostException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			} catch (InvalidMessageException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			}
+		}*/
+		
+		System.exit(0);
 	}
 }

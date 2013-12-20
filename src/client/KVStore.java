@@ -150,7 +150,7 @@ public class KVStore implements KVCommInterface {
 			}
 			
 		} else {
-			logger.error(moduleName + ": Not connected to a KVServer.");
+			logger.error(moduleName + ": Not connected to a KVServer (disconnect).");
 		}
 	}
 
@@ -283,7 +283,17 @@ public class KVStore implements KVCommInterface {
 			}
 			return null;
 		} else {
-			throw new ConnectException(moduleName + ": Not connected to a KVServer.");
+			try {
+				// try to reconnect
+				connect();
+				return this.put(key, value); 
+			} catch (UnknownHostException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). UnknownHost " + address + ":" + port);
+			} catch (IOException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). IO Failure " + address + ":" + port);
+			} catch (InvalidMessageException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (put). Invalid Message " + address + ":" + port);
+			}
 		}
 	}
 
@@ -367,7 +377,17 @@ public class KVStore implements KVCommInterface {
 			}
 			return null;
 		} else {
-			throw new ConnectException("Not connected to a KVServer.");
+			try {
+				// try to reconnect
+				connect();
+				return this.get(key); 
+			} catch (UnknownHostException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). UnknownHost " + address + ":" + port);
+			} catch (IOException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). IO Failure " + address + ":" + port);
+			} catch (InvalidMessageException e) {
+				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). Invalid Message " + address + ":" + port);
+			}
 		}
 	}
 	
