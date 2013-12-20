@@ -139,10 +139,12 @@ public class ECS {
 		ECSMessage message;
 		ECSServerCommunicator node = moveRandomNode(storageService, serverRepository);
 		if (node == null) {
+			logger.warn("Warn. There is no more server nodes available to be removed.");
 			return;
 		}
 		ECSServerCommunicator nextNode = getNextNode(node);
 		if (nextNode == null) {
+			logger.error("Bug. Error getting nextNode in the removeNode.");
 			return;
 		}
 		BigInteger startIndex = getStartIndex(node);
@@ -291,6 +293,7 @@ public class ECS {
 		ECSServerCommunicator node = moveRandomNode(serverRepository, storageService);
 
 		if (node == null) {
+			logger.warn("Warn. There is no more server nodes available to be initialized.");
 			return null;
 		}
 		logger.info("Initializing server node " + node.getAddress() + ":" + node.getPort());
