@@ -48,7 +48,7 @@ public class LogSetup {
 			
 			logger.removeAllAppenders();
 			logger.addAppender(fileAppender);
-			// logger.addAppender(new ConsoleAppender(layout));
+			logger.addAppender(new ConsoleAppender(layout));
 			logger.setLevel(level);
 		} catch (IOException e) {
 			e.printStackTrace();
