@@ -22,12 +22,12 @@ import client.KVStore;
  * @author Elias Tatros
  */
 public class KVClient {
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	private Logger logger;
 	// private static Logger rootLogger = Logger.getRootLogger();
 	private KVStore kvStore = null;
 	KVCommunication connection = null;
-	String name = "";
+	String name = "Client";
 		
 	public KVClient() {
 		initLog();
@@ -50,7 +50,7 @@ public class KVClient {
     	System.setProperty("file.encoding", "US-ASCII");
     	
     	try {
-    		Shell shell = new Shell(new KVClient());
+    		Shell shell = new Shell(new KVClient("ShellClient"));
     		shell.display();
     	} catch (Exception ex)	{
     		System.out.println("A fatal error occured. The program will now exit.");
@@ -88,7 +88,7 @@ public class KVClient {
 		if (kvStore != null)
 			kvStore.disconnect();
 		else
-			throw new ConnectException(this.name + ": Not connected to a KVStore.");
+			throw new ConnectException(" Not connected to a KVStore.");
 	}
 	
 	/**
@@ -102,7 +102,7 @@ public class KVClient {
 		if (kvStore != null)
 			return kvStore.put(key, value);
 		else
-			throw new ConnectException(this.name + ": Not connected to a KVStore.");
+			throw new ConnectException(" Not connected to a KVStore.");
 	}
 	
 	/**
@@ -115,7 +115,7 @@ public class KVClient {
 		if (kvStore !=null)
 			return kvStore.get(key);
 		else
-			throw new ConnectException(this.name + ": Not connected to a KVStore.");
+			throw new ConnectException(" Not connected to a KVStore.");
 		
 	}
 	
@@ -127,7 +127,7 @@ public class KVClient {
 		if (kvStore != null) {
 			return this.kvStore.getMetadata();
 		} else {
-			logger.error(this.name + ": Cannot obtain meta data from client.");
+			logger.error(" Cannot obtain meta data from client.");
 			return null;
 		}
 	}
@@ -140,7 +140,7 @@ public class KVClient {
 		if (kvStore != null) {
 			return this.kvStore.getHashCircle();
 		} else {
-			logger.error(this.name + ": Cannot obtain hash-circle data from client.");
+			logger.error(" Cannot obtain hash-circle data from client.");
 			return null;
 		}
 	}

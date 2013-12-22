@@ -4,6 +4,9 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -22,7 +25,7 @@ public class ECSMessage {
 	private HashMap<BigInteger, String> movingData;
 	private final String movingDataEmpty = "EMPTY"; 
 
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 
 	/**
 	 * Construct a message received in the form of an array of bytes.
@@ -30,6 +33,9 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when the message does not have the correct number of arguments or the command is not associated if the number of arguments given.
 	 */
 	public ECSMessage(byte[] bytes) throws InvalidMessageException {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECSMessage", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		String message;
 		String[] arguments;
 
@@ -90,8 +96,10 @@ public class ECSMessage {
 	 * @param command The type of the message.
 	 * @throws InvalidMessageException Thrown when a command that requires arguments is entered.
 	 */
-	public ECSMessage(ECSStatusType command)
-			throws InvalidMessageException {
+	public ECSMessage(ECSStatusType command) throws InvalidMessageException {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECSMessage", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE
 				|| command == ECSStatusType.MOVE_DATA || command == ECSStatusType.MOVE_DATA_INTERNAL) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
@@ -105,8 +113,10 @@ public class ECSMessage {
 	 * @param metadata The metadata that will be sent to the server. 
 	 * @throws InvalidMessageException Thrown when the command is not associated with the metadata. 
 	 */
-	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata)
-			throws InvalidMessageException {
+	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata) throws InvalidMessageException {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
@@ -120,8 +130,10 @@ public class ECSMessage {
 	 * @param movingData The data that is being transfered from one server node to the other.
 	 * @throws InvalidMessageException Thrown when the command is not associated with the movingData.
 	 */
-	public ECSMessage(ECSStatusType command, HashMap<BigInteger, String> movingData)
-			throws InvalidMessageException {
+	public ECSMessage(ECSStatusType command, HashMap<BigInteger, String> movingData) throws InvalidMessageException {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		if (command != ECSStatusType.MOVE_DATA_INTERNAL) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
@@ -137,8 +149,10 @@ public class ECSMessage {
 	 * @param server The server that the indexes correspond. 
 	 * @throws InvalidMessageException Thrown when the command entered is correctly associated if less arguments. 
 	 */
-	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server)
-			throws InvalidMessageException {
+	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server) throws InvalidMessageException {
+		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		if (command != ECSStatusType.MOVE_DATA) {
 			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}

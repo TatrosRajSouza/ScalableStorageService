@@ -78,6 +78,7 @@ public class ClientConnection implements Runnable {
 				while(isOpen) { // until connection open
 					try { //connection lost
 						byte[] latestMsg = receiveMessage();
+						logger.debug("Received a new message");
 						KVQuery kvQueryCommand;
 						try { //   not KVMessage
 							kvQueryCommand = new KVQuery(latestMsg);

@@ -92,9 +92,9 @@ public class Shell {
 					logger.warn(kvClient.getClientName() + ": Unknown Host!");
 				} catch (ConnectException ex) {
 					logger.warn(kvClient.getClientName() + ": Could not establish connection! Reason: " + ex.getMessage());
-				} catch (IOException e) {
+				} catch (IOException ex) {
 					// printError("Could not establish connection!");
-					logger.warn(kvClient.getClientName() + ": Could not establish connection!");
+					logger.warn(kvClient.getClientName() + ": Could not establish connection! Reason: " + ex.getMessage());
 				} catch (InvalidMessageException ex) {
 					System.out.println(kvClient.getClientName() + ": Unable to connect to server. Received an invalid message: \n" + ex.getMessage());
 					// ex.printStackTrace();
@@ -141,7 +141,7 @@ public class Shell {
 					KVMessage kvResult = kvClient.get(key);
 					try {
 						if (kvResult != null)
-							System.out.println(kvClient.getClientName() + ": \n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getValue());
+							System.out.println(kvClient.getClientName() + ": \n>>> Received: " + kvResult.getStatus().toString() + ", value: " + kvResult.getKey());
 						else
 							System.out.println(kvClient.getClientName() + ": Unexpected error: The kvResult was null");
 					} catch (InvalidMessageException ex) {

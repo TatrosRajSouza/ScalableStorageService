@@ -57,8 +57,9 @@ public class ECS {
 				logger.warn("Trying to initialize more nodes that are available");
 			}
 		}
+		
 		try {
-			logger.info("Initializing the metadata in the servers initialized.");
+			logger.info("Initializing the metadata for the servers.");
 			ECSServerCommunicator server;
 			ECSMessage message = new ECSMessage(ECSStatusType.INIT, storageService);
 			for (ServerData kvServer : storageService.getServers()) {
@@ -72,7 +73,6 @@ public class ECS {
 		} catch (IOException e) {
 			logger.error("Couldn't send the message. Check with the server is on and try again.");
 		}
-
 	}
 
 	/**
@@ -218,6 +218,7 @@ public class ECS {
 		ECSMessage ecsMessage;
 
 		logger.info("Shutting down the service.");
+
 		for (ServerData server : storageService.getServers()) {
 			serverCommunication = (ECSServerCommunicator) server;
 
@@ -300,6 +301,7 @@ public class ECS {
 
 		sendSSHCall(node.getAddress(), node.getPort());
 		hashing.addServer(node.getAddress(), node.getPort());
+		
 		try {
 			node.connect();
 		} catch (UnknownHostException e) {
@@ -445,19 +447,7 @@ public class ECS {
 				String[] cmd = {"./script.sh", address, currentDirectory, Integer.toString(port)};
 				run.exec(cmd);
 			} else { // Otherwise Assume Windows
-				/* Build the Command String */
-				/* We want java -jar <PROGRAM_DIR>\ms3-server.jar port */
-				/* Ignoring ssh for now... since you have to enter password and also confirm a few warnings on windows */
-				StringBuilder sb = new StringBuilder();
-				sb.append("java -jar ");
-				sb.append(System.getProperty("user.dir") + "\\ms3-server.jar ");
-				sb.append(port);
-				
-				String cmd = sb.toString();
-				System.out.println();
-				System.out.println("Command: " + cmd);
-				System.out.println();
-				run.exec(cmd);
+				new ServerRunner(port).start();   
 			}
 		} catch (IOException e) {
 			System.out.println(e.getMessage());

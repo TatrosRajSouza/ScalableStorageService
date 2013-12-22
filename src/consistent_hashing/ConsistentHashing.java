@@ -9,6 +9,9 @@ import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import common.messages.ServerData;
@@ -24,15 +27,20 @@ import common.messages.ServerData;
  */
 public class ConsistentHashing {
 	MessageDigest md5digest;
-	private static Logger logger;
+	private Logger logger;
 	SortedMap<BigInteger, String> hashCircle;
 
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs\\metaData.log", "ConsHash", Level.ALL);
+		this.logger = ls.getLogger();
+	}
+	
 	/**
 	 * Enables Consistent Hashing, start with empty circle
 	 */
 	public ConsistentHashing() {
 		hashCircle =  new TreeMap<BigInteger, String>();
-		logger = Logger.getRootLogger();
+		initLog();
 
 		try {
 			md5digest = MessageDigest.getInstance("MD5");
@@ -47,6 +55,7 @@ public class ConsistentHashing {
 	 * @param servers An ArrayList of ServerData that should be hashed to the circle
 	 */
 	public ConsistentHashing(ArrayList<ServerData> servers) {
+		initLog();
 		hashCircle =  new TreeMap<BigInteger, String>();
 		logger = Logger.getRootLogger();
 

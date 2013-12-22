@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import client.KVCommunication;
 import common.messages.ECSMessage;
+import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
 import common.messages.ServerData;
 
@@ -38,10 +39,13 @@ public class ECSServerCommunicator extends ServerData {
 	 */
 	public void connect() throws UnknownHostException, IOException {
 		try {
+			logger.info("Trying to connect to " + getAddress() + ":" + getPort());
 			communication = new KVCommunication(getAddress(), getPort(), "ECS");
+			logger.info("Connected to " + getAddress() + ":" + getPort());
 		} catch (UnknownHostException e) {
 			logger.error("Error! Couldn't connect to " + getAddress() + ":" + getPort());
 		} catch (IOException e) {
+			logger.error("Error! IOException while trying to connect to " + getAddress() + ":" + getPort());
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e1) {
@@ -65,7 +69,24 @@ public class ECSServerCommunicator extends ServerData {
 	 * @throws IOException Thrown when there is a problem in the communication.
 	 */
 	public void sendMessage(byte[] msgBytes) throws SocketTimeoutException, IOException {
-		communication.sendMessage(msgBytes);
+		ECSStatusType type = null;
+		try {
+			ECSMessage message = new ECSMessage(msgBytes);
+			type = message.getCommand();
+		} catch (InvalidMessageException e) {
+			logger.debug("Tried to send invalid ECSMessage to " + getAddress() + ":" + getPort());
+		}
+		
+		if (type != null)
+			logger.debug("Sending " + type + " to " + getAddress() + ":" + getPort());
+		else
+			logger.debug("Sending Message of unknown type to " + getAddress() + ":" + getPort());
+		
+		try {
+			communication.sendMessage(msgBytes);
+		} catch (Exception e) {
+			logger.debug("Unable to send message. Exception: " + e.getMessage());
+		}
 	}
 	
 	public ECSMessage receiveMessage() throws SocketTimeoutException, IOException, InvalidMessageException {

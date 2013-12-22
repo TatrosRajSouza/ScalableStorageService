@@ -15,7 +15,7 @@ public class LogSetup {
 
 	public static final String UNKNOWN_LEVEL = "UnknownLevel";
 	// private static Logger logger = Logger.getRootLogger();
-	private Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	private String logdir;
 	
 	/**

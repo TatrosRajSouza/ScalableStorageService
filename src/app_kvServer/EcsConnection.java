@@ -5,6 +5,9 @@ import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import client.KVCommunication;
@@ -19,7 +22,7 @@ import common.messages.ServerData;
  * @author Udhayaraj Sivalingam 
  */
 public class EcsConnection {
-	private static Logger logger = Logger.getRootLogger();
+	private static Logger logger;
 	private String move;
 	private ECSMessage ecsMessage;
 	private KVServer serverInstance;
@@ -27,11 +30,15 @@ public class EcsConnection {
 		// TODO Auto-generated constructor stub
 		this.ecsMessage = new ECSMessage(latestMsg);
 		this.serverInstance = serverInstance;
+		
+		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	public String process() throws InvalidMessageException {
-		// TODO Auto-generated method stub
-		if(ecsMessage.getCommand().equals(ECSStatusType.INIT))
+		logger.debug("Received message from ECS: " + ecsMessage.getCommand());
+		if(ecsMessage.getCommand().equals(ECSStatusType.INIT)) {	
 			initKVServer(ecsMessage.getMetadata());
+		}
 		else if(ecsMessage.getCommand().equals(ECSStatusType.START))
 			start();
 		else if(ecsMessage.getCommand().equals(ECSStatusType.STOP))
@@ -79,14 +86,13 @@ public class EcsConnection {
 	// convert with meta data parameter
 	private void initKVServer(InfrastructureMetadata metaData)
 	{
+		logger.info("Received INIT from ECS. Setting meta data to " + metaData.toString());
 		this.serverInstance.setMetaData(metaData);
+		logger.info("Set meta data to " + this.serverInstance.getMetaData().toString());
 	}
-	private  void start()
-	{
-
+	private  void start() {
 		logger.info("Allowing server to serve client requests");
 		this.serverInstance.setServeClientRequest(true);
-
 	}
 	private void stopServer(){		
 		logger.info("Stopping server to serve client requests");

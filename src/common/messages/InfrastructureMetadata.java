@@ -1,16 +1,23 @@
 package common.messages;
 
 import java.util.ArrayList;
+
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public class InfrastructureMetadata {
 	private ArrayList<ServerData> servers;
-	private static Logger logger = Logger.getRootLogger();
+	private Logger logger;
 	
 	/**
 	 * Construct new empty meta data
 	 */
 	public InfrastructureMetadata() {
+		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		servers = new ArrayList<ServerData>();
 	}
 	
@@ -19,6 +26,9 @@ public class InfrastructureMetadata {
 	 * @param servers ArrayList containing a number of ServerData
 	 */
 	public InfrastructureMetadata(ArrayList<ServerData> servers) {
+		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		this.servers = servers;
 	}
 	
@@ -29,6 +39,9 @@ public class InfrastructureMetadata {
 	 * i.e.: ServerNameA,ServerIPA,ServerPortA;ServerNameB,ServerIPB,ServerPortB; ... and so on.
 	 */
 	public InfrastructureMetadata(String metaDataString) {
+		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		this.logger = ls.getLogger();
+		
 		servers = new ArrayList<ServerData>();
 		update (metaDataString);
 	}

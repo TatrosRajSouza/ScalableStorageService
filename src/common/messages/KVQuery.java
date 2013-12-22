@@ -1,5 +1,8 @@
 package common.messages;
 
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -16,14 +19,19 @@ public class KVQuery implements KVMessage {
 
 	private String[] arguments;
 
-	private static Logger logger = Logger.getRootLogger();
+	private  Logger logger;
 
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs\\KVQuery.log", "KVQuery", Level.ALL);
+		this.logger = ls.getLogger();
+	}
 	/**
 	 * Construct a query from a message received in the form of an array of bytes
 	 * @param bytes
 	 * @throws InvalidMessageException
 	 */
 	public KVQuery(byte[] bytes) throws InvalidMessageException {
+		initLog();
 		String message;
 
 		message = new String(bytes);
@@ -57,6 +65,8 @@ public class KVQuery implements KVMessage {
 	 * @throws InvalidMessageException thrown when a command that is not associated with exactly one argument is entered
 	 */
 	public KVQuery(StatusType command) throws InvalidMessageException {
+		initLog();
+		
 		if (command != StatusType.CONNECT && command != StatusType.CONNECT_ERROR
 				&& command != StatusType.DISCONNECT && command != StatusType.DISCONNECT_SUCCESS )
 			throw new InvalidMessageException("Incorrect number of arguments or unknown command.");
@@ -72,6 +82,8 @@ public class KVQuery implements KVMessage {
 	 * @throws InvalidMessageException thrown when a command that is not associated with exactly one argument is entered
 	 */
 	public KVQuery(StatusType command, String argument) throws InvalidMessageException {
+		initLog();
+		
 		if (command != StatusType.GET && command != StatusType.GET_ERROR && command != StatusType.GET_SUCCESS
 				&& command != StatusType.FAILED && command != StatusType.CONNECT_SUCCESS)
 			throw new InvalidMessageException("Incorrect number of arguments for the command");
@@ -89,6 +101,8 @@ public class KVQuery implements KVMessage {
 	 * @throws InvalidMessageException thrown when a command associated with less than two arguments is entered
 	 */
 	public KVQuery(StatusType command, String key, String value) throws InvalidMessageException {
+		initLog();
+		
 		if (command != StatusType.GET_SUCCESS
 				&& command != StatusType.PUT			&& command != StatusType.PUT_SUCCESS
 				&& command != StatusType.PUT_UPDATE		&& command != StatusType.PUT_ERROR

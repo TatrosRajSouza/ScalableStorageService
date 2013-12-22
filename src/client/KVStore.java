@@ -11,7 +11,6 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
 import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
@@ -71,11 +70,19 @@ public class KVStore implements KVCommInterface {
 	 */
 	@Override
 	public void connect() throws UnknownHostException, IOException, InvalidMessageException, ConnectException {
+		// System.out.println("New KVComm " + address + " " + port + " " + this.name);
+		logger.debug("Trying to create new KVComm " + address + ":" + port);
 		kvComm = new KVCommunication(address, port, this.name);
 		KVQuery kvQueryConnectMessage = new KVQuery(KVMessage.StatusType.CONNECT);
+		logger.debug("Trying to send connect message to " + address + ":" + port);
 		kvComm.sendMessage(kvQueryConnectMessage.toBytes());
+		logger.debug("Sent Connect message to " + address + ":" + port);
+		logger.debug("Waiting for response from " + address + ":" + port);
 		byte[] connectResponse = kvComm.receiveMessage();
+		logger.debug("Response received " + address + ":" + port);
+		
 		KVQuery kvQueryMessage = new KVQuery(connectResponse);
+		
 		
 		if (kvQueryMessage.getStatus() == StatusType.CONNECT_SUCCESS) {
 			if (DEBUG) {

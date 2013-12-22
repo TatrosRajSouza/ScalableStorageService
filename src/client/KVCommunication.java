@@ -26,9 +26,8 @@ public class KVCommunication {
 	private SocketStatus socketStatus;
 	private OutputStream output;
  	private InputStream input;
- 	private String name = "";
  	private String moduleName = "<KVComm Module>";
- 	private static final int TIMEOUT_MS = 200;
+ 	private static final int TIMEOUT_MS = 3000;
 	private static final int BUFFER_SIZE = 1024;
 	private static final int DROP_SIZE = 4096 * BUFFER_SIZE;
 	
@@ -40,13 +39,12 @@ public class KVCommunication {
 	 * @throws IOException
 	 */
 	public KVCommunication(String address, int port, String name) throws UnknownHostException, IOException {
-		this.name = name;
-		connect(address, port);
 		initLog();
+		connect(address, port);
 	}
 	
 	public void initLog() {
-		LogSetup ls = new LogSetup("logs\\client.log", name, Level.ALL);
+		LogSetup ls = new LogSetup("logs\\client.log", this.moduleName, Level.ALL);
 		this.logger = ls.getLogger();
 	}
 	
@@ -65,7 +63,7 @@ public class KVCommunication {
 		setSocketStatus(SocketStatus.CONNECTED);
 		
 		if(KVClient.DEBUG)
-			logger.info(this.name + moduleName + ": Connection established");
+			logger.info(" Connection established");
 	}
 	
 	/**
@@ -73,14 +71,14 @@ public class KVCommunication {
 	 */
 	public void closeConnection() {
 		if(KVClient.DEBUG)
-			logger.info(this.name + moduleName + ": try to close connection ...");
+			logger.info(" try to close connection ...");
 		
 		try {
 			tearDownConnection();
 			setSocketStatus(SocketStatus.DISCONNECTED);
 		} catch (IOException ioe) {
 			if(KVClient.DEBUG)
-				logger.error(this.name + moduleName + ": Unable to close connection!");
+				logger.error(" Unable to close connection!");
 		}
 	}
 	
@@ -90,7 +88,7 @@ public class KVCommunication {
 	 */
 	private void tearDownConnection() throws IOException {
 		if(KVClient.DEBUG)
-			logger.info(this.name + moduleName + ": tearing down the connection ...");
+			logger.info(" tearing down the connection ...");
 		
 		if (clientSocket != null) {
 			if (input != null)
@@ -102,7 +100,7 @@ public class KVCommunication {
 			clientSocket = null;
 			
 			if(KVClient.DEBUG)
-				logger.info(this.name + moduleName + ": Connection closed by communication module!");
+				logger.info(" Connection closed by communication module!");
 		}
 	}
 	
@@ -117,13 +115,13 @@ public class KVCommunication {
 			output.write(msgBytes, 0, msgBytes.length);
 			output.flush();
 			if(KVClient.DEBUG) {
-				logger.info(this.name + moduleName + ": SEND \t<" 
+				logger.info(" SEND \t<" 
 						+ clientSocket.getInetAddress().getHostAddress() + ":" 
 						+ clientSocket.getPort() + ">: '" 
 						+ new String(msgBytes) +"'");
 			}
 		} else {
-			throw new IOException(this.name + moduleName + ": Unable to transmit message, the message was null.");
+			throw new IOException(" Unable to transmit message, the message was null.");
 		}
 	}
 	
@@ -187,7 +185,7 @@ public class KVCommunication {
 
 		/* build final String */
 		if(KVClient.DEBUG) {
-			logger.info(this.name + moduleName + ": RECEIVE \t<" 
+			logger.info(" RECEIVE \t<" 
 					+ clientSocket.getInetAddress().getHostAddress() + ":" 
 					+ clientSocket.getPort() + ">: '" 
 					+ new String(msgBytes) + "'");

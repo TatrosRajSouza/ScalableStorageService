@@ -3,6 +3,7 @@ package app_kvServer;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -116,16 +117,14 @@ public class KVServer extends Thread {
 
 
 	public void setMetaData(InfrastructureMetadata metaData) {
+		logger.info("SetMetaData(): " + metaData.toString());
 		this.metaData = metaData;
-		if(consistentHashing == null)
-		{
-
+		if(consistentHashing == null) {
 			consistentHashing = new ConsistentHashing(metaData.getServers());
-
-		}
-		else
-		{
+			logger.info("Created new hashing circle: " + metaData.toString());
+		} else {
 			consistentHashing.update(metaData.getServers());
+			logger.info("Updated existed hashing circle: " + metaData.toString());
 		}
 
 	}
@@ -154,6 +153,8 @@ public class KVServer extends Thread {
 		
 		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
+		
+		this.logger.info("KVServer log running @port: " + port);
 	}
 
 
@@ -210,7 +211,15 @@ public class KVServer extends Thread {
 			serverSocket = new ServerSocket(port);
 
 			logger.info("Server listening on port: " 
-					+ serverSocket.getLocalPort());    
+					+ serverSocket.getLocalPort());   
+			
+			// init with local meta data
+			ArrayList<ServerData> serverData = new ArrayList<ServerData>();
+			String address = InetAddress.getLocalHost().getHostAddress();
+			System.out.println(address);
+			serverData.add(new ServerData(address + ":" + port, address, port));
+			setMetaData(new InfrastructureMetadata(serverData));
+			
 			return true;
 
 		} catch (IOException e) {
@@ -245,7 +254,11 @@ public class KVServer extends Thread {
 					System.out.println("Usage: Server <port>!");
 				} else {
 					int port = Integer.parseInt(args[0]);
-					new KVServer(port).start();
+					KVServer server = new KVServer(port);
+					server.start();
+					
+					// server.setServeClientRequest(true);
+
 					//System.exit(0);
 				}
 			} catch (NumberFormatException nfe) {
