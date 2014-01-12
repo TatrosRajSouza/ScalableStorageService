@@ -50,7 +50,7 @@ public class EcsConnection {
 		else if(ecsMessage.getCommand().equals(ECSStatusType.UNLOCK_WRITE))
 			UnLockWrite();
 		else if(ecsMessage.getCommand().equals(ECSStatusType.UPDATE))
-			update(ecsMessage.getMetadata().toString());
+			update(ecsMessage.getMetadata());
 		else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
 		{
 			move = "error";
@@ -121,14 +121,17 @@ public class EcsConnection {
 		}
 
 	}
-	private void update(String metaDataString)
+	private void update(InfrastructureMetadata infrastructureMetadata)
 	{
-		this.serverInstance.getMetaData().update(metaDataString);
+		this.serverInstance.getMetaData().update(infrastructureMetadata.toString());
+		this.serverInstance.getConsistentHashing().update(infrastructureMetadata.getServers());
 	}
 	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
+		logger.info("Data moved to:" + serverData.getName() + "port:" + serverData.getPort());
 		HashMap<BigInteger, String> movingData = this.serverInstance.getKvdata().findMovingData(startIndex, endIndex);
 		String move = null;
+		logger.info("startindex:" + startIndex + "endindex:" + endIndex);
 		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
 
 		KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort(), "ECS");
