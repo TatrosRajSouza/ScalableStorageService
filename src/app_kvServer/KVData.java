@@ -68,8 +68,8 @@ public class KVData {
 
 	public String get(BigInteger hashedKey)  {
 		// TODO Auto-generated method stub
-		//logger.info("size of the datastore:" + dataStore.size());
-		/*HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
+		/*logger.info("size of the datastore:" + dataStore.size());
+		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
 		// iterate over the range or hashmap?
 		if(!dataStore.isEmpty())
 		{
@@ -106,11 +106,14 @@ public class KVData {
 			}
 			else
 			{
-				//logger.info("incorrect start index");
-				if(endIndex.compareTo(key)  <= 0  && startIndex.compareTo(key) >= 0 )
+				/*logger.info("incorrect start index");
+				logger.info("Start Index:" + startIndex);
+				logger.info("End Index:" + endIndex);
+				logger.info("Key:" + key);*/
+				if(startIndex.compareTo(key)  <= 0  )
 				{
 					movingData.put(key, pairs.getValue());
-					//logger.info("incorrectindex:key:" + key + "value:" + pairs.getValue());
+					logger.info("incorrectindex:key:" + key + "value:" + pairs.getValue());
 				}
 			}
 		}
