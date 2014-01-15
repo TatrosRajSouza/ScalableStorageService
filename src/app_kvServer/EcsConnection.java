@@ -125,6 +125,7 @@ public class EcsConnection {
 	{
 		this.serverInstance.getMetaData().update(infrastructureMetadata.toString());
 		this.serverInstance.getConsistentHashing().update(infrastructureMetadata.getServers());
+		logger.info("metadata updation:" + infrastructureMetadata.toString());
 	}
 	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
@@ -142,8 +143,9 @@ public class EcsConnection {
 		{
 			move = "movecompleted";
 		}
-
-		this.serverInstance.getMovedDataList().add(movingData);
+        this.serverInstance.getKvdata().remove(movingData);
+        logger.info("data removed");
+		//this.serverInstance.getMovedDataList().add(movingData);
 		// need to send message 
 		return move;
 

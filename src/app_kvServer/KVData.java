@@ -68,7 +68,7 @@ public class KVData {
 
 	public String get(BigInteger hashedKey)  {
 		// TODO Auto-generated method stub
-		/*logger.info("size of the datastore:" + dataStore.size());
+		logger.info("size of the datastore:" + dataStore.size());
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
 		// iterate over the range or hashmap?
 		if(!dataStore.isEmpty())
@@ -78,7 +78,7 @@ public class KVData {
 			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
 			logger.info("key:"+pairs.getKey() + "value:"+pairs.getValue());
 		}
-		}*/
+		}
 		return dataStore.get(hashedKey);
 	}
 

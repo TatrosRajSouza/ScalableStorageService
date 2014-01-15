@@ -101,6 +101,8 @@ public class ECS {
 			logger.info("Moving the metadata to the added node.");
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			nextNode.sendMessage(message.toBytes());
+			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
+			nextNode.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.MOVE_DATA, getStartIndex(node),
 					getEndIndex(node), node);
 			nextNode.sendMessage(message.toBytes());
