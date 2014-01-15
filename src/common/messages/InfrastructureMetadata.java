@@ -142,7 +142,7 @@ public class InfrastructureMetadata {
 			}
 		}
 		
-		if (this.servers.size() <= 0) {
+		if (newServerData.size() <= 0) {
 			logger.warn("The String supplied to the meta-data update includes no active Servers, therefore meta-data is empty.");
 		}
 		
