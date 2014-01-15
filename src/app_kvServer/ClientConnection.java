@@ -97,6 +97,7 @@ public class ClientConnection implements Runnable {
 								if(command.equals("GET"))	{ //get block
 	
 									key = kvQueryCommand.getKey();
+									//logger.info("Metadata of:" +this.serverInstance.getPort() + " metadata:" + this.serverInstance.getMetaData().toString());
 									if(this.serverInstance.isDEBUG())
 									{
 										logger.info("SERVER: Get operation Key:" + key);
@@ -361,6 +362,9 @@ public class ClientConnection implements Runnable {
 
 			ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
 			ServerData serverDataServer = this.serverInstance.getServerData();
+			logger.info("Check Range adress" + serverDataHash.getAddress().toString() + serverDataServer.getAddress().toString() );
+			logger.info("Check Range port" + serverDataHash.getPort() + serverDataServer.getPort() );
+			logger.info("key is: " + key + "value: " + value);
 			if(this.serverInstance.isDEBUG())
 			{
 				logger.info("Check Range adress" + serverDataHash.getAddress().toString() + serverDataServer.getAddress().toString() );
@@ -374,6 +378,7 @@ public class ClientConnection implements Runnable {
 				{
 
 					hashedKey = this.serverInstance.getConsistentHashing().hashKey(key);
+					logger.info("success");
 				} 
 
 			}
