@@ -125,14 +125,40 @@ public class EcsConnection {
 	{
 		this.serverInstance.getMetaData().update(infrastructureMetadata.toString());
 		this.serverInstance.getConsistentHashing().update(infrastructureMetadata.getServers());
-		logger.info("metadata updation:" + infrastructureMetadata.toString());
+		//logger.info("metadata updation:" + infrastructureMetadata.toString());
 	}
 	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
-		logger.info("Data moved to:" + serverData.getName() + "port:" + serverData.getPort());
-		HashMap<BigInteger, String> movingData = this.serverInstance.getKvdata().findMovingData(startIndex, endIndex);
+		//logger.info("Data moved to:" + serverData.getName() + "port:" + serverData.getPort());
+		HashMap<BigInteger, String> movingData;
+		BigInteger serverIndex = this.serverInstance.getConsistentHashing().hashServer(serverData.getAddress(), serverData.getPort());
+		//logger.info("Start Index:" + startIndex);
+		//logger.info("End Index:" + endIndex);
+		//logger.info("serverIndex:" + serverIndex);
+		if(startIndex.compareTo(endIndex) >= 0)
+		{
+			if(serverIndex.compareTo(startIndex) > 0 && serverIndex.compareTo(endIndex) > 0)
+			{
+				movingData = this.serverInstance.getKvdata().findMovingData(startIndex,serverIndex,true);
+			}
+			else
+			{
+				movingData = this.serverInstance.getKvdata().findMovingData(startIndex,endIndex,true);
+			}
+		}
+		else
+		{
+		 if(serverIndex.compareTo(startIndex) > 0 && serverIndex.compareTo(endIndex) < 0)
+		 {
+			 movingData = this.serverInstance.getKvdata().findMovingData(startIndex,serverIndex,false);
+		 }
+		 else
+		 {
+			 movingData = this.serverInstance.getKvdata().findMovingData(startIndex,endIndex,false);
+		 }
+		}
 		String move = null;
-		logger.info("startindex:" + startIndex + "endindex:" + endIndex);
+		//logger.info("dataserver:"+this.serverInstance.getPort()+"startindex:" + startIndex + "endindex:" + endIndex);
 		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
 
 		KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort(), "ECS");
