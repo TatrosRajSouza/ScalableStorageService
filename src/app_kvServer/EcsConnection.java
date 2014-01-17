@@ -172,7 +172,7 @@ public class EcsConnection {
 		return move;
 
 	}
-	private void removeData(KVServer kvserver)
+	/*private void removeData(KVServer kvserver)
 	{
 		if(this.serverInstance.getMovedDataList() != null)
 		{
@@ -188,5 +188,5 @@ public class EcsConnection {
 			}
 		}
 		}
-	}
+	}*/
 }
