@@ -27,12 +27,11 @@ public class EcsConnection {
 	private ECSMessage ecsMessage;
 	private KVServer serverInstance;
 	public EcsConnection(byte[] latestMsg,KVServer serverInstance) throws InvalidMessageException {
-		// TODO Auto-generated constructor stub
 		this.ecsMessage = new ECSMessage(latestMsg);
 		this.serverInstance = serverInstance;
 		
 		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
-		this.logger = ls.getLogger();
+		EcsConnection.logger = ls.getLogger();
 	}
 	public String process() throws InvalidMessageException {
 		logger.debug("Received message from ECS: " + ecsMessage.getCommand());
@@ -64,10 +63,8 @@ public class EcsConnection {
 			} catch (UnknownHostException e) {
 				logger.error("Error while updation"+e.getMessage());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				logger.error("Error while updation"+e.getMessage());
 			} catch (InvalidMessageException e) {
-				// TODO Auto-generated catch block
 				logger.error("Error while updation"+e.getMessage());
 			}
 		}
@@ -76,7 +73,6 @@ public class EcsConnection {
 	}
 
 	private String moveData(HashMap<BigInteger, String> movingData) {
-		// TODO Auto-generated method stub
 		this.serverInstance.getKvdata().moveData(movingData);
 		return "moveinternalcompleted";
 	}

@@ -67,7 +67,6 @@ public class KVData {
 	}
 
 	public String get(BigInteger hashedKey)  {
-		// TODO Auto-generated method stub
 		/*logger.info("size of the datastore:" + dataStore.size());
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
 		// iterate over the range or hashmap?
@@ -158,7 +157,6 @@ public class KVData {
 	}
 
 	public void remove(HashMap<BigInteger, String> movedData) {
-		// TODO Auto-generated method stub
 		if(!movedData.isEmpty())
 		{
 		Iterator<Entry<BigInteger, String>> it = movedData.entrySet().iterator();

@@ -232,7 +232,6 @@ public class ClientConnection implements Runnable {
 											logger.error("Error! Unable to tear down connection!", ioe);
 										}
 									} catch (InvalidMessageException e) {
-										// TODO Auto-generated catch block
 										logger.error("Error in sending disconnect message");
 									}
 								} //disconnect block
@@ -261,7 +260,6 @@ public class ClientConnection implements Runnable {
 									logger.debug("SERVER:Stopped");
 	
 								} catch (InvalidMessageException e1) {
-									// TODO Auto-generated catch block
 									logger.error("Error in invalid message format:server side:");
 								}
 							} //server stopped block
@@ -330,7 +328,6 @@ public class ClientConnection implements Runnable {
 	}
 
 	private void sendConnectSuccess(String connectSuccess) {
-		// TODO Auto-generated method stub
 		KVQuery kvQueryConnect;
 		try {
 			kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
@@ -340,10 +337,8 @@ public class ClientConnection implements Runnable {
 			
 			sendMessage(kvQueryConnect.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
 			logger.error("Invalid connect message");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			logger.error("Error in sending connect success" + e.getMessage());;
 		}
 	}
@@ -356,7 +351,6 @@ public class ClientConnection implements Runnable {
 	 * checks whether this server is responsible for incoming key
 	 */
 	private BigInteger checkRange(String key, String value) {
-		// TODO Auto-generated method stub
 		BigInteger hashedKey = null;
 		try {
 
@@ -383,10 +377,8 @@ public class ClientConnection implements Runnable {
 
 			}
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
 			logger.error("Illegal key" + e.getMessage());
 		} catch (EmptyServerDataException e) {
-			// TODO Auto-generated catch block
 			logger.error("no servers in the circle" + e.getMessage());
 
 		}
