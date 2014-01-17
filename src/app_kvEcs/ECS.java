@@ -305,11 +305,14 @@ public class ECS {
 		hashing.addServer(node.getAddress(), node.getPort());
 		
 		try {
+			Thread.sleep(500);
 			node.connect();
 		} catch (UnknownHostException e) {
 			logger.error("Couldn't reach the server node " + node.getAddress() + ":" + node.getPort());
 		} catch (IOException e) {
 			logger.error("Couldn't connect to the server node " + node.getAddress() + ":" + node.getPort());
+		} catch (InterruptedException e) {
+			logger.error("Problem with threads.");
 		}
 
 		return node;
