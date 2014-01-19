@@ -64,7 +64,7 @@ public abstract class ServerCommunicator<T> extends ServerData {
 		try {
 			communication.sendMessage(msgBytes);
 		} catch (Exception e) {
-			logger.debug("Unable to send message. Exception: " + e.getMessage());
+			logger.debug("Unable to send message. Exception: " + e.getClass().getName());
 		}
 	}
 }

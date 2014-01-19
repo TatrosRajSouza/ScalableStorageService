@@ -27,7 +27,7 @@ public class ServerServerCommunicator extends ServerCommunicator<ServerServerMes
 			ServerServerMessage message = new ServerServerMessage(msgBytes);
 			type = message.getCommand();
 		} catch (InvalidMessageException e) {
-			logger.debug("Tried to send invalid ECSMessage to " + getAddress() + ":" + getPort());
+			logger.debug("Tried to send invalid ServerServerMessage to " + getAddress() + ":" + getPort());
 		}
 		sendMessage(msgBytes, type);
 	}
