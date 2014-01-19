@@ -26,13 +26,13 @@ import common.messages.ServerData;
  *
  */
 public class ConsistentHashing {
-	MessageDigest md5digest;
-	private Logger logger;
-	SortedMap<BigInteger, String> hashCircle;
+	private static MessageDigest md5digest;
+	private static Logger logger;
+	private SortedMap<BigInteger, String> hashCircle;
 
 	public void initLog() {
 		LogSetup ls = new LogSetup("logs\\metaData.log", "ConsHash", Level.ALL);
-		this.logger = ls.getLogger();
+		ConsistentHashing.logger = ls.getLogger();
 	}
 	
 	/**
@@ -96,7 +96,7 @@ public class ConsistentHashing {
 	 * @param key A String key that should be hashed
 	 * @return 128-bit md5 hash
 	 */
-	public BigInteger hashKey(String key) {
+	public static BigInteger hashKey(String key) {
 		try {
 			md5digest.reset();
 			byte[] bytes = md5digest.digest(key.getBytes("US-ASCII"));
