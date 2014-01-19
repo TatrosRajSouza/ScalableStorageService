@@ -12,6 +12,8 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import consistent_hashing.ConsistentHashing;
+
 /**
  * The KVData stores data which is sent by clients in a key -> value fashion . 
  * @author Udhayaraj Sivalingam
@@ -25,6 +27,24 @@ public class KVData {
 	{
 		LogSetup ls = new LogSetup("logs\\KVDATA.log", "KVDATA", Level.ALL);
 		this.logger = ls.getLogger();
+	}
+
+	public KVData(String data) {
+		String[] dataArray = data.split("###");
+		for (String dataEntry : dataArray) {
+			String[] dataEntryValues = dataEntry.split("$$$");
+			dataStore.put(ConsistentHashing.hashKey(dataEntryValues[0]), dataEntryValues[0]);
+		}
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder data = new StringBuilder();
+		for (BigInteger key : dataStore.keySet()) {
+			data.append(key.toString() + "$$$" + dataStore.get(key) + "###");
+		}
+		
+		return data.toString();
 	}
 
 	public String put(BigInteger key, String value) {
