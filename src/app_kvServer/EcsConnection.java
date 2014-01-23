@@ -118,7 +118,7 @@ public class EcsConnection {
 		if (serverInstance.nextServer != null) {
 			oldNextServer = serverInstance.nextServer.getName();
 		} if (serverInstance.nextNextServer != null) {
-			oldNextServer = serverInstance.nextNextServer.getName();
+			oldNextNextServer = serverInstance.nextNextServer.getName();
 		}
 		hashCircle = serverInstance.getConsistentHashing().getHashCircle();
 		for (BigInteger hash : hashCircle.keySet()) {
@@ -201,7 +201,7 @@ public class EcsConnection {
 		if (nextNextServer.equals(serverInstance.getServerData().getName())) {
 			serverInstance.nextNextServer = null;
 		} else {
-			String[] name = nextServer.split(":");
+			String[] name = nextNextServer.split(":");
 			serverInstance.nextNextServer = new ServerServerCommunicator(name[0], Integer.parseInt(name[1]));
 			try {
 				serverInstance.nextNextServer.connect();

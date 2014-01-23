@@ -36,7 +36,11 @@ public class KVServer extends Thread {
 	private  InfrastructureMetadata metaData;
 	private ConsistentHashing consistentHashing;
 
-
+	// Change this to a list
+	public ServerServerCommunicator nextServer;
+	public ServerServerCommunicator nextNextServer;
+	public KVData lastNodeData;
+	public KVData lastLastNodeData;
 
 
 
