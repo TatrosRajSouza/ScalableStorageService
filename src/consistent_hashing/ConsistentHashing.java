@@ -29,8 +29,18 @@ public class ConsistentHashing {
 	private static MessageDigest md5digest;
 	private static Logger logger;
 	private SortedMap<BigInteger, String> hashCircle;
+	
+	static {
+		initLog();
+		try {
+			md5digest = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("Failed to create MessageDigest. The specified algorithm is not supported.");
+			// e.printStackTrace();
+		}
+	}
 
-	public void initLog() {
+	public static void initLog() {
 		LogSetup ls = new LogSetup("logs\\metaData.log", "ConsHash", Level.ALL);
 		ConsistentHashing.logger = ls.getLogger();
 	}
@@ -40,14 +50,6 @@ public class ConsistentHashing {
 	 */
 	public ConsistentHashing() {
 		hashCircle =  new TreeMap<BigInteger, String>();
-		initLog();
-
-		try {
-			md5digest = MessageDigest.getInstance("MD5");
-		} catch (NoSuchAlgorithmException e) {
-			logger.error("Failed to create MessageDigest. The specified algorithm is not supported.");
-			// e.printStackTrace();
-		}
 	}
 
 	/**
