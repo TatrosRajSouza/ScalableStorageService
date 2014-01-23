@@ -64,6 +64,8 @@ public class ECSShell {
 		sb.append("\t\t\t\t Add a new node to the storage service at an arbitrary position.\n");
 		sb.append(PROMPT).append("removeNode");
 		sb.append("\t\t\t\t Remove a node from the storage service at an arbitrary position.\n");
+		sb.append(PROMPT).append("getStatus");
+		sb.append("\t\t\t\t Print in the server log the data status of all nodes.\n");
 		sb.append(PROMPT).append("logLevel");
 		sb.append("\t\t\t\t changes the logLevel \n");
 		sb.append(PROMPT).append("\t\t\t\t\t ");
@@ -92,6 +94,8 @@ public class ECSShell {
 				ECSClient.ecs.addNode();
 			} else if (tokens[0].equals("removeNode")) {
 				ECSClient.ecs.removeNode();
+			} else if (tokens[0].equals("getStatus")) {
+				ECSClient.ecs.getStatus();
 			} else if (tokens[0].equals("help")) {
 				printHelp();
 			} else {

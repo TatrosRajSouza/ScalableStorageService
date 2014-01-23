@@ -459,4 +459,26 @@ public class ECS {
 			logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 		}
 	}
+
+	public void getStatus() {
+		ECSServerCommunicator serverCommunication;
+		ECSMessage ecsMessage;
+
+		logger.info("Getting the data status of the service.");
+
+		for (ServerData server : storageService.getServers()) {
+			serverCommunication = (ECSServerCommunicator) server;
+
+			try {
+				ecsMessage = new ECSMessage(ECSStatusType.GET_STATUS);
+				serverCommunication.sendMessage(ecsMessage.toBytes());
+			} catch (InvalidMessageException e) {
+				logger.error("Problems creating the message. Please check the protocol specification.");
+			} catch (SocketTimeoutException e) {
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
+			} catch (IOException e) {
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
+			}
+		}
+	}
 }

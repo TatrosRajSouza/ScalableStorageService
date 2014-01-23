@@ -174,7 +174,7 @@ public class ECSMessage {
 				|| command == ECSStatusType.SHUTDOWN || command == ECSStatusType.LOCK_WRITE
 				|| command == ECSStatusType.UNLOCK_WRITE || command == ECSStatusType.MOVE_COMPLETED
 				|| command == ECSStatusType.MOVE_ERROR || command == ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS
-				|| command == ECSStatusType.FAILED) {
+				|| command == ECSStatusType.FAILED || command == ECSStatusType.GET_STATUS) {
 			message += "\r";
 		} else if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE) {
 			message += "\n" + metadata.toString() + "\r";
