@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.Test;
 
@@ -75,7 +74,7 @@ public class KVDataTest {
 		kvData.put(b5,"jona5");
 		kvData.put(b6,"jona6");
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
-		movingData = kvData.findMovingData(b3, b5);
+		//movingData = kvData.findMovingData(b3, b5);
 		assertTrue(movingData.size() == 3);
 		Iterator<Entry<BigInteger, String>> it = movingData.entrySet().iterator();
 		while (it.hasNext()) {
@@ -88,7 +87,7 @@ public class KVDataTest {
 			if(key.equals(b5))
 					assertTrue(pairs.getValue().equals("jona5"));
 		}
-		movingData = kvData.findMovingData(b5, b3);
+		//movingData = kvData.findMovingData(b5, b3);
 		assertTrue(movingData.size() == 3);
 		Iterator<Entry<BigInteger, String>> it1 = movingData.entrySet().iterator();
 		while (it1.hasNext()) {
@@ -121,7 +120,6 @@ public class KVDataTest {
 		movingData.put(b5,"jona5");
 		movingData.put(b6,"jona6");
 		kvData.moveData(movingData);
-		ConcurrentHashMap<BigInteger, String> dataStore = kvData.dataStore;
 		assertTrue(kvData.dataStore.size() == 6);
 		
 	}
@@ -142,7 +140,6 @@ public class KVDataTest {
 		movingData.put(b5,"jona5");
 		movingData.put(b6,"jona6");
 		kvData.moveData(movingData);
-		ConcurrentHashMap<BigInteger, String> dataStore = kvData.dataStore;
 		assertTrue(kvData.dataStore.size() == 6);
 	}
 	@Test
@@ -165,7 +162,6 @@ public class KVDataTest {
 		movingData.put(b5,"jona5");
 		movingData.put(b6,"jona6");
 		kvData.remove(movingData);
-		ConcurrentHashMap<BigInteger, String> dataStore = kvData.dataStore;
 		assertTrue(kvData.dataStore.size() == 3);
 	}
 }
