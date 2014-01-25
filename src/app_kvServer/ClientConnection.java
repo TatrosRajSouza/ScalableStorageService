@@ -283,9 +283,7 @@ public class ClientConnection implements Runnable {
 										logger.debug("SERVER:ECS move error");
 									}
 								}
-							}
-							catch(InvalidMessageException eEcs) //Server-server message
-							{
+							} catch (InvalidMessageException eEcs) {//Server-server message
 								try {
 									ServerConnection serverConnection = new ServerConnection(latestMsg, this.serverInstance);
 									serverConnection.process();
@@ -339,7 +337,7 @@ public class ClientConnection implements Runnable {
 					1, key, value);
 			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
+			logger.error("Error while updation"+e.getMessage());
 			e.printStackTrace();
 		}
 		try {
@@ -347,7 +345,7 @@ public class ClientConnection implements Runnable {
 					2, key, value);
 			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
+			logger.error("Error while updation"+e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -359,16 +357,14 @@ public class ClientConnection implements Runnable {
 					1, key);
 			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error while updation" + e.getMessage());
 		}
 		try {
 			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
 					2, key);
 			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
 		} catch (InvalidMessageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error while updation" + e.getMessage());
 		}
 	}
 
@@ -422,9 +418,7 @@ public class ClientConnection implements Runnable {
 		} catch (EmptyServerDataException e) {
 			logger.error("no servers in the circle" + e.getMessage());
 
-		}
-		catch(Exception e)
-		{
+		} catch(Exception e) {
 			logger.error("unknown exception in check range" + e.getMessage());
 		}
 		return false;
