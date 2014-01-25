@@ -83,8 +83,8 @@ public class EcsConnection {
 
 	private void getStatus() {
 		logger.info("Server data (coordinator): " + serverInstance.getKvdata());
-		logger.info("Server data (replica - last node): " + serverInstance.lastNodeData);
-		logger.info("Server data (replica - last last node):" + serverInstance.lastLastNodeData);
+		logger.info("Server data (replica - last node): " + serverInstance.getLastNodeData());
+		logger.info("Server data (replica - last last node):" + serverInstance.getLastLastNodeData());
 	}
 	
 	public ECSStatusType getCommand() {
@@ -116,10 +116,10 @@ public class EcsConnection {
 		SortedMap<BigInteger, String> hashCircle;
 		int next = 0;
 
-		if (serverInstance.nextServer != null) {
-			oldNextServer = serverInstance.nextServer.getName();
-		} if (serverInstance.nextNextServer != null) {
-			oldNextNextServer = serverInstance.nextNextServer.getName();
+		if (serverInstance.getNextServer() != null) {
+			oldNextServer = serverInstance.getNextServer().getName();
+		} if (serverInstance.getNextNextServer() != null) {
+			oldNextNextServer = serverInstance.getNextNextServer().getName();
 		}
 		hashCircle = serverInstance.getConsistentHashing().getHashCircle();
 		for (BigInteger hash : hashCircle.keySet()) {
@@ -155,11 +155,11 @@ public class EcsConnection {
 		sendMessageToNextServers(oldNextServer, oldNextNextServer, nextServer, nextNextServer);
 	}
 	private void sendMessageToNextServers(String oldNextServer, String oldNextNextServer, String nextServer, String nextNextServer) {
-		if (serverInstance.nextServer != null && !nextServer.equals(oldNextServer) && !nextServer.equals(oldNextNextServer)) {
+		if (serverInstance.getNextServer() != null && !nextServer.equals(oldNextServer) && !nextServer.equals(oldNextNextServer)) {
 			logger.info("%%% " + serverInstance.getKvdata().toString().length());
 			ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 1, serverInstance.getKvdata());
 			try {
-				serverInstance.nextServer.sendMessage(message.toBytes());
+				serverInstance.getNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -168,11 +168,11 @@ public class EcsConnection {
 				e.printStackTrace();
 			}
 		}
-		if (serverInstance.nextNextServer != null && !nextNextServer.equals(oldNextServer) && !nextNextServer.equals(oldNextNextServer)) {
+		if (serverInstance.getNextNextServer() != null && !nextNextServer.equals(oldNextServer) && !nextNextServer.equals(oldNextNextServer)) {
 			logger.info("%%%");
 			ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 2, serverInstance.getKvdata());
 			try {
-				serverInstance.nextNextServer.sendMessage(message.toBytes());
+				serverInstance.getNextNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -185,12 +185,12 @@ public class EcsConnection {
 
 	private void setNextServer(String nextServer, String nextNextServer) {
 		if (nextServer.equals(serverInstance.getServerData().getName())) {
-			serverInstance.nextServer = null;
+			serverInstance.setNextServer(null);
 		} else {
 			String[] name = nextServer.split(":");
-			serverInstance.nextServer = new ServerServerCommunicator(name[0], Integer.parseInt(name[1]));
+			serverInstance.setNextServer(new ServerServerCommunicator(name[0], Integer.parseInt(name[1])));
 			try {
-				serverInstance.nextServer.connect();
+				serverInstance.getNextServer().connect();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -200,12 +200,12 @@ public class EcsConnection {
 			}
 		}
 		if (nextNextServer.equals(serverInstance.getServerData().getName())) {
-			serverInstance.nextNextServer = null;
+			serverInstance.setNextNextServer(null);
 		} else {
 			String[] name = nextNextServer.split(":");
-			serverInstance.nextNextServer = new ServerServerCommunicator(name[0], Integer.parseInt(name[1]));
+			serverInstance.setNextNextServer(new ServerServerCommunicator(name[0], Integer.parseInt(name[1])));
 			try {
-				serverInstance.nextNextServer.connect();
+				serverInstance.getNextNextServer().connect();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

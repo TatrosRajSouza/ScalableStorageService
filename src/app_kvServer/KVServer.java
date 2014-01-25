@@ -37,11 +37,10 @@ public class KVServer extends Thread {
 	private  InfrastructureMetadata metaData;
 	private ConsistentHashing consistentHashing;
 
-	// Change this to a list
-	public ServerServerCommunicator nextServer;
-	public ServerServerCommunicator nextNextServer;
-	public KVData lastNodeData;
-	public KVData lastLastNodeData;
+	private ServerServerCommunicator nextServer;
+	private ServerServerCommunicator nextNextServer;
+	private KVData lastNodeData;
+	private KVData lastLastNodeData;
 
 
 
@@ -244,6 +243,70 @@ public class KVServer extends Thread {
 
 	public void setServerData(ServerData serverData) {
 		this.serverData = serverData;
+	}
+
+
+	/**
+	 * @return the nextServer
+	 */
+	public ServerServerCommunicator getNextServer() {
+		return nextServer;
+	}
+
+
+	/**
+	 * @param nextServer the nextServer to set
+	 */
+	public void setNextServer(ServerServerCommunicator nextServer) {
+		this.nextServer = nextServer;
+	}
+
+
+	/**
+	 * @return the nextNextServer
+	 */
+	public ServerServerCommunicator getNextNextServer() {
+		return nextNextServer;
+	}
+
+
+	/**
+	 * @param nextNextServer the nextNextServer to set
+	 */
+	public void setNextNextServer(ServerServerCommunicator nextNextServer) {
+		this.nextNextServer = nextNextServer;
+	}
+
+
+	/**
+	 * @return the lastNodeData
+	 */
+	public KVData getLastNodeData() {
+		return lastNodeData;
+	}
+
+
+	/**
+	 * @param lastNodeData the lastNodeData to set
+	 */
+	public void setLastNodeData(KVData lastNodeData) {
+		this.lastNodeData = lastNodeData;
+	}
+
+
+	/**
+	 * @return the lastLastNodeData
+	 */
+	public KVData getLastLastNodeData() {
+		return lastLastNodeData;
+	}
+
+
+	/**
+	 * @param lastLastNodeData the lastLastNodeData to set
+	 */
+	public void setLastLastNodeData(KVData lastLastNodeData) {
+		this.lastLastNodeData = lastLastNodeData;
 	}
 
 

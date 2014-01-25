@@ -64,17 +64,17 @@ public class ServerConnection {
 
 	private void putAll(int numServer, KVData data) {
 		if (numServer == 1) {
-			serverInstance.lastNodeData = data;
+			serverInstance.setLastNodeData(data);
 		} else {
-			serverInstance.lastLastNodeData = data;
+			serverInstance.setLastLastNodeData(data);
 		}
 	}
 
 	private void delete(int numServer, String key) {
 		if (numServer == 1) {
-			serverInstance.lastNodeData.dataStore.remove(key);
+			serverInstance.getLastNodeData().dataStore.remove(key);
 		} else {
-			serverInstance.lastLastNodeData.dataStore.remove(key);
+			serverInstance.getLastLastNodeData().dataStore.remove(key);
 		}
 	}
 
@@ -82,9 +82,9 @@ public class ServerConnection {
 		BigInteger hashedKey = ConsistentHashing.hashKey(serverServerMessage.getKey());
 		
 		if (numServer == 1) {
-			serverInstance.lastNodeData.put(hashedKey, serverServerMessage.getValue());
+			serverInstance.getLastNodeData().put(hashedKey, serverServerMessage.getValue());
 		} else {
-			serverInstance.lastLastNodeData.put(hashedKey, serverServerMessage.getValue());
+			serverInstance.getLastLastNodeData().put(hashedKey, serverServerMessage.getValue());
 		}
 	}
 }

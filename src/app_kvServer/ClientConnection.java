@@ -365,9 +365,9 @@ public class ClientConnection implements Runnable {
 		BigInteger hashedKey = ConsistentHashing.hashKey(key);
 		String value = serverInstance.getKvdata().get(hashedKey);
 		if (value == null) {
-			value = serverInstance.lastNodeData.get(hashedKey);
+			value = serverInstance.getLastNodeData().get(hashedKey);
 			if (value == null) {
-				value = serverInstance.lastLastNodeData.get(hashedKey);
+				value = serverInstance.getLastLastNodeData().get(hashedKey);
 			}
 		}
 		return value;
@@ -376,19 +376,19 @@ public class ClientConnection implements Runnable {
 	private void sendServerServerPut(String key, String value) throws SocketTimeoutException, IOException {
 		ServerServerMessage serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
 				1, key, value);
-		serverInstance.nextServer.sendMessage(serverServerMessage.toBytes());
+		serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
 		serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
 				2, key, value);
-		serverInstance.nextNextServer.sendMessage(serverServerMessage.toBytes());
+		serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
 	}
 
 	private void sendServerServerDelete(String key) throws SocketTimeoutException, IOException {
 		ServerServerMessage serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
 				1, key);
-		serverInstance.nextServer.sendMessage(serverServerMessage.toBytes());
+		serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
 		serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
 				2, key);
-		serverInstance.nextNextServer.sendMessage(serverServerMessage.toBytes());
+		serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
 	}
 
 	private void sendConnectSuccess(String connectSuccess) {
