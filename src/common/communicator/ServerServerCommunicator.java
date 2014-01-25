@@ -12,7 +12,7 @@ import common.messages.InvalidMessageException;
 import common.messages.ServerServerMessage;
 import common.messages.ServerServerStatustype;
 
-public class ServerServerCommunicator extends ServerCommunicator<ServerServerMessage> {
+public class ServerServerCommunicator extends ServerCommunicator {
 
 	public ServerServerCommunicator(String address, int port) {
 		super(address + ":" + port, address, port);

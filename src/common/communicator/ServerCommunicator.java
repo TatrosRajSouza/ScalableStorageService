@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import common.ServerData;
 import client.KVCommunication;
 
-public abstract class ServerCommunicator<T> extends ServerData {
+public abstract class ServerCommunicator extends ServerData {
 
 	protected Logger logger;
 	protected KVCommunication communication;

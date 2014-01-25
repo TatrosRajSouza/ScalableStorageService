@@ -12,7 +12,7 @@ import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
 
-public class ECSServerCommunicator extends ServerCommunicator<ECSMessage> {
+public class ECSServerCommunicator extends ServerCommunicator {
 
 	/**
 	 * Creates a new server data with communication.
