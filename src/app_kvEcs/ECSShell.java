@@ -17,7 +17,7 @@ public class ECSShell {
 	private Logger logger;
 
 	public ECSShell() {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS Shell", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS Shell", Level.ALL);
 		this.logger = ls.getLogger();
 	}
 	

@@ -57,7 +57,7 @@ public class ClientConnection implements Runnable {
 		this.isOpen = true;
 		this.serverInstance = serverInstance;
 
-		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
 	}
 

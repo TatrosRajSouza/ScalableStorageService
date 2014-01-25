@@ -64,7 +64,7 @@ public class KVStore implements KVCommInterface {
 	}
 	
 	public void initLog() {
-		LogSetup ls = new LogSetup("logs\\client.log", name, Level.ALL);
+		LogSetup ls = new LogSetup("logs/client.log", name, Level.ALL);
 		this.logger = ls.getLogger();
 	}
 

@@ -155,7 +155,7 @@ public class KVServer extends Thread {
 	public KVServer(int port){
 		this.port = port;
 		
-		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		this.logger.info("KVServer log running @port: " + port);

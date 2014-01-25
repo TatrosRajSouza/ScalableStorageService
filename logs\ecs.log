@@ -1,0 +1,140 @@
+2014-01-25 19:21:43,976 INFO  [main] ECS: Reading the configurating file and creating the server repository.
+2014-01-25 19:21:46,641 INFO  [main] ECS: Initializing server node 127.0.0.1:50001
+2014-01-25 19:21:47,158 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50001
+2014-01-25 19:21:47,167 INFO  [main] ECS Comm: Connected to 127.0.0.1:50001
+2014-01-25 19:21:47,167 INFO  [main] ECS: Initializing server node 127.0.0.1:50007
+2014-01-25 19:21:47,668 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50007
+2014-01-25 19:21:47,669 INFO  [main] ECS Comm: Connected to 127.0.0.1:50007
+2014-01-25 19:21:47,669 INFO  [main] ECS: Initializing server node 127.0.0.1:50006
+2014-01-25 19:21:48,170 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50006
+2014-01-25 19:21:48,171 INFO  [main] ECS Comm: Connected to 127.0.0.1:50006
+2014-01-25 19:21:48,171 INFO  [main] ECS: Initializing server node 127.0.0.1:50000
+2014-01-25 19:21:48,672 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50000
+2014-01-25 19:21:48,674 INFO  [main] ECS Comm: Connected to 127.0.0.1:50000
+2014-01-25 19:21:48,674 INFO  [main] ECS: Initializing server node 127.0.0.1:50002
+2014-01-25 19:21:49,175 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50002
+2014-01-25 19:21:49,176 INFO  [main] ECS Comm: Connected to 127.0.0.1:50002
+2014-01-25 19:21:49,177 INFO  [main] ECS: Initializing server node 127.0.0.1:50004
+2014-01-25 19:21:49,678 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50004
+2014-01-25 19:21:49,680 INFO  [main] ECS Comm: Connected to 127.0.0.1:50004
+2014-01-25 19:21:49,680 INFO  [main] ECS: Initializing server node 127.0.0.1:50005
+2014-01-25 19:21:50,181 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50005
+2014-01-25 19:21:50,182 INFO  [main] ECS Comm: Connected to 127.0.0.1:50005
+2014-01-25 19:21:50,183 INFO  [main] ECS: Initializing server node 127.0.0.1:50003
+2014-01-25 19:21:50,684 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50003
+2014-01-25 19:21:50,685 INFO  [main] ECS Comm: Connected to 127.0.0.1:50003
+2014-01-25 19:21:50,685 INFO  [main] ECS: Initializing the metadata for the servers.
+2014-01-25 19:21:50,688 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50001
+2014-01-25 19:21:50,690 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50007
+2014-01-25 19:21:50,691 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50006
+2014-01-25 19:21:50,692 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50000
+2014-01-25 19:21:50,693 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50002
+2014-01-25 19:21:50,698 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50004
+2014-01-25 19:21:50,699 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50005
+2014-01-25 19:21:50,705 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50003
+2014-01-25 19:21:51,123 INFO  [main] ECS: Starting the service.
+2014-01-25 19:21:51,124 INFO  [main] ECS: Starting node 127.0.0.1:50001
+2014-01-25 19:21:51,125 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50001
+2014-01-25 19:21:51,125 INFO  [main] ECS: Starting node 127.0.0.1:50007
+2014-01-25 19:21:51,126 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50007
+2014-01-25 19:21:51,127 INFO  [main] ECS: Starting node 127.0.0.1:50006
+2014-01-25 19:21:51,128 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50006
+2014-01-25 19:21:51,129 INFO  [main] ECS: Starting node 127.0.0.1:50000
+2014-01-25 19:21:51,130 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50000
+2014-01-25 19:21:51,131 INFO  [main] ECS: Starting node 127.0.0.1:50002
+2014-01-25 19:21:51,132 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50002
+2014-01-25 19:21:51,132 INFO  [main] ECS: Starting node 127.0.0.1:50004
+2014-01-25 19:21:51,133 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50004
+2014-01-25 19:21:51,133 INFO  [main] ECS: Starting node 127.0.0.1:50005
+2014-01-25 19:21:51,134 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50005
+2014-01-25 19:21:51,135 INFO  [main] ECS: Starting node 127.0.0.1:50003
+2014-01-25 19:21:51,135 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50003
+2014-01-25 19:22:04,178 INFO  [main] ECS: Shutting down the service.
+2014-01-25 19:22:04,180 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50001
+2014-01-25 19:22:04,182 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50007
+2014-01-25 19:22:04,184 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50006
+2014-01-25 19:22:04,185 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50000
+2014-01-25 19:22:04,187 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50002
+2014-01-25 19:22:04,189 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50004
+2014-01-25 19:22:04,192 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50005
+2014-01-25 19:22:04,193 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50003
+2014-01-25 19:22:25,371 INFO  [main] ECS: Reading the configurating file and creating the server repository.
+2014-01-25 19:22:28,256 INFO  [main] ECS: Initializing server node 127.0.0.1:50003
+2014-01-25 19:22:28,773 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50003
+2014-01-25 19:22:28,781 INFO  [main] ECS Comm: Connected to 127.0.0.1:50003
+2014-01-25 19:22:28,781 INFO  [main] ECS: Initializing server node 127.0.0.1:50000
+2014-01-25 19:22:29,282 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50000
+2014-01-25 19:22:29,283 INFO  [main] ECS Comm: Connected to 127.0.0.1:50000
+2014-01-25 19:22:29,284 INFO  [main] ECS: Initializing server node 127.0.0.1:50004
+2014-01-25 19:22:29,784 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50004
+2014-01-25 19:22:29,786 INFO  [main] ECS Comm: Connected to 127.0.0.1:50004
+2014-01-25 19:22:29,786 INFO  [main] ECS: Initializing server node 127.0.0.1:50007
+2014-01-25 19:22:30,287 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50007
+2014-01-25 19:22:30,288 INFO  [main] ECS Comm: Connected to 127.0.0.1:50007
+2014-01-25 19:22:30,288 INFO  [main] ECS: Initializing server node 127.0.0.1:50005
+2014-01-25 19:22:30,789 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50005
+2014-01-25 19:22:30,791 INFO  [main] ECS Comm: Connected to 127.0.0.1:50005
+2014-01-25 19:22:30,791 INFO  [main] ECS: Initializing server node 127.0.0.1:50002
+2014-01-25 19:22:31,292 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50002
+2014-01-25 19:22:31,293 INFO  [main] ECS Comm: Connected to 127.0.0.1:50002
+2014-01-25 19:22:31,293 INFO  [main] ECS: Initializing server node 127.0.0.1:50001
+2014-01-25 19:22:31,794 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50001
+2014-01-25 19:22:31,796 INFO  [main] ECS Comm: Connected to 127.0.0.1:50001
+2014-01-25 19:22:31,796 INFO  [main] ECS: Initializing server node 127.0.0.1:50006
+2014-01-25 19:22:32,297 INFO  [main] ECS Comm: Trying to connect to 127.0.0.1:50006
+2014-01-25 19:22:32,298 INFO  [main] ECS Comm: Connected to 127.0.0.1:50006
+2014-01-25 19:22:32,298 INFO  [main] ECS: Initializing the metadata for the servers.
+2014-01-25 19:22:32,302 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50003
+2014-01-25 19:22:32,304 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50000
+2014-01-25 19:22:32,306 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50004
+2014-01-25 19:22:32,308 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50007
+2014-01-25 19:22:32,310 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50005
+2014-01-25 19:22:32,313 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50002
+2014-01-25 19:22:32,326 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50001
+2014-01-25 19:22:32,327 DEBUG [main] ECS Comm: Sending INIT to 127.0.0.1:50006
+2014-01-25 19:22:33,038 INFO  [main] ECS: Starting the service.
+2014-01-25 19:22:33,038 INFO  [main] ECS: Starting node 127.0.0.1:50003
+2014-01-25 19:22:33,039 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50003
+2014-01-25 19:22:33,040 INFO  [main] ECS: Starting node 127.0.0.1:50000
+2014-01-25 19:22:33,041 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50000
+2014-01-25 19:22:33,041 INFO  [main] ECS: Starting node 127.0.0.1:50004
+2014-01-25 19:22:33,042 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50004
+2014-01-25 19:22:33,043 INFO  [main] ECS: Starting node 127.0.0.1:50007
+2014-01-25 19:22:33,044 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50007
+2014-01-25 19:22:33,044 INFO  [main] ECS: Starting node 127.0.0.1:50005
+2014-01-25 19:22:33,045 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50005
+2014-01-25 19:22:33,046 INFO  [main] ECS: Starting node 127.0.0.1:50002
+2014-01-25 19:22:33,047 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50002
+2014-01-25 19:22:33,047 INFO  [main] ECS: Starting node 127.0.0.1:50001
+2014-01-25 19:22:33,048 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50001
+2014-01-25 19:22:33,048 INFO  [main] ECS: Starting node 127.0.0.1:50006
+2014-01-25 19:22:33,049 DEBUG [main] ECS Comm: Sending START to 127.0.0.1:50006
+2014-01-25 19:22:47,367 INFO  [main] ECS: Getting the data status of the service.
+2014-01-25 19:22:47,368 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50003
+2014-01-25 19:22:47,369 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50000
+2014-01-25 19:22:47,371 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50004
+2014-01-25 19:22:47,373 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50007
+2014-01-25 19:22:47,374 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50005
+2014-01-25 19:22:47,377 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50002
+2014-01-25 19:22:47,379 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50001
+2014-01-25 19:22:47,380 DEBUG [main] ECS Comm: Sending GET_STATUS to 127.0.0.1:50006
+2014-01-25 19:22:48,774 INFO  [main] ECS: Shutting down the service.
+2014-01-25 19:22:48,775 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50003
+2014-01-25 19:22:48,776 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50000
+2014-01-25 19:22:48,777 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50004
+2014-01-25 19:22:48,778 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50007
+2014-01-25 19:22:48,779 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50005
+2014-01-25 19:22:48,779 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50002
+2014-01-25 19:22:48,780 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50001
+2014-01-25 19:22:48,781 DEBUG [main] ECS Comm: Sending SHUTDOWN to 127.0.0.1:50006
+2014-01-25 19:52:14,948 INFO  [main] ECS: Starting the service.
+2014-01-25 19:52:14,949 INFO  [main] ECS: Starting node 127.0.0.1:50001
+2014-01-25 19:52:14,950 INFO  [main] ECS: Starting node 127.0.0.1:50003
+2014-01-25 19:52:14,952 INFO  [main] ECS: Starting node 127.0.0.1:50005
+2014-01-25 19:52:14,953 INFO  [main] ECS: Starting node 127.0.0.1:50002
+2014-01-25 19:52:14,954 INFO  [main] ECS: Starting node 127.0.0.1:50000
+2014-01-25 19:52:14,956 INFO  [main] ECS: Starting node 127.0.0.1:50006
+2014-01-25 19:52:14,958 INFO  [main] ECS: Starting node 127.0.0.1:50007
+2014-01-25 19:52:14,959 INFO  [main] ECS: Starting node 127.0.0.1:50004
+2014-01-25 19:52:35,476 INFO  [main] ECS: Getting the data status of the service.
+2014-01-25 19:52:36,264 INFO  [main] ECS: Shutting down the service.

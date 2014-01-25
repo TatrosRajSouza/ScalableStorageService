@@ -23,7 +23,7 @@ public class ECSServerCommunicator extends ServerCommunicator {
 	public ECSServerCommunicator(String name, String address, int port) {
 		super(name, address, port);
 
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS Comm", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS Comm", Level.ALL);
 		logger = ls.getLogger();
 	}
 

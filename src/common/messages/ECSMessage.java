@@ -36,7 +36,7 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when the message does not have the correct number of arguments or the command is not associated if the number of arguments given.
 	 */
 	public ECSMessage(byte[] bytes) throws InvalidMessageException {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECSMessage", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECSMessage", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		String message;

@@ -25,7 +25,7 @@ public class KVData {
 	
 	public KVData()
 	{
-		LogSetup ls = new LogSetup("logs\\KVDATA.log", "KVDATA", Level.ALL);
+		LogSetup ls = new LogSetup("logs/KVDATA.log", "KVDATA", Level.ALL);
 		this.logger = ls.getLogger();
 	}
 

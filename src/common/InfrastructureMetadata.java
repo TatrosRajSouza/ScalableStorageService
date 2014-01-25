@@ -15,7 +15,7 @@ public class InfrastructureMetadata {
 	 * Construct new empty meta data
 	 */
 	public InfrastructureMetadata() {
-		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		LogSetup ls = new LogSetup("logs/metaData.log", "metaData", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		servers = new ArrayList<ServerData>();

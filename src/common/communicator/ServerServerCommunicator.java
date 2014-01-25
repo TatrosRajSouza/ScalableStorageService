@@ -23,7 +23,7 @@ public class ServerServerCommunicator extends ServerCommunicator {
 	public ServerServerCommunicator(String address, int port) {
 		super(address + ":" + port, address, port);
 		
-		LogSetup ls = new LogSetup("logs\\server.log", "Server-Server Comm", Level.ALL);
+		LogSetup ls = new LogSetup("logs/server.log", "Server-Server Comm", Level.ALL);
 		logger = ls.getLogger();
 	}
 	

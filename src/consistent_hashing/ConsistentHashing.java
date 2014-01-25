@@ -42,7 +42,7 @@ public class ConsistentHashing {
 	}
 
 	public static void initLog() {
-		LogSetup ls = new LogSetup("logs\\metaData.log", "ConsHash", Level.ALL);
+		LogSetup ls = new LogSetup("logs/metaData.log", "ConsHash", Level.ALL);
 		ConsistentHashing.logger = ls.getLogger();
 	}
 

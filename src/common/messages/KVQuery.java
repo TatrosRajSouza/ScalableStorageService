@@ -22,7 +22,7 @@ public class KVQuery implements KVMessage {
 	private  Logger logger;
 
 	public void initLog() {
-		LogSetup ls = new LogSetup("logs\\KVQuery.log", "KVQuery", Level.ALL);
+		LogSetup ls = new LogSetup("logs/KVQuery.log", "KVQuery", Level.ALL);
 		this.logger = ls.getLogger();
 	}
 	/**

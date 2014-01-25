@@ -43,7 +43,7 @@ public class ECS {
 		hashing = new ConsistentHashing();
 		generator = new Random();
 
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS", Level.ALL);
 		this.logger = ls.getLogger();
 	}
 

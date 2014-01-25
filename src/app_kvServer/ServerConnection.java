@@ -28,7 +28,7 @@ public class ServerConnection {
 		this.serverServerMessage = new ServerServerMessage(latestMsg);
 		this.serverInstance = serverInstance;
 		
-		LogSetup ls = new LogSetup("logs\\server.log", "Server-Server", Level.ALL);
+		LogSetup ls = new LogSetup("logs/server.log", "Server-Server", Level.ALL);
 		logger = ls.getLogger();
 	}
 

@@ -36,7 +36,7 @@ public class EcsConnection {
 		this.ecsMessage = new ECSMessage(latestMsg);
 		this.serverInstance = serverInstance;
 
-		LogSetup ls = new LogSetup("logs\\server.log", "Server", Level.ALL);
+		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		EcsConnection.logger = ls.getLogger();
 	}
 	public String process() throws InvalidMessageException {
@@ -171,14 +171,11 @@ public class EcsConnection {
 				ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 1, serverInstance.getKvdata());
 				serverInstance.getNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message. Check with the server is on and try again.");
 			} catch (InvalidMessageException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Problems creating the message. Please check the protocol specification."	);
 			}
 		}
 		if (serverInstance.getNextNextServer() != null && !nextNextServer.equals(oldNextServer) && !nextNextServer.equals(oldNextNextServer)) {
@@ -186,14 +183,11 @@ public class EcsConnection {
 				ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 2, serverInstance.getKvdata());
 				serverInstance.getNextNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't send the message. Check with the server is on and try again.");
 			} catch (InvalidMessageException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Problems creating the message. Please check the protocol specification."	);
 			}
 		}
 	}
@@ -210,11 +204,9 @@ public class EcsConnection {
 			try {
 				serverInstance.getNextServer().connect();
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't reach the server node " + serverInstance.getNextServer().getName());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't connect to the server node " + serverInstance.getNextServer().getName());
 			}
 		}
 		if (nextNextServer.equals(serverInstance.getServerData().getName())) {
@@ -225,11 +217,9 @@ public class EcsConnection {
 			try {
 				serverInstance.getNextNextServer().connect();
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't reach the server node " + serverInstance.getNextServer().getName());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("Couldn't connect to the server node " + serverInstance.getNextServer().getName());
 			}
 		}
 	}

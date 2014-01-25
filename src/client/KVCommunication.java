@@ -44,7 +44,7 @@ public class KVCommunication {
 	}
 	
 	public void initLog() {
-		LogSetup ls = new LogSetup("logs\\client.log", this.moduleName, Level.ALL);
+		LogSetup ls = new LogSetup("logs/client.log", this.moduleName, Level.ALL);
 		this.logger = ls.getLogger();
 	}
 	
