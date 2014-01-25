@@ -1,4 +1,4 @@
-package app_kvEcs;
+package common.communicator;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -7,6 +7,7 @@ import logger.LogSetup;
 
 import org.apache.log4j.Level;
 
+import common.communicator.ServerCommunicator;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;

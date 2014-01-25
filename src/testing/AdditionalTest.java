@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import app_kvEcs.ECSServerCommunicator;
 import client.KVCommunication;
 import client.KVStore;
+import common.communicator.ECSServerCommunicator;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;
@@ -37,7 +37,7 @@ public class AdditionalTest extends TestCase {
 			serverListServer.add(server1Data);
 			//serverListServer.add(server2Data);
 			InfrastructureMetadata clientMetaData = new InfrastructureMetadata(serverListServer);
-			ECSServerCommunicator server = new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
+			new ECSServerCommunicator("127.0.0.1:50000", "127.0.0.1", 50000);
 			ECSMessage initMessage = new ECSMessage(ECSStatusType.INIT, clientMetaData);
 			KVCommunication comm  = new KVCommunication("127.0.0.1", 50000, "commTest");
 			comm.sendMessage(initMessage.toBytes());

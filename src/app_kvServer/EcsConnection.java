@@ -13,6 +13,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import client.KVCommunication;
+import common.communicator.ServerServerCommunicator;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InfrastructureMetadata;

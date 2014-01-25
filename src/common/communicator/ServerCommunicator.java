@@ -1,4 +1,4 @@
-package app_kvEcs;
+package common.communicator;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;

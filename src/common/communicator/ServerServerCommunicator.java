@@ -1,4 +1,4 @@
-package app_kvServer;
+package common.communicator;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -7,10 +7,10 @@ import logger.LogSetup;
 
 import org.apache.log4j.Level;
 
+import common.communicator.ServerCommunicator;
 import common.messages.InvalidMessageException;
 import common.messages.ServerServerMessage;
 import common.messages.ServerServerStatustype;
-import app_kvEcs.ServerCommunicator;
 
 public class ServerServerCommunicator extends ServerCommunicator<ServerServerMessage> {
 
