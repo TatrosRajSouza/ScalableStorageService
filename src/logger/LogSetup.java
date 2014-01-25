@@ -16,7 +16,6 @@ public class LogSetup {
 	public static final String UNKNOWN_LEVEL = "UnknownLevel";
 	// private static Logger logger = Logger.getRootLogger();
 	private Logger logger;
-	private String logdir;
 	
 	/**
 	 * Initializes the logging for the echo server. Logs are appended to the 
@@ -28,12 +27,10 @@ public class LogSetup {
 	 * @throws IOException if the log destination could not be found.
 	 */
 	public LogSetup(String logdir, String name, Level level) {
-		this.logdir = logdir;
 		initLog(name, logdir, level);
 	}
 	
 	public LogSetup(String logdir, String name, Level level, boolean simple) {
-		this.logdir = logdir;
 		initLogSimple(name, logdir, level);
 	}	
 	

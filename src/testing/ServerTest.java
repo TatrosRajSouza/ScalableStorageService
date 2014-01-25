@@ -4,18 +4,14 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import org.apache.log4j.Level;
 import org.junit.Test;
 
 import common.InfrastructureMetadata;
 import common.ServerData;
 import common.messages.InvalidMessageException;
-import consistent_hashing.ConsistentHashing;
-import consistent_hashing.EmptyServerDataException;
 import app_kvClient.KVClient;
 import app_kvServer.KVServer;
 import junit.framework.TestCase;
-import logger.LogSetup;
 
 /**
  * @author Elias Tatros
@@ -69,16 +65,12 @@ public class ServerTest extends TestCase {
 			ServerData server1Data = new ServerData("127.0.0.1:50000", "127.0.0.1", 50000);
 			ServerData server2Data = new ServerData("127.0.0.1:50001", "127.0.0.1", 50001);
 			ArrayList<ServerData> serverListServer = new ArrayList<ServerData>();
-			ArrayList<ServerData> serverListClient = new ArrayList<ServerData>();
 			serverListServer.add(server1Data);
 			serverListServer.add(server2Data);
 			
 			String key1 = "A";
-			String key2 = "ZZZZZ";
 			String value1 = "B";
-			String value2 = "Y";
 			
-			InfrastructureMetadata clientMetaData = new InfrastructureMetadata();
 			client.connect(serverAddress, serverPort);
 			
 			server1.setServeClientRequest(true);

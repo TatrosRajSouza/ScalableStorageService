@@ -15,7 +15,6 @@ import org.apache.log4j.Logger;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVMessage.StatusType;
-
 import app_kvClient.KVClient;
 
 public class ClientWrapper implements Runnable {
@@ -30,10 +29,12 @@ public class ClientWrapper implements Runnable {
 	private ArrayList<String> getKeys = new ArrayList<String>();
 	private int putsSent = 0;
 	private int putsSuccess = 0;
+	@SuppressWarnings("unused")
 	private int putsFailed = 0;
 	
 	private int getsSent = 0;
 	private int getsSuccess = 0;
+	@SuppressWarnings("unused")
 	private int getsFailed = 0;
 	
 	public Logger logger;

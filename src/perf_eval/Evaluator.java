@@ -35,7 +35,6 @@ public class Evaluator {
 	public static final String LINE_KEYWORD_VALUE = "Subject: ";
 	
 	private int numClients;
-	private int numServers;
 	private int numKVPairs = 20000;
 	private int numRequestsPerClient;
 	private String enronPath = "";
@@ -57,7 +56,6 @@ public class Evaluator {
 		this.enronPath = enronPath;
 		this.numKVPairs = numDataPairs;
 		this.numClients = numClients;
-		this.numServers = numServers;
 		this.numRequestsPerClient = numRequestsPerClient;
 			
 		LogSetup ls = new LogSetup("logs/eval.log", "PE", Level.ALL);
