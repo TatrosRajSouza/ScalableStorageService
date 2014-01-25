@@ -1,258 +1,0 @@
-2014-01-25 19:21:47,167 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:47,669 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:48,171 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:48,674 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:49,176 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:49,679 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:50,182 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:50,685 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:50,689 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,690 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,691 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,692 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,697 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,698 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,700 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:50,705 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'INIT
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:21:51,125 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'START'
-2014-01-25 19:21:51,127 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'START'
-2014-01-25 19:21:51,129 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'START'
-2014-01-25 19:21:51,130 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'START'
-2014-01-25 19:21:51,132 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'START'
-2014-01-25 19:21:51,133 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'START'
-2014-01-25 19:21:51,134 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'START'
-2014-01-25 19:21:51,136 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'START'
-2014-01-25 19:21:58,313 DEBUG [main] ShellClient: Trying to create new KVComm 127.0.0.1:50000
-2014-01-25 19:21:58,319 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:21:58,321 DEBUG [main] ShellClient: Trying to send connect message to 127.0.0.1:50000
-2014-01-25 19:21:58,321 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'CONNECT'
-2014-01-25 19:21:58,321 DEBUG [main] ShellClient: Sent Connect message to 127.0.0.1:50000
-2014-01-25 19:21:58,322 DEBUG [main] ShellClient: Waiting for response from 127.0.0.1:50000
-2014-01-25 19:21:58,324 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'CONNECT_SUCCESS
-Connection to MSRG Echo server established: /127.0.0.1 / 50000'
-2014-01-25 19:21:58,324 DEBUG [main] ShellClient: Response received 127.0.0.1:50000
-2014-01-25 19:21:58,325 INFO  [main] ShellClient: <KVStore Module>: Connected to KVServer
-2014-01-25 19:21:58,325 INFO  [main] ShellClient: <KVStore Module>: Server Message: Connection to MSRG Echo server established: /127.0.0.1 / 50000
-2014-01-25 19:22:02,095 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50000
-2014-01-25 19:22:02,095 INFO  [main] ShellClient: <KVStore Module>: Connected to the responsible Server: 127.0.0.1:50000
-2014-01-25 19:22:02,096 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'PUT
-abc
-abc'
-2014-01-25 19:22:02,096 INFO  [main] ShellClient: <KVStore Module>: Sent PUT Request for <key, value>: <abc, abc>
-2014-01-25 19:22:02,097 INFO  [main] ShellClient: Waiting for PUT response from server...
-2014-01-25 19:22:02,102 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'SERVER_NOT_RESPONSIBLE
-metaData
-node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;'
-2014-01-25 19:22:02,104 INFO  [main] ShellClient: <KVStore Module>: Received new MetaData from Server: node2,127.0.0.1,50001;node8,127.0.0.1,50007;node7,127.0.0.1,50006;node1,127.0.0.1,50000;node3,127.0.0.1,50002;node5,127.0.0.1,50004;node6,127.0.0.1,50005;node4,127.0.0.1,50003;
-2014-01-25 19:22:02,106 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50003
-2014-01-25 19:22:02,106 INFO  [main] ShellClient: <KVStore Module>: We are currently not connected to the responsible server (Connected to: 127.0.0.1:50000
-2014-01-25 19:22:02,107 INFO  [main] ShellClient: <KVStore Module>: Disconnecting from 127.0.0.1:50000 (currently connected Server)
-2014-01-25 19:22:02,108 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'DISCONNECT'
-2014-01-25 19:22:02,108 INFO  [main] ShellClient: <KVStore Module>: Waiting for disconnect response from server...
-2014-01-25 19:22:02,109 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'DISCONNECT_SUCCESS'
-2014-01-25 19:22:02,110 INFO  [main] ShellClient: <KVStore Module>: Successfully disconnected from server.
-2014-01-25 19:22:02,110 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:02,110 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:02,110 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:02,111 INFO  [main] ShellClient: <KVStore Module>: Connecting to Responsible Server: 127.0.0.1:50003
-2014-01-25 19:22:02,111 DEBUG [main] ShellClient: Trying to create new KVComm 127.0.0.1:50003
-2014-01-25 19:22:02,112 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:02,113 DEBUG [main] ShellClient: Trying to send connect message to 127.0.0.1:50003
-2014-01-25 19:22:02,113 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'CONNECT'
-2014-01-25 19:22:02,113 DEBUG [main] ShellClient: Sent Connect message to 127.0.0.1:50003
-2014-01-25 19:22:02,113 DEBUG [main] ShellClient: Waiting for response from 127.0.0.1:50003
-2014-01-25 19:22:02,116 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'CONNECT_SUCCESS
-Connection to MSRG Echo server established: /127.0.0.1 / 50003'
-2014-01-25 19:22:02,117 DEBUG [main] ShellClient: Response received 127.0.0.1:50003
-2014-01-25 19:22:02,117 INFO  [main] ShellClient: <KVStore Module>: Connected to KVServer
-2014-01-25 19:22:02,118 INFO  [main] ShellClient: <KVStore Module>: Server Message: Connection to MSRG Echo server established: /127.0.0.1 / 50003
-2014-01-25 19:22:02,118 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50003
-2014-01-25 19:22:02,118 INFO  [main] ShellClient: <KVStore Module>: Connected to the responsible Server: 127.0.0.1:50003
-2014-01-25 19:22:02,119 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'PUT
-abc
-abc'
-2014-01-25 19:22:02,119 INFO  [main] ShellClient: <KVStore Module>: Sent PUT Request for <key, value>: <abc, abc>
-2014-01-25 19:22:02,119 INFO  [main] ShellClient: Waiting for PUT response from server...
-2014-01-25 19:22:02,126 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'PUT_SUCCESS
-abc
-abc'
-2014-01-25 19:22:03,019 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'DISCONNECT'
-2014-01-25 19:22:03,020 INFO  [main] ShellClient: <KVStore Module>: Waiting for disconnect response from server...
-2014-01-25 19:22:03,021 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'DISCONNECT_SUCCESS'
-2014-01-25 19:22:03,022 INFO  [main] ShellClient: <KVStore Module>: Successfully disconnected from server.
-2014-01-25 19:22:03,022 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:03,022 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:03,022 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,180 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'SHUTDOWN'
-2014-01-25 19:22:04,180 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,180 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,181 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,182 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'SHUTDOWN'
-2014-01-25 19:22:04,182 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,182 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,183 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,184 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'SHUTDOWN'
-2014-01-25 19:22:04,184 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,184 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,184 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,186 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'SHUTDOWN'
-2014-01-25 19:22:04,186 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,186 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,186 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,187 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'SHUTDOWN'
-2014-01-25 19:22:04,188 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,188 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,188 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,190 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'SHUTDOWN'
-2014-01-25 19:22:04,190 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,190 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,190 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,192 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'SHUTDOWN'
-2014-01-25 19:22:04,192 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,192 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,193 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:04,194 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'SHUTDOWN'
-2014-01-25 19:22:04,194 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:04,194 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:04,194 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:28,780 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:29,283 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:29,786 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:30,288 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:30,790 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:31,293 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:31,796 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:32,298 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:32,303 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,304 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,307 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,308 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,310 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,325 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,326 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:32,328 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'INIT
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:33,040 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'START'
-2014-01-25 19:22:33,041 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'START'
-2014-01-25 19:22:33,042 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'START'
-2014-01-25 19:22:33,044 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'START'
-2014-01-25 19:22:33,046 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'START'
-2014-01-25 19:22:33,047 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'START'
-2014-01-25 19:22:33,048 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'START'
-2014-01-25 19:22:33,050 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'START'
-2014-01-25 19:22:41,192 DEBUG [main] ShellClient: Trying to create new KVComm 127.0.0.1:50000
-2014-01-25 19:22:41,198 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:41,199 DEBUG [main] ShellClient: Trying to send connect message to 127.0.0.1:50000
-2014-01-25 19:22:41,200 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'CONNECT'
-2014-01-25 19:22:41,200 DEBUG [main] ShellClient: Sent Connect message to 127.0.0.1:50000
-2014-01-25 19:22:41,200 DEBUG [main] ShellClient: Waiting for response from 127.0.0.1:50000
-2014-01-25 19:22:41,203 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'CONNECT_SUCCESS
-Connection to MSRG Echo server established: /127.0.0.1 / 50000'
-2014-01-25 19:22:41,203 DEBUG [main] ShellClient: Response received 127.0.0.1:50000
-2014-01-25 19:22:41,204 INFO  [main] ShellClient: <KVStore Module>: Connected to KVServer
-2014-01-25 19:22:41,204 INFO  [main] ShellClient: <KVStore Module>: Server Message: Connection to MSRG Echo server established: /127.0.0.1 / 50000
-2014-01-25 19:22:42,813 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50000
-2014-01-25 19:22:42,813 INFO  [main] ShellClient: <KVStore Module>: Connected to the responsible Server: 127.0.0.1:50000
-2014-01-25 19:22:42,814 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'PUT
-abc
-abc'
-2014-01-25 19:22:42,814 INFO  [main] ShellClient: <KVStore Module>: Sent PUT Request for <key, value>: <abc, abc>
-2014-01-25 19:22:42,814 INFO  [main] ShellClient: Waiting for PUT response from server...
-2014-01-25 19:22:42,820 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'SERVER_NOT_RESPONSIBLE
-metaData
-node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;'
-2014-01-25 19:22:42,821 INFO  [main] ShellClient: <KVStore Module>: Received new MetaData from Server: node4,127.0.0.1,50003;node1,127.0.0.1,50000;node5,127.0.0.1,50004;node8,127.0.0.1,50007;node6,127.0.0.1,50005;node3,127.0.0.1,50002;node2,127.0.0.1,50001;node7,127.0.0.1,50006;
-2014-01-25 19:22:42,823 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50003
-2014-01-25 19:22:42,823 INFO  [main] ShellClient: <KVStore Module>: We are currently not connected to the responsible server (Connected to: 127.0.0.1:50000
-2014-01-25 19:22:42,823 INFO  [main] ShellClient: <KVStore Module>: Disconnecting from 127.0.0.1:50000 (currently connected Server)
-2014-01-25 19:22:42,824 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'DISCONNECT'
-2014-01-25 19:22:42,824 INFO  [main] ShellClient: <KVStore Module>: Waiting for disconnect response from server...
-2014-01-25 19:22:42,826 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50000>: 'DISCONNECT_SUCCESS'
-2014-01-25 19:22:42,826 INFO  [main] ShellClient: <KVStore Module>: Successfully disconnected from server.
-2014-01-25 19:22:42,827 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:42,827 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:42,827 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:42,827 INFO  [main] ShellClient: <KVStore Module>: Connecting to Responsible Server: 127.0.0.1:50003
-2014-01-25 19:22:42,828 DEBUG [main] ShellClient: Trying to create new KVComm 127.0.0.1:50003
-2014-01-25 19:22:42,829 INFO  [main] <KVComm Module>:  Connection established
-2014-01-25 19:22:42,829 DEBUG [main] ShellClient: Trying to send connect message to 127.0.0.1:50003
-2014-01-25 19:22:42,830 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'CONNECT'
-2014-01-25 19:22:42,830 DEBUG [main] ShellClient: Sent Connect message to 127.0.0.1:50003
-2014-01-25 19:22:42,830 DEBUG [main] ShellClient: Waiting for response from 127.0.0.1:50003
-2014-01-25 19:22:42,835 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'CONNECT_SUCCESS
-Connection to MSRG Echo server established: /127.0.0.1 / 50003'
-2014-01-25 19:22:42,835 DEBUG [main] ShellClient: Response received 127.0.0.1:50003
-2014-01-25 19:22:42,835 INFO  [main] ShellClient: <KVStore Module>: Connected to KVServer
-2014-01-25 19:22:42,836 INFO  [main] ShellClient: <KVStore Module>: Server Message: Connection to MSRG Echo server established: /127.0.0.1 / 50003
-2014-01-25 19:22:42,836 INFO  [main] ShellClient: <KVStore Module>: The responsible Server for key abc is: 127.0.0.1:50003
-2014-01-25 19:22:42,836 INFO  [main] ShellClient: <KVStore Module>: Connected to the responsible Server: 127.0.0.1:50003
-2014-01-25 19:22:42,837 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'PUT
-abc
-abc'
-2014-01-25 19:22:42,837 INFO  [main] ShellClient: <KVStore Module>: Sent PUT Request for <key, value>: <abc, abc>
-2014-01-25 19:22:42,837 INFO  [main] ShellClient: Waiting for PUT response from server...
-2014-01-25 19:22:42,844 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'PUT_SUCCESS
-abc
-abc'
-2014-01-25 19:22:43,701 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'DISCONNECT'
-2014-01-25 19:22:43,701 INFO  [main] ShellClient: <KVStore Module>: Waiting for disconnect response from server...
-2014-01-25 19:22:43,703 INFO  [main] <KVComm Module>:  RECEIVE 	<127.0.0.1:50003>: 'DISCONNECT_SUCCESS'
-2014-01-25 19:22:43,703 INFO  [main] ShellClient: <KVStore Module>: Successfully disconnected from server.
-2014-01-25 19:22:43,704 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:43,704 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:43,704 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:47,368 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'GET_STATUS'
-2014-01-25 19:22:47,370 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'GET_STATUS'
-2014-01-25 19:22:47,371 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'GET_STATUS'
-2014-01-25 19:22:47,373 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'GET_STATUS'
-2014-01-25 19:22:47,376 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'GET_STATUS'
-2014-01-25 19:22:47,378 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'GET_STATUS'
-2014-01-25 19:22:47,379 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'GET_STATUS'
-2014-01-25 19:22:47,381 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'GET_STATUS'
-2014-01-25 19:22:48,775 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50003>: 'SHUTDOWN'
-2014-01-25 19:22:48,775 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,775 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,776 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,776 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50000>: 'SHUTDOWN'
-2014-01-25 19:22:48,776 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,776 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,776 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,777 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50004>: 'SHUTDOWN'
-2014-01-25 19:22:48,777 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,777 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,777 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,778 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50007>: 'SHUTDOWN'
-2014-01-25 19:22:48,778 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,778 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,778 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,779 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50005>: 'SHUTDOWN'
-2014-01-25 19:22:48,779 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,779 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,779 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50002>: 'SHUTDOWN'
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50001>: 'SHUTDOWN'
-2014-01-25 19:22:48,780 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,781 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,781 INFO  [main] <KVComm Module>:  Connection closed by communication module!
-2014-01-25 19:22:48,781 INFO  [main] <KVComm Module>:  SEND 	<127.0.0.1:50006>: 'SHUTDOWN'
-2014-01-25 19:22:48,781 INFO  [main] <KVComm Module>:  try to close connection ...
-2014-01-25 19:22:48,781 INFO  [main] <KVComm Module>:  tearing down the connection ...
-2014-01-25 19:22:48,782 INFO  [main] <KVComm Module>:  Connection closed by communication module!
