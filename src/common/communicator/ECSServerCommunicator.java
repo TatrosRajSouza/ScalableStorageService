@@ -27,6 +27,12 @@ public class ECSServerCommunicator extends ServerCommunicator {
 		logger = ls.getLogger();
 	}
 
+	/**
+	 * Sends an ECSMessage
+	 * @param msgBytes the bytes of the ECSMessage
+	 * @throws SocketTimeoutException thrown if the message wasn't delivered on time
+	 * @throws IOException Signals that an I/O exception of some sort has occurred
+	 */
 	public void sendMessage(byte[] msgBytes) throws SocketTimeoutException, IOException {
 		ECSStatusType type = null;
 		try {
@@ -39,6 +45,13 @@ public class ECSServerCommunicator extends ServerCommunicator {
 		sendMessage(msgBytes, type);
 	}
 
+	/**
+	 * Receive an ECSMessage
+	 * @return the ECSMessage received
+	 * @throws SocketTimeoutException thrown if couldn't receive the message on time
+	 * @throws IOException Signals that an I/O exception of some sort has occurred
+	 * @throws InvalidMessageException thrown if the received message wasn't an ECS
+	 */
 	public ECSMessage receiveMessage() throws SocketTimeoutException, IOException, InvalidMessageException {
 		byte[] message = communication.receiveMessage();
 		return new ECSMessage(message);

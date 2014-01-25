@@ -105,10 +105,13 @@ public class EcsConnection {
 		this.serverInstance.setMetaData(metaData);
 		logger.info("Set meta data to " + this.serverInstance.getMetaData().toString());
 
-		changeNextServers();
+		updateNextServers();
 	}
 
-	private void changeNextServers() {
+	/**
+	 * Update communication to the servers that will hold replicated data from this server.
+	 */
+	private void updateNextServers() {
 		String oldNextServer = "";
 		String oldNextNextServer = "";
 		String nextServer = "";
@@ -154,11 +157,18 @@ public class EcsConnection {
 		setNextServer(nextServer, nextNextServer);
 		sendMessageToNextServers(oldNextServer, oldNextNextServer, nextServer, nextNextServer);
 	}
+	
+	/**
+	 * If the next servers didn't change send them the data to be replicated
+	 * @param oldNextServer name of the former nextServer
+	 * @param oldNextNextServer name of the former nextNextServer
+	 * @param nextServer name of the actual nextServer
+	 * @param nextNextServer name of the actual nextNextServer
+	 */
 	private void sendMessageToNextServers(String oldNextServer, String oldNextNextServer, String nextServer, String nextNextServer) {
 		if (serverInstance.getNextServer() != null && !nextServer.equals(oldNextServer) && !nextServer.equals(oldNextNextServer)) {
-			logger.info("%%% " + serverInstance.getKvdata().toString().length());
-			ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 1, serverInstance.getKvdata());
 			try {
+				ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 1, serverInstance.getKvdata());
 				serverInstance.getNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
 				// TODO Auto-generated catch block
@@ -166,12 +176,14 @@ public class EcsConnection {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (InvalidMessageException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		if (serverInstance.getNextNextServer() != null && !nextNextServer.equals(oldNextServer) && !nextNextServer.equals(oldNextNextServer)) {
-			logger.info("%%%");
-			ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 2, serverInstance.getKvdata());
 			try {
+				ServerServerMessage message = new ServerServerMessage(ServerServerStatustype.SERVER_PUT_ALL, 2, serverInstance.getKvdata());
 				serverInstance.getNextNextServer().sendMessage(message.toBytes());
 			} catch (SocketTimeoutException e) {
 				// TODO Auto-generated catch block
@@ -179,10 +191,16 @@ public class EcsConnection {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (InvalidMessageException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
 
+	/**
+	 * Update communication to the servers that will hold replicated data from this server.
+	 */
 	private void setNextServer(String nextServer, String nextNextServer) {
 		if (nextServer.equals(serverInstance.getServerData().getName())) {
 			serverInstance.setNextServer(null);
@@ -252,7 +270,7 @@ public class EcsConnection {
 		this.serverInstance.getMetaData().update(infrastructureMetadata.toString());
 		this.serverInstance.getConsistentHashing().update(infrastructureMetadata.getServers());
 		//logger.info("metadata updation:" + infrastructureMetadata.toString());
-		changeNextServers();
+		updateNextServers();
 	}
 	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{

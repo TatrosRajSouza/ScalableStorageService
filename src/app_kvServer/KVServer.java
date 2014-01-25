@@ -247,7 +247,8 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @return the nextServer
+	 * @return communicator to the next server in the hash circle,
+	 *  i.e. one of the servers that holds replicated data of this KVServer
 	 */
 	public ServerServerCommunicator getNextServer() {
 		return nextServer;
@@ -255,7 +256,8 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @param nextServer the nextServer to set
+	 * @param changes the communicator to the next server in the hash circle,
+	 *  i.e. one of the servers that holds replicated data of this KVServer
 	 */
 	public void setNextServer(ServerServerCommunicator nextServer) {
 		this.nextServer = nextServer;
@@ -263,7 +265,8 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @return the nextNextServer
+	 * @return communicator to the second next server in the hash circle,
+	 *  i.e. one of the servers that holds replicated data of this KVServer
 	 */
 	public ServerServerCommunicator getNextNextServer() {
 		return nextNextServer;
@@ -271,7 +274,8 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @param nextNextServer the nextNextServer to set
+	 * @param changes the communicator to the second next server in the hash circle,
+	 *  i.e. one of the servers that holds replicated data of this KVServer
 	 */
 	public void setNextNextServer(ServerServerCommunicator nextNextServer) {
 		this.nextNextServer = nextNextServer;
@@ -279,7 +283,7 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @return the lastNodeData
+	 * @return the replicated data held from the last server in the hash circle
 	 */
 	public KVData getLastNodeData() {
 		return lastNodeData;
@@ -287,7 +291,7 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @param lastNodeData the lastNodeData to set
+	 * @param change the replicated data held from the last server in the hash circle
 	 */
 	public void setLastNodeData(KVData lastNodeData) {
 		this.lastNodeData = lastNodeData;
@@ -295,7 +299,7 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @return the lastLastNodeData
+	 * @return the replicated data held from the second last server in the hash circle
 	 */
 	public KVData getLastLastNodeData() {
 		return lastLastNodeData;
@@ -303,7 +307,7 @@ public class KVServer extends Thread {
 
 
 	/**
-	 * @param lastLastNodeData the lastLastNodeData to set
+	 * @param change the replicated data held from the second last server in the hash circle
 	 */
 	public void setLastLastNodeData(KVData lastLastNodeData) {
 		this.lastLastNodeData = lastLastNodeData;

@@ -10,6 +10,11 @@ public class ServerServerMessage {
 	private int numServer;
 	private final String EMPTY = "EMPTY";
 
+	/**
+	 * Construct a message received in the form of an array of bytes.
+	 * @param bytes Message received in the form of bytes.
+	 * @throws InvalidMessageException Thrown when the message does not have the correct number of arguments or the command is not associated if the number of arguments given.
+	 */
 	public ServerServerMessage(byte[] bytes) throws InvalidMessageException {
 		String message;
 		String[] arguments;
@@ -44,9 +49,15 @@ public class ServerServerMessage {
 		}
 	}
 
-	public ServerServerMessage(ServerServerStatustype command, int numServer, String key) {
+	/**
+	 * Constructs a message that has only a key
+	 * @param command The type of the message.
+	 * @param numServer Indicates the server to which the message is going, according to its position in the hash circle in relation to the sender.
+	 * @param key the key of the tuple
+	 */
+	public ServerServerMessage(ServerServerStatustype command, int numServer, String key) throws InvalidMessageException {
 		if (command != ServerServerStatustype.SERVER_DELETE) {
-			//throw
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.numServer = numServer;
@@ -56,9 +67,16 @@ public class ServerServerMessage {
 		numServer = 0;
 	}
 
-	public ServerServerMessage(ServerServerStatustype command, int numServer, String key, String value) {
+	/**
+	 * Constructs a message that has a key and a value
+	 * @param command The type of the message.
+	 * @param numServer Indicates the server to which the message is going, according to its position in the hash circle in relation to the sender.
+	 * @param key the key of the tuple
+	 * @param value the value of the tuple
+	 */
+	public ServerServerMessage(ServerServerStatustype command, int numServer, String key, String value) throws InvalidMessageException {
 		if (command != ServerServerStatustype.SERVER_PUT) {
-			//throw
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.numServer = numServer;
@@ -68,9 +86,14 @@ public class ServerServerMessage {
 		numServer = 0;
 	}
 
-	public ServerServerMessage(ServerServerStatustype command, int numServer, KVData serverData) {
+	/**
+	 * Constructs a message to update the replicated data on other servers
+	 * @param command The type of the message.
+	 * @param numServer Indicates the server to which the message is going, according to its position in the hash circle in relation to the sender.
+	 */
+	public ServerServerMessage(ServerServerStatustype command, int numServer, KVData serverData) throws InvalidMessageException {
 		if (command != ServerServerStatustype.SERVER_PUT_ALL) {
-			//throw
+			throw new InvalidMessageException("Incorrect number of arguments or command.");
 		}
 		this.command = command;
 		this.numServer = numServer;
@@ -79,8 +102,11 @@ public class ServerServerMessage {
 		value = null;
 	}
 
+	/**
+	 * Transform the message in an array of bytes to be sent.
+	 * @return The message in an array of bytes.
+	 */
 	public byte[] toBytes() {
-		byte[] bytes = null;
 		String message = command.toString() + "\n" + numServer + "\n";
 
 		switch (command) {
@@ -99,15 +125,7 @@ public class ServerServerMessage {
 			break;
 		}
 
-		bytes = message.getBytes();
-		/*if (bytes.length > KVMessage.DROP_SIZE) {
-			logger.error("Cannot convert KVQuery to bytes, since the payload would be too large.\n"
-					+ "  Payload: " + bytes.length / 1024 + " kb"
-					+ "  Maxmium allowed: " + KVMessage.DROP_SIZE / 1024 + " kb");
-			return null;
-		}*/
-
-		return bytes;
+		return message.getBytes();
 	}
 
 	private void checkLength(int length) throws InvalidMessageException {

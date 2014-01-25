@@ -14,6 +14,12 @@ import common.messages.ServerServerStatustype;
 
 public class ServerServerCommunicator extends ServerCommunicator {
 
+	/**
+	 * Creates a new server data with communication.
+	 * @param name The name of the server, used for logging and user I/O
+	 * @param address The IP address of the server.
+	 * @param port The remote port the server is running on.
+	 */
 	public ServerServerCommunicator(String address, int port) {
 		super(address + ":" + port, address, port);
 		
@@ -21,6 +27,12 @@ public class ServerServerCommunicator extends ServerCommunicator {
 		logger = ls.getLogger();
 	}
 	
+	/**
+	 * Sends an ServerServerMessage
+	 * @param msgBytes the bytes of the ServerServerMessage
+	 * @throws SocketTimeoutException thrown if the message wasn't delivered on time
+	 * @throws IOException Signals that an I/O exception of some sort has occurred
+	 */
 	public void sendMessage(byte[] msgBytes) throws SocketTimeoutException, IOException {
 		ServerServerStatustype type = null;
 		try {

@@ -18,6 +18,12 @@ public class ServerConnection {
 	private KVServer serverInstance;
 	private ServerServerMessage serverServerMessage;
 
+	/**
+	 * Creates a processor of server-server messages
+	 * @param latestMsg message received that will be processed
+	 * @param serverInstance data of the running server 
+	 * @throws InvalidMessageException thrown if the message received is invalid
+	 */
 	public ServerConnection(byte[] latestMsg, KVServer serverInstance) throws InvalidMessageException {
 		this.serverServerMessage = new ServerServerMessage(latestMsg);
 		this.serverInstance = serverInstance;
@@ -26,7 +32,10 @@ public class ServerConnection {
 		logger = ls.getLogger();
 	}
 
-	public ServerServerMessage process() {
+	/**
+	 * Process the message
+	 */
+	public void process() {
 		switch (serverServerMessage.getCommand()) {
 		case SERVER_PUT:
 			put(serverServerMessage.getNumServer(), serverServerMessage.getKey(), serverServerMessage.getValue());
@@ -38,28 +47,6 @@ public class ServerConnection {
 			putAll(serverServerMessage.getNumServer(), serverServerMessage.getData());
 			break;
 		}
-		
-		/*if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL))
-		{
-			move = "error";
-			move = moveData(ecsMessage.getMovingData());
-		}
-		else if(ecsMessage.getCommand().equals(ECSStatusType.MOVE_DATA))
-		{
-			try {
-				move = "error";
-				move = moveData(ecsMessage.getStartIndex(), ecsMessage.getEndIndex(), ecsMessage.getServer());
-			} catch (UnknownHostException e) {
-				logger.error("Error while updation"+e.getMessage());
-			} catch (IOException e) {
-				logger.error("Error while updation"+e.getMessage());
-			} catch (InvalidMessageException e) {
-				logger.error("Error while updation"+e.getMessage());
-			}
-		}
-
-		return move;*/
-		return serverServerMessage;
 	}
 
 	private void putAll(int numServer, KVData data) {

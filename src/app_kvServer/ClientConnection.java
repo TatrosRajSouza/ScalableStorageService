@@ -77,8 +77,6 @@ public class ClientConnection implements Runnable {
 				while(isOpen) { // until connection open
 					try { //connection lost
 						byte[] latestMsg = receiveMessage();
-						//logger.info("############## Receving message from " + serverInstance.getName());
-						//logger.debug("Received a new message");
 						KVQuery kvQueryCommand;
 						try { //   not KVMessage
 							kvQueryCommand = new KVQuery(latestMsg);
@@ -286,52 +284,13 @@ public class ClientConnection implements Runnable {
 									}
 								}
 							}
-							catch(InvalidMessageException eEcs)
+							catch(InvalidMessageException eEcs) //Server-server message
 							{
 								try {
-									//TODO
-									logger.info("%%%%%%%%");
 									ServerConnection serverConnection = new ServerConnection(latestMsg, this.serverInstance);
-									ServerServerMessage serverMessage = serverConnection.process();
-									logger.info("############## Receving message " + serverMessage.getCommand());
-
-
-									/*String values = "&";
-									for (BigInteger hash : serverInstance.getKvdata().dataStore.keySet()) {
-										values += serverInstance.getKvdata().dataStore.get(hash);
-									}
-									logger.info("############## " + values);
-
-									BigInteger hashedKey = ConsistentHashing.hashKey(serverMessage.getKey());
-									serverInstance.getKvdata().put(hashedKey, serverMessage.getValue());*/
-
-									/*if(serverMessage != null)
-									{
-										if(serverMessage.equals("movecompleted"))
-										{
-											ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
-											sendMessage(ecsMoveSuccess.toBytes());
-											logger.debug("SERVER:ECS move completed");
-										}
-										else if(serverMessage.equals("moveinternalcompleted"))
-										{
-											ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
-											sendMessage(ecsMoveSuccess.toBytes());
-											logger.debug("SERVER:ECS movinternale completed");
-										}
-										else
-										{
-											ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
-											sendMessage(ecsMoveSuccess.toBytes());
-											logger.debug("SERVER:ECS move error");
-										}
-									}*/
-									/*ServerConnection serverConnection = new ServerConnection(latestMsg, this.serverInstance);
-									String serverMessage = serverConnection.process();
-									logger.info("############## Receving message from " + serverInstance.getName() + "\n" + serverMessage);*/
+									serverConnection.process();
 								}
-								catch(InvalidMessageException eServer)
-								{
+								catch (InvalidMessageException eServer) {
 									logger.error("Invalid message received from ECS");
 								}	
 							} 
@@ -374,21 +333,43 @@ public class ClientConnection implements Runnable {
 	}
 
 	private void sendServerServerPut(String key, String value) throws SocketTimeoutException, IOException {
-		ServerServerMessage serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
-				1, key, value);
-		serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
-		serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
-				2, key, value);
-		serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+		ServerServerMessage serverServerMessage;
+		try {
+			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
+					1, key, value);
+			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
+					2, key, value);
+			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void sendServerServerDelete(String key) throws SocketTimeoutException, IOException {
-		ServerServerMessage serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
-				1, key);
-		serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
-		serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
-				2, key);
-		serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+		ServerServerMessage serverServerMessage;
+		try {
+			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
+					1, key);
+			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
+					2, key);
+			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+		} catch (InvalidMessageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void sendConnectSuccess(String connectSuccess) {
@@ -538,13 +519,13 @@ public class ClientConnection implements Runnable {
 
 		/* build final String */
 
-		//if(this.serverInstance.isDEBUG())
-		//{
-		logger.info("RECEIVE @@@@@@\t<" 
-				+ clientSocket.getInetAddress().getHostAddress() + ":" 
-				+ clientSocket.getPort() + ">: '" 
-				+ new String(msgBytes) + "'");
-		//}
+		if(this.serverInstance.isDEBUG())
+		{
+			logger.info("RECEIVE @@@@@@\t<" 
+					+ clientSocket.getInetAddress().getHostAddress() + ":" 
+					+ clientSocket.getPort() + ">: '" 
+					+ new String(msgBytes) + "'");
+		}
 		return msgBytes;
 	}
 
