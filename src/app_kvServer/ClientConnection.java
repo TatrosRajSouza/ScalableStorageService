@@ -13,12 +13,12 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.ServerData;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
-import common.messages.ServerData;
 import common.messages.ServerServerMessage;
 import common.messages.ServerServerStatustype;
 import consistent_hashing.ConsistentHashing;

@@ -1,4 +1,4 @@
-package common.messages;
+package common;
 
 public class ServerData {
 	

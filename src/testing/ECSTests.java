@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-import common.messages.ServerData;
+import common.ServerData;
 import app_kvEcs.ECS;
 import junit.framework.TestCase;
 

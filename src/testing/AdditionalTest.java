@@ -9,13 +9,13 @@ import org.junit.Test;
 
 import client.KVCommunication;
 import client.KVStore;
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.communicator.ECSServerCommunicator;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
-import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
-import common.messages.ServerData;
 import junit.framework.TestCase;
 
 /*        To the person that is going to grade this assignment.

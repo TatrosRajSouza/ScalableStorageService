@@ -1,4 +1,4 @@
-package common.messages;
+package common;
 
 import java.util.ArrayList;
 

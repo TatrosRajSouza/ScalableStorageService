@@ -6,7 +6,7 @@ import java.util.SortedMap;
 
 import org.junit.Test;
 
-import common.messages.ServerData;
+import common.ServerData;
 import consistent_hashing.ConsistentHashing;
 import junit.framework.TestCase;
 

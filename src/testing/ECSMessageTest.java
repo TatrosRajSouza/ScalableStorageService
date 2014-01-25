@@ -7,11 +7,11 @@ import junit.framework.TestCase;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
-import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
-import common.messages.ServerData;
 
 public class ECSMessageTest extends TestCase {
 	@BeforeClass

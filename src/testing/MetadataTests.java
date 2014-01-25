@@ -3,8 +3,9 @@ package testing;
 import java.util.ArrayList;
 
 import org.junit.Test;
-import common.messages.InfrastructureMetadata;
-import common.messages.ServerData;
+
+import common.InfrastructureMetadata;
+import common.ServerData;
 import junit.framework.TestCase;
 
 public class MetadataTests extends TestCase {

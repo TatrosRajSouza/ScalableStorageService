@@ -15,7 +15,7 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import common.messages.ServerData;
+import common.ServerData;
 
 /**
  * Implements Consistent Hashing of Servers and Keys

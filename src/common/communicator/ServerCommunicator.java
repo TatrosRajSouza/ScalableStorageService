@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
 
-import common.messages.ServerData;
+import common.ServerData;
 import client.KVCommunication;
 
 public abstract class ServerCommunicator<T> extends ServerData {

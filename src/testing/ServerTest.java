@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import org.apache.log4j.Level;
 import org.junit.Test;
 
-import common.messages.InfrastructureMetadata;
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.messages.InvalidMessageException;
-import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
 import consistent_hashing.EmptyServerDataException;
 import app_kvClient.KVClient;

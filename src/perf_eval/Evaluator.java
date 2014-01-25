@@ -22,9 +22,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import common.messages.InfrastructureMetadata;
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.messages.InvalidMessageException;
-import common.messages.ServerData;
 import app_kvServer.KVServer;
 
 public class Evaluator {

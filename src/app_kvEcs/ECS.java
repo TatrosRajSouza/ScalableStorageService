@@ -17,12 +17,12 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.communicator.ECSServerCommunicator;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
-import common.messages.InfrastructureMetadata;
 import common.messages.InvalidMessageException;
-import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
 
 public class ECS {

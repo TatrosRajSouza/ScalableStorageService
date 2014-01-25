@@ -14,12 +14,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import app_kvClient.SocketStatus;
-import common.messages.InfrastructureMetadata;
+import common.InfrastructureMetadata;
+import common.ServerData;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
 import common.messages.KVMessage.StatusType;
-import common.messages.ServerData;
 import consistent_hashing.ConsistentHashing;
 import consistent_hashing.EmptyServerDataException;
 

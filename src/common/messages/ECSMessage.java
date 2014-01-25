@@ -9,6 +9,9 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.InfrastructureMetadata;
+import common.ServerData;
+
 /**
  * Create a message from or to ECS/Server.
  * Implements the protocol established for this application
