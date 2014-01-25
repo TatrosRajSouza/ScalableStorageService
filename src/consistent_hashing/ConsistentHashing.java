@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -29,7 +30,7 @@ public class ConsistentHashing {
 	private static MessageDigest md5digest;
 	private static Logger logger;
 	private SortedMap<BigInteger, String> hashCircle;
-	
+
 	static {
 		initLog();
 		try {
@@ -44,7 +45,7 @@ public class ConsistentHashing {
 		LogSetup ls = new LogSetup("logs\\metaData.log", "ConsHash", Level.ALL);
 		ConsistentHashing.logger = ls.getLogger();
 	}
-	
+
 	/**
 	 * Enables Consistent Hashing, start with empty circle
 	 */
@@ -174,7 +175,7 @@ public class ConsistentHashing {
 
 			if (tailMap.isEmpty()) { // TailMap was empty, hence Wrap-around and return the first server in the map
 				try {
-					return ServerDataFromValue(hashCircle.get(hashCircle.firstKey()));
+					return serverDataFromValue(hashCircle.get(hashCircle.firstKey()));
 				} catch (IllegalArgumentException ex) {
 					logger.error("Hash value for key " + hashCircle.firstKey() + " of invalid format: " + hashCircle.get(hashCircle.firstKey()));
 					throw ex;
@@ -182,7 +183,7 @@ public class ConsistentHashing {
 			}
 			else { // Return the first server in the TailMap
 				try {
-					return ServerDataFromValue(hashCircle.get(tailMap.firstKey()));
+					return serverDataFromValue(hashCircle.get(tailMap.firstKey()));
 				} catch (IllegalArgumentException ex) {
 					logger.error("Hash value for key " + tailMap.firstKey() + " of invalid format: " + hashCircle.get(tailMap.firstKey()));
 					throw ex;
@@ -190,7 +191,7 @@ public class ConsistentHashing {
 			}
 		} else { // There is a server with equal hash to the key
 			try {
-				return ServerDataFromValue(hashCircle.get(keyHash));
+				return serverDataFromValue(hashCircle.get(keyHash));
 			} catch (IllegalArgumentException ex) {
 				logger.error("Hash value for key " + keyHash + " of invalid format: " + hashCircle.get(keyHash));
 				throw ex;
@@ -198,12 +199,53 @@ public class ConsistentHashing {
 		}
 	}
 
+
+	public List<ServerData> getServersForKey(String key) throws EmptyServerDataException, IllegalArgumentException {
+		List<ServerData> list = new ArrayList<ServerData>();
+		ServerData server;
+
+		if (hashCircle.isEmpty()) {
+			throw new EmptyServerDataException("There are no Servers in the hashCircle");
+		}
+
+		server = getServerForKey(key);
+		list.add(server);
+		server = getNextServer(server);
+		if (server != null) {
+			list.add(server);
+			server = getNextServer(server);
+			if (server != null) {
+				list.add(server);
+			}
+		}
+
+		return list;
+	}
+
+	private ServerData getNextServer(ServerData server) {
+		BigInteger hashServer = hashServer(server.getAddress(), server.getPort());
+		boolean next = false;
+
+		for (BigInteger hash : hashCircle.keySet()) {
+			if (next) {
+				return serverDataFromValue(hashCircle.get(hash));
+			} else if (hashServer.equals(hash)) {
+				next = true;
+			}
+		}
+
+		if (next) {
+			return serverDataFromValue(hashCircle.get(hashCircle.firstKey()));
+		}
+		return null;
+	}
+
 	/**
 	 * Internal use, create instance of ServerData for a value in the hash-circle
 	 * @param value A value for a server on the hash-circle ("<IP>:<Port>")
 	 * @return The ServerData corresponding to the provided value
 	 */
-	private ServerData ServerDataFromValue(String value) throws IllegalArgumentException {
+	private ServerData serverDataFromValue(String value) throws IllegalArgumentException {
 		String serverStr[] = value.split(":");
 
 		if (serverStr.length == 2) {

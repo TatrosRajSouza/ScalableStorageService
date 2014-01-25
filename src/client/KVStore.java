@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Random;
 
 import logger.LogSetup;
 
@@ -38,6 +40,7 @@ public class KVStore implements KVCommInterface {
 	private ConsistentHashing consHash;
 	private String name = "";
 	private String moduleName = "<KVStore Module>";
+	private Random generator = new Random();
 	
 	
 	/**
@@ -166,46 +169,71 @@ public class KVStore implements KVCommInterface {
 	}
 
 	/**
-	 * Find and connect to the responsible server for a given key according to the current meta data
+	 * Find and connect to the responsible server coordinator for a given key according to the current meta data
 	 * @param key The key that we want to find the responsible server for
 	 * @return ServerData for the responsible Server
 	 */
-	private ServerData connectResponsibleServer(String key) {
+	private ServerData connectResponsibleServerCoordinator(String key) {
 		/* Obtain responsible server according to current meta data */
 		ServerData responsibleServer = null;
 		try {
 			responsibleServer = consHash.getServerForKey(key);
+			connectServer(key, responsibleServer);
+		} catch (IllegalArgumentException ex) {
+			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
+			// ex.printStackTrace();
+		} catch (EmptyServerDataException ex) {
+			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
+			// ex.printStackTrace();
+		}
+		
+		return responsibleServer;
+	}
 
+	private void connectServer(String key, ServerData responsibleServer) {
+		if (DEBUG)
+			logger.info(moduleName + ": The responsible Server for key " + key + " is: " + responsibleServer.getAddress() + ":" + responsibleServer.getPort());
+		/* Make sure we select the correct server and connect to it */
+		if (!(responsibleServer.getAddress().equals(this.address)) || responsibleServer.getPort() != this.port) {
 			if (DEBUG)
-				logger.info(moduleName + ": The responsible Server for key " + key + " is: " + responsibleServer.getAddress() + ":" + responsibleServer.getPort());
-			/* Make sure we select the correct server and connect to it */
-			if (!(responsibleServer.getAddress().equals(this.address)) || responsibleServer.getPort() != this.port) {
+				logger.info(moduleName + ": We are currently not connected to the responsible server (Connected to: " + this.address + ":" + this.port);
+			
+			if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 				if (DEBUG)
-					logger.info(moduleName + ": We are currently not connected to the responsible server (Connected to: " + this.address + ":" + this.port);
+					logger.info(moduleName + ": Disconnecting from " + address + ":" + port + " (currently connected Server)");
 				
-				if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
-					if (DEBUG)
-						logger.info(moduleName + ": Disconnecting from " + address + ":" + port + " (currently connected Server)");
-					
-					this.disconnect();
-				}
-				
-				this.address = responsibleServer.getAddress();
-				this.port = responsibleServer.getPort();
-				
-				try {
-					if (DEBUG)
-						logger.info(moduleName + ": Connecting to Responsible Server: " + address + ":" + port);
-					
-					this.connect();
-				} catch (UnknownHostException ex) {
-					logger.warn(moduleName + ": Put Request Failed. Responsible Server is Unknown Host!");
-				} catch (IOException ex) {
-					logger.warn(moduleName + ": Put Request Failed. Could not establish connection due to an IOError!" + ex.getMessage());
-				} catch (InvalidMessageException ex) {
-					logger.warn(moduleName + ": Put Request Failed. Unable to connect to responsible server. Received an invalid message: \n" + ex.getMessage());
-				}
+				this.disconnect();
 			}
+			
+			this.address = responsibleServer.getAddress();
+			this.port = responsibleServer.getPort();
+			
+			try {
+				if (DEBUG)
+					logger.info(moduleName + ": Connecting to Responsible Server: " + address + ":" + port);
+				
+				this.connect();
+			} catch (UnknownHostException ex) {
+				logger.warn(moduleName + ": Put Request Failed. Responsible Server is Unknown Host!");
+			} catch (IOException ex) {
+				logger.warn(moduleName + ": Put Request Failed. Could not establish connection due to an IOError!" + ex.getMessage());
+			} catch (InvalidMessageException ex) {
+				logger.warn(moduleName + ": Put Request Failed. Unable to connect to responsible server. Received an invalid message: \n" + ex.getMessage());
+			}
+		}
+	}
+	
+	/**
+	 * Find a responsible server for a given key according to the current meta data
+	 * @param key The key that we want to find the responsible server for
+	 * @return ServerData for the responsible Server
+	 */
+	private ServerData getResponsibleServer(String key) {
+		/* Obtain responsible server according to current meta data */
+		ServerData responsibleServer = null;
+		try {
+			List<ServerData> servers = consHash.getServersForKey(key);
+			responsibleServer = servers.get(generator.nextInt(servers.size()));
 		} catch (IllegalArgumentException ex) {
 			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
 			// ex.printStackTrace();
@@ -226,7 +254,7 @@ public class KVStore implements KVCommInterface {
 	@Override
 	public KVMessage put(String key, String value) throws ConnectException {
 		/* Find & if necessary, connect to responsible Server */
-		ServerData responsibleServer = connectResponsibleServer(key);
+		ServerData responsibleServer = connectResponsibleServerCoordinator(key);
 		
 		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			if (DEBUG)
@@ -264,7 +292,7 @@ public class KVStore implements KVCommInterface {
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
 						/* Retrieve & connect responsible Server for put key */
-						responsibleServer = connectResponsibleServer(key);
+						responsibleServer = connectResponsibleServerCoordinator(key);
 						if (responsibleServer == null) {
 							logger.error(moduleName + ": Put Request Failed. Unable to find responsible server for key: " + key + "\nList of servers in circle: \n");
 							for (String server : consHash.getHashCircle().values()) {
@@ -318,9 +346,9 @@ public class KVStore implements KVCommInterface {
 		logger.warn("Trying to get Key <" + key + ">");
 		
 		/* Find & if necessary, connect to responsible Server */
-		ServerData responsibleServer = connectResponsibleServer(key);
+		ServerData responsibleServer = getResponsibleServer(key);
 		
-		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
+		if (kvComm != null && kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			/* Optimistic query to currently connected Server */
 			try {
 				kvComm.sendMessage(new KVQuery(StatusType.GET, key).toBytes());
@@ -358,7 +386,8 @@ public class KVStore implements KVCommInterface {
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
 						/* Retrieve & connect responsible Server for put key */
-						this.connectResponsibleServer(key);
+						responsibleServer = getResponsibleServer(key);
+						connectServer(key, responsibleServer);
 						if (responsibleServer == null) {
 							logger.error(moduleName + ": Get Request Failed. Unable to find responsible server for key: " + key + "\nList of servers in circle: \n");
 							for (String server : consHash.getHashCircle().values()) {
@@ -390,15 +419,10 @@ public class KVStore implements KVCommInterface {
 			return null;
 		} else {
 			try {
-				// try to reconnect
-				connect();
+				connectServer(key, responsibleServer);
 				return this.get(key); 
-			} catch (UnknownHostException e) {
-				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). UnknownHost " + address + ":" + port);
 			} catch (IOException e) {
 				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). IO Failure " + address + ":" + port  + ", message: " + e.getMessage());
-			} catch (InvalidMessageException e) {
-				throw new ConnectException(moduleName + ": Not connected to a KVServer (get). Invalid Message " + address + ":" + port);
 			}
 		}
 	}
