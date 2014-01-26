@@ -100,7 +100,7 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when a command that requires arguments is entered.
 	 */
 	public ECSMessage(ECSStatusType command) throws InvalidMessageException {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECSMessage", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECSMessage", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		if (command == ECSStatusType.INIT || command == ECSStatusType.UPDATE

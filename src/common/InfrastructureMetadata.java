@@ -26,7 +26,7 @@ public class InfrastructureMetadata {
 	 * @param servers ArrayList containing a number of ServerData
 	 */
 	public InfrastructureMetadata(ArrayList<ServerData> servers) {
-		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		LogSetup ls = new LogSetup("logs/metaData.log", "metaData", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		this.servers = servers;
