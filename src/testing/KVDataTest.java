@@ -74,7 +74,7 @@ public class KVDataTest {
 		kvData.put(b5,"jona5");
 		kvData.put(b6,"jona6");
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
-		//movingData = kvData.findMovingData(b3, b5);
+		movingData = kvData.findMovingData(b3, b5, false);
 		assertTrue(movingData.size() == 3);
 		Iterator<Entry<BigInteger, String>> it = movingData.entrySet().iterator();
 		while (it.hasNext()) {
