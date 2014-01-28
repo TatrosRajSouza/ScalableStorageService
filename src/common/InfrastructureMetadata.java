@@ -39,7 +39,7 @@ public class InfrastructureMetadata {
 	 * i.e.: ServerNameA,ServerIPA,ServerPortA;ServerNameB,ServerIPB,ServerPortB; ... and so on.
 	 */
 	public InfrastructureMetadata(String metaDataString) {
-		LogSetup ls = new LogSetup("logs\\metaData.log", "metaData", Level.ALL);
+		LogSetup ls = new LogSetup("logs/metaData.log", "metaData", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		servers = new ArrayList<ServerData>();
