@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.List;
 
 import logger.LogSetup;
 
@@ -116,6 +117,13 @@ public class ClientConnection implements Runnable {
 										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
 										sendMessage(kvQueryGet.toBytes());
 										logger.debug("SERVER:Get success");
+									}
+									else if (checkRangeReplicas(key)) 
+									{
+										KVQuery kvQueryGetError = new KVQuery(KVMessage.StatusType.GET_ERROR, key);
+										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
+												+ kvQueryGetError.getStatus() + " <" + kvQueryGetError.getKey() + ">");
+										sendMessage(kvQueryGetError.toBytes());
 									}
 									else
 									{
@@ -424,7 +432,21 @@ public class ClientConnection implements Runnable {
 		return false;
 	}
 
-
+	private boolean checkRangeReplicas(String key) {
+		List<ServerData> servers;
+		try {
+			ServerData serverInstanceData = serverInstance.getServerData();
+			servers = serverInstance.getConsistentHashing().getServersForKey(key);
+			for (ServerData server : servers) {
+				if (server.getPort() == serverInstanceData.getPort() && server.getAddress().equals(serverInstanceData.getAddress())) {
+					return true;
+				}
+			}
+		} catch (EmptyServerDataException e) {
+			logger.warn(e.getMessage());
+		}
+		return false;
+	}
 
 	private void sendError(KVMessage.StatusType statusType, String key, String value) throws UnsupportedEncodingException, IOException {
 		KVQuery kvQueryError;
