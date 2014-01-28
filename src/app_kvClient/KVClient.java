@@ -22,7 +22,7 @@ import client.KVStore;
  * @author Elias Tatros
  */
 public class KVClient {
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	private Logger logger;
 	// private static Logger rootLogger = Logger.getRootLogger();
 	private KVStore kvStore = null;
