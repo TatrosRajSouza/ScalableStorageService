@@ -199,8 +199,11 @@ public class ConsistentHashing {
 		}
 	}
 
-
-	public List<ServerData> getServersForKey(String key) throws EmptyServerDataException, IllegalArgumentException {
+	/**
+	 * Return a list with the servers responsible for this key
+	 * @throws EmptyServerDataException thrown if there are no servers in the hash circle
+	 */
+	public List<ServerData> getServersForKey(String key) throws EmptyServerDataException {
 		List<ServerData> list = new ArrayList<ServerData>();
 		ServerData server;
 
