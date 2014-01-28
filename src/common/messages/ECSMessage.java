@@ -117,7 +117,7 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when the command is not associated with the metadata. 
 	 */
 	public ECSMessage(ECSStatusType command, InfrastructureMetadata metadata) throws InvalidMessageException {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		if (command != ECSStatusType.INIT && command != ECSStatusType.UPDATE) {
