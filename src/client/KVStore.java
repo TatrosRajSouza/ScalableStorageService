@@ -41,8 +41,8 @@ public class KVStore implements KVCommInterface {
 	private String name = "";
 	private String moduleName = "<KVStore Module>";
 	private Random generator = new Random();
-	
-	
+
+
 	/**
 	 * Initialize KVStore with address and port of KVServer
 	 * @param address the address of the KVServer
@@ -52,9 +52,9 @@ public class KVStore implements KVCommInterface {
 		this.address = address;
 		this.port = port;
 		this.name = name;
-		
+
 		initLog();
-		
+
 		/* Create empty meta data and add the user-specified server */
 		this.metaData = new InfrastructureMetadata();
 		this.metaData.addServer("Initial User-Specified Server", address, port);
@@ -62,7 +62,7 @@ public class KVStore implements KVCommInterface {
 		/* Initialize the consistent Hashing */
 		this.consHash = new ConsistentHashing(metaData.getServers());
 	}
-	
+
 	public void initLog() {
 		LogSetup ls = new LogSetup("logs/client.log", name, Level.ALL);
 		this.logger = ls.getLogger();
@@ -83,24 +83,24 @@ public class KVStore implements KVCommInterface {
 		logger.debug("Waiting for response from " + address + ":" + port);
 		byte[] connectResponse = kvComm.receiveMessage();
 		logger.debug("Response received " + address + ":" + port);
-		
+
 		KVQuery kvQueryMessage = new KVQuery(connectResponse);
-		
-		
+
+
 		if (kvQueryMessage.getStatus() == StatusType.CONNECT_SUCCESS) {
 			if (DEBUG) {
 				logger.info(moduleName + ": Connected to KVServer");
 				logger.info(moduleName + ": Server Message: " + kvQueryMessage.getTextMessage());
 			}
 		}
-		
+
 		else if (kvQueryMessage.getStatus() == StatusType.CONNECT_ERROR) {
 			if (DEBUG) {
 				System.out.println(moduleName + ": Unable to connect to KVServer.");
 				logger.error(moduleName + ": Unable to connect to KVServer.");
 			}
 		}
-		
+
 		else {
 			if (DEBUG) {
 				logger.error(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
@@ -116,19 +116,19 @@ public class KVStore implements KVCommInterface {
 	public void disconnect() {
 		if (kvComm != null && kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			try {
-			kvComm.sendMessage(new KVQuery(StatusType.DISCONNECT).toBytes());
+				kvComm.sendMessage(new KVQuery(StatusType.DISCONNECT).toBytes());
 			} catch (IOException ex) {
 				logger.error(moduleName + ": Unable to send disconnect message, an IO Error occured:\n" + ex.getMessage());
 			} catch (InvalidMessageException ex) {
 				logger.error(moduleName + ": Unable to generate disconnect message, the message type was invalid.");
 			}
-			
+
 			// TODO: WAIT FOR DISCONNECT_SUCCESS MESSAGE THEN DISCONNECT
 			// As this is never sent by the server I simply close the connection for now.
 			// Wait for answer
 			if (DEBUG)
 				logger.info(moduleName + ": Waiting for disconnect response from server...");
-			
+
 			try {
 				byte[] disconnectResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(disconnectResponse);
@@ -155,14 +155,14 @@ public class KVStore implements KVCommInterface {
 			} catch (IOException ex) {
 				if (DEBUG) {
 					logger.error(moduleName + ": Connection closed forcefully " +
-						"because an IO Exception occured while waiting for PUT response from the server:\n" + ex.getMessage());
+							"because an IO Exception occured while waiting for PUT response from the server:\n" + ex.getMessage());
 				}
 			}
-			
+
 			if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 				kvComm.closeConnection();
 			}
-			
+
 		} else {
 			logger.error(moduleName + ": Not connected to a KVServer (disconnect).");
 		}
@@ -173,12 +173,11 @@ public class KVStore implements KVCommInterface {
 	 * @param key The key that we want to find the responsible server for
 	 * @return ServerData for the responsible Server
 	 */
-	private ServerData connectResponsibleServerCoordinator(String key) {
+	private ServerData getResponsibleServerCoordinator(String key) {
 		/* Obtain responsible server according to current meta data */
 		ServerData responsibleServer = null;
 		try {
 			responsibleServer = consHash.getServerForKey(key);
-			connectServer(key, responsibleServer);
 		} catch (IllegalArgumentException ex) {
 			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": The obtained value for the server hash was of invalid format.");
 			// ex.printStackTrace();
@@ -186,7 +185,7 @@ public class KVStore implements KVCommInterface {
 			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
 			// ex.printStackTrace();
 		}
-		
+
 		return responsibleServer;
 	}
 
@@ -197,21 +196,21 @@ public class KVStore implements KVCommInterface {
 		if (!(responsibleServer.getAddress().equals(this.address)) || responsibleServer.getPort() != this.port) {
 			if (DEBUG)
 				logger.info(moduleName + ": We are currently not connected to the responsible server (Connected to: " + this.address + ":" + this.port);
-			
+
 			if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 				if (DEBUG)
 					logger.info(moduleName + ": Disconnecting from " + address + ":" + port + " (currently connected Server)");
-				
+
 				this.disconnect();
 			}
-			
+
 			this.address = responsibleServer.getAddress();
 			this.port = responsibleServer.getPort();
-			
+
 			try {
 				if (DEBUG)
 					logger.info(moduleName + ": Connecting to Responsible Server: " + address + ":" + port);
-				
+
 				this.connect();
 			} catch (UnknownHostException ex) {
 				logger.warn(moduleName + ": Put Request Failed. Responsible Server is Unknown Host!");
@@ -222,7 +221,7 @@ public class KVStore implements KVCommInterface {
 			}
 		}
 	}
-	
+
 	/**
 	 * Find a responsible server for a given key according to the current meta data
 	 * @param key The key that we want to find the responsible server for
@@ -241,10 +240,10 @@ public class KVStore implements KVCommInterface {
 			logger.error(moduleName + ": Failed to obtain responsible server for key " + key + ": There are no servers hashed to the circle.");
 			// ex.printStackTrace();
 		}
-		
+
 		return responsibleServer;
 	}
-	
+
 	/**
 	 * Put a key value pair to the remote KVServer
 	 * @param key The key that should be inserted
@@ -254,16 +253,17 @@ public class KVStore implements KVCommInterface {
 	@Override
 	public KVMessage put(String key, String value) throws ConnectException {
 		/* Find & if necessary, connect to responsible Server */
-		ServerData responsibleServer = connectResponsibleServerCoordinator(key);
-		
+		ServerData responsibleServer = getResponsibleServerCoordinator(key);
+		connectServer(key, responsibleServer);
+
 		if (kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			if (DEBUG)
 				logger.info(moduleName + ": Connected to the responsible Server: " + address + ":" + port);
-			
+
 			try {
 				/* Optimistic Query, send put request to current connected server */
 				kvComm.sendMessage(new KVQuery(StatusType.PUT, key, value).toBytes());
-				
+
 				if (DEBUG)
 					logger.info(moduleName + ": Sent PUT Request for <key, value>: <" + key + ", " + value + ">");
 			} catch (IOException ex) {
@@ -271,11 +271,11 @@ public class KVStore implements KVCommInterface {
 			} catch (InvalidMessageException ex) {
 				logger.error(moduleName + ": Unable to generate put command, the message type is invalid for the given arguments.");
 			}
-			
+
 			// Wait for answer
 			if (DEBUG)
 				logger.info("Waiting for PUT response from server...");
-			
+
 			try {
 				byte[] putResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(putResponse);
@@ -288,11 +288,12 @@ public class KVStore implements KVCommInterface {
 						if (DEBUG)
 							logger.info(moduleName + ": Received new MetaData from Server: " + kvResult.value);
 						this.metaData.update(kvResult.value);
-						
+
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
 						/* Retrieve & connect responsible Server for put key */
-						responsibleServer = connectResponsibleServerCoordinator(key);
+						responsibleServer = getResponsibleServerCoordinator(key);
+						connectServer(key, responsibleServer);
 						if (responsibleServer == null) {
 							logger.error(moduleName + ": Put Request Failed. Unable to find responsible server for key: " + key + "\nList of servers in circle: \n");
 							for (String server : consHash.getHashCircle().values()) {
@@ -304,7 +305,7 @@ public class KVStore implements KVCommInterface {
 						return this.put(key, value);
 					}
 				}
-				
+
 				// System.out.println(kvResult.getStatus());
 				// PUT_SUCCESS or PUT_UPDATE
 				return kvResult;
@@ -344,15 +345,15 @@ public class KVStore implements KVCommInterface {
 	@Override
 	public KVMessage get(String key) throws ConnectException {
 		logger.warn("Trying to get Key <" + key + ">");
-		
+
 		/* Find & if necessary, connect to responsible Server */
 		ServerData responsibleServer = getResponsibleServer(key);
-		
+
 		if (kvComm != null && kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			/* Optimistic query to currently connected Server */
 			try {
 				kvComm.sendMessage(new KVQuery(StatusType.GET, key).toBytes());
-				
+
 				if (DEBUG)
 					logger.info(moduleName + ": Sent GET Request for <key>: <" + key + ">");
 			} catch (SocketTimeoutException ex) {
@@ -362,19 +363,33 @@ public class KVStore implements KVCommInterface {
 			} catch (InvalidMessageException ex) {
 				logger.error(moduleName + ": Unable to generate get command, the message type is invalid for the given arguments.");
 			}
-			
+
 			// Wait for answer
 			if (DEBUG)
 				logger.info("Waiting for GET response from server...");
-			
+
 			try {
 				byte[] getResponse = kvComm.receiveMessage();
 				KVQuery kvQueryMessage = new KVQuery(getResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
-				
-				if (kvResult.getStatus() == StatusType.GET_SUCCESS || kvResult.getStatus() == StatusType.GET_ERROR) {
+
+				if (kvResult.getStatus() == StatusType.GET_SUCCESS) {
 					logger.info("Received GET_SUCCESS for key " + key);
 					return kvResult;
+				} else if (kvResult.getStatus() == StatusType.GET_ERROR) {
+					responsibleServer = getResponsibleServerCoordinator(key);
+					if (responsibleServer.getPort() == port && responsibleServer.getAddress().equals(address)) {
+						return kvResult;
+					} else {
+						address = responsibleServer.getAddress();
+						port = responsibleServer.getPort();
+						name = responsibleServer.getName();
+						connect();
+						kvComm.sendMessage(new KVQuery(StatusType.GET, key).toBytes());
+						getResponse = kvComm.receiveMessage();
+						kvQueryMessage = new KVQuery(getResponse);
+						return new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
+					}
 				} else if (kvResult.getStatus() == StatusType.SERVER_NOT_RESPONSIBLE) {
 					/* Need to update meta data and contact other server */
 					if (kvResult.key.equals("metaData")) {
@@ -382,7 +397,7 @@ public class KVStore implements KVCommInterface {
 						if (DEBUG)
 							logger.info(moduleName + ": Received new MetaData from Server: " + kvResult.value);
 						this.metaData.update(kvResult.value);
-						
+
 						/* Update consistent hashing circle to new version */
 						this.consHash.update(metaData.getServers());
 						/* Retrieve & connect responsible Server for put key */
@@ -426,7 +441,7 @@ public class KVStore implements KVCommInterface {
 			}
 		}
 	}
-	
+
 	/**
 	 * Obtain the current meta data for this KVStore
 	 * @return {@link InfrastructureMetadata} The meta data for this instance of KVStore
@@ -434,7 +449,7 @@ public class KVStore implements KVCommInterface {
 	public InfrastructureMetadata getMetadata() {
 		return this.metaData;
 	}
-	
+
 	/**
 	 * Obtain the current Hash-circle for this instance of KVStore
 	 * @return {@link ConsistentHashing} current Hash-circle for this instance of KVStore
@@ -442,7 +457,7 @@ public class KVStore implements KVCommInterface {
 	public ConsistentHashing getHashCircle() {
 		return this.consHash;
 	}
-	
+
 	/**
 	 * Obtain connection status of communication module
 	 * @return {@link SocketStatus} connection status of communication module
@@ -454,6 +469,6 @@ public class KVStore implements KVCommInterface {
 			logger.error(moduleName + ": Cannot obtain socket status. Communication module not initialized.");
 			return SocketStatus.DISCONNECTED;
 		}
-			
+
 	}
 }
