@@ -134,7 +134,7 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when the command is not associated with the movingData.
 	 */
 	public ECSMessage(ECSStatusType command, HashMap<BigInteger, String> movingData) throws InvalidMessageException {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		if (command != ECSStatusType.MOVE_DATA_INTERNAL) {
@@ -153,7 +153,7 @@ public class ECSMessage {
 	 * @throws InvalidMessageException Thrown when the command entered is correctly associated if less arguments. 
 	 */
 	public ECSMessage(ECSStatusType command, BigInteger startIndex, BigInteger endIndex, ServerData server) throws InvalidMessageException {
-		LogSetup ls = new LogSetup("logs\\ecs.log", "ECS", Level.ALL);
+		LogSetup ls = new LogSetup("logs/ecs.log", "ECS", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		if (command != ECSStatusType.MOVE_DATA) {
