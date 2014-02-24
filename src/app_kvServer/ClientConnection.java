@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
@@ -15,7 +16,17 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import crypto_protocol.HandshakeException;
+import crypto_protocol.Message;
+import crypto_protocol.MessageType;
+import crypto_protocol.ClientInitMessage;
+import crypto_protocol.ClientKeyExchangeMessage;
+import common.CommonCrypto;
+import crypto_protocol.ErrorMessage;
+import crypto_protocol.ServerAuthConfirmationMessage;
 import common.ServerData;
+import crypto_protocol.ServerInitMessage;
+import crypto_protocol.SessionInfo;
 import common.Settings;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
@@ -41,6 +52,7 @@ public class ClientConnection implements Runnable {
 	private InputStream input;
 	private OutputStream output;
 	private boolean isOpen;
+	private SessionInfo session;
 
 	public boolean isOpen() {
 		return isOpen;
@@ -63,6 +75,104 @@ public class ClientConnection implements Runnable {
 		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
 	}
+	
+	/**
+	 * General receive method
+	 * @return Message received Message
+	 * @throws IOException
+	 */
+	public Message bytesToMessage(byte[] bytes) throws IOException {
+		
+		try {
+			Object input =  CommonCrypto.objectFromByteArray(bytes);
+		
+			if (input instanceof ClientInitMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ClientInitMessage)input;
+				
+			} else if (input instanceof ClientKeyExchangeMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ClientKeyExchangeMessage)input;
+				
+			} else if (input instanceof ErrorMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ErrorMessage)input;
+				
+			} else if (input instanceof ServerAuthConfirmationMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ServerAuthConfirmationMessage)input;
+				
+			} else if (input instanceof ServerInitMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ServerInitMessage)input;
+			} else {
+				throw new IOException("Received Object is not a valid Message. Expected <Message>, Received <" + input.getClass() + ">");
+			}
+		} catch (ClassNotFoundException e) {
+			throw new IOException("Received Object was not of the expected type. Expected <Message>, Received <UnknownType>");
+		}
+	}
+	
+	/**
+	 * Verifies that a given message is of a specific type
+	 * @param message message to verify
+	 * @param expectedType the expected MessageType
+	 * @return true if message is of specified type, false otherwise
+	 * @throws HandshakeException 
+	 * @throws InvalidMessageException 
+	 * @throws Exception in case of an error
+	 */
+	public boolean verifyMessageType(Message message, MessageType expectedType) throws HandshakeException {
+		if (message.getType().equals(expectedType)) {
+			return true;
+		} else if (message.getType().equals("ErrorMessage")) {
+			ErrorMessage errorMessage = (ErrorMessage) message;
+			throw new HandshakeException("Received Error Message from Client: " + errorMessage.getMessage());
+		} else {
+			throw new HandshakeException("Received unexpected Message from Client. Type: " + message.getType());
+		}
+	}
+	
+	/**
+	 * Send java object over socket output stream
+	 * @param obj a java object
+	 * @throws IOException
+	 */
+	public void sendObject(Object obj) throws IOException {
+		if (obj == null) {
+			throw new IOException("Tried to send null Object.");
+		}
+		
+		logger.info("SEND >> " + obj.toString());
+		byte[] bytes = CommonCrypto.objectToByteArray(obj);
+		sendMessage(bytes);
+	}
+	
+	private void performHandshake(Socket clientSocket) throws HandshakeException, IOException {
+		session = new SessionInfo();
+		session.setClientAuthRequired(false);
+		
+		session.setServerIP(clientSocket.getLocalAddress().getHostAddress());
+		session.setClientIP(clientSocket.getInetAddress().getHostAddress());
+		session.setLocalPort(clientSocket.getLocalPort());
+		session.setRemotePort(clientSocket.getPort());
+		
+		logger.debug(session);
+		
+		// Expect ClientInit
+		Message message = bytesToMessage(receiveMessage());
+		if (!verifyMessageType(message, MessageType.ClientInitMessage))
+			throw new HandshakeException("Invalid Message received.");
+		
+		ClientInitMessage clientInitMessage = (ClientInitMessage) message;
+		session.setClientNonce(clientInitMessage.getNonce());	
+		
+		// Send ServerInit
+		ServerInitMessage serverInitMessage = new ServerInitMessage(Settings.TRANSFER_ENCRYPTION, KVServer.serverCertificate, session.isClientAuthRequired());
+		session.setServerNonce(serverInitMessage.getNonce());
+		session.setServerCertificate(serverInitMessage.getCertificate());
+		sendObject(serverInitMessage);
+	}
 
 	/**
 	 * Initializes and starts the client connection. 
@@ -76,8 +186,20 @@ public class ClientConnection implements Runnable {
 				input = clientSocket.getInputStream();
 				String connectSuccess = "Connection to MSRG Echo server established: " 
 						+ clientSocket.getLocalAddress() + " / "
-						+ clientSocket.getLocalPort();		
-				while(isOpen) { // until connection open
+						+ clientSocket.getLocalPort();
+				
+				try {
+					performHandshake(clientSocket);
+				} catch (HandshakeException ex2) {
+					// TODO Auto-generated catch block
+					logger.error("Error during secure handshake:\n" + ex2.getMessage());
+					ex2.printStackTrace();
+				} catch (IOException ex3) {
+					logger.error("Error during secure handshake:\n" + ex3.getMessage());
+					ex3.printStackTrace();
+				}
+				
+				while(isOpen && session.isValid()) { // until connection open
 					try { //connection lost
 						byte[] latestMsg = receiveMessage();
 						logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(latestMsg, Settings.CHARSET) + ">");

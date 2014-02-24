@@ -1,11 +1,24 @@
 package app_kvServer;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,8 +28,10 @@ import logger.LogSetup;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.CommonCrypto;
 import common.InfrastructureMetadata;
 import common.ServerData;
+import common.Settings;
 import common.communicator.ServerServerCommunicator;
 import consistent_hashing.ConsistentHashing;
 /**
@@ -41,6 +56,13 @@ public class KVServer extends Thread {
 	private ServerServerCommunicator nextNextServer;
 	private KVData lastNodeData;
 	private KVData lastLastNodeData;
+	
+	public static String SERVER_CERT_PATH = "";
+	public static String SERVER_PRIVKEY_PATH = "";
+	public static X509Certificate serverCertificate = null;
+	public static X509Certificate caCertificate = null;
+	private static PrivateKey serverPrivateKey;
+	private ArrayList<X509Certificate> trustedCAs;
 
 
 
@@ -150,17 +172,105 @@ public class KVServer extends Thread {
 	 * 
 	 * @param port a port number which the Server is listening to in order to 
 	 * 		establish a socket connection to a client. The port number should 
-	 * 		reside in the range of dynamic ports, i.e 49152 � 65535.
+	 * 		reside in the range of dynamic ports, i.e 49152 to 65535.
 	 */
 	public KVServer(int port){
+		KVServer.SERVER_CERT_PATH = Settings.SERVER_CERT_PATH;
+		KVServer.SERVER_PRIVKEY_PATH = Settings.SERVER_PRIVKEY_PATH;
+		
 		this.port = port;
 		
 		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
 		
 		this.logger.info("KVServer log running @port: " + port);
-	}
+		
+		try {
+			trustedCAs = CommonCrypto.loadTrustStore();
+		} catch (CertificateException e) {
+			logger.error("Unable to load Trust Store: " + e.getMessage() + "\nServer Application terminated.");
+			System.exit(1);
+		} catch (Exception e) {
+			logger.error("Unable to load Trust Store: " + e.getMessage() + "\nServer Application terminated.");
+			System.exit(1);
+		}
+		logger.info("---List of trusted CAs---");
+		for (X509Certificate cert : trustedCAs) {
+			logger.info(cert.getSubjectX500Principal().getName());
+		}
+		
+		/* Try importing Server Certificate */
+		try {
+			createServerCertificate(KVServer.SERVER_CERT_PATH);
+		} catch (CertificateException e) {
+			throw new IllegalArgumentException("Unable to create Server X.509 Certificate from file: " + KVServer.SERVER_CERT_PATH);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException("Server X.509 Certificate file not found at: " + KVServer.SERVER_CERT_PATH);
+		}
+		
+		/* Try to import CA Certificate */
+		try {
+			importCACertificate(Settings.getCACertPath());
+		} catch (CertificateException e) {
+			logger.error("Unable to import CA Certificate from file: " + Settings.getCACertPath() + ", or Certificate invalid.\nReason: " + e.getMessage() + "\nServer Exiting.");
+			System.exit(1);
+		}
 
+		try {
+			serverPrivateKey = CommonCrypto.loadPrivateKey(SERVER_PRIVKEY_PATH, Charset.forName(Settings.CHARSET));
+		} catch (FileNotFoundException e) {
+			logger.error("Servers private key file not found at: " + SERVER_PRIVKEY_PATH + "\nServer Application terminated.");
+			System.exit(1);
+		}catch (IOException e) {
+			logger.error("Unable to read this Servers private key from file: " + SERVER_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nServer Application terminated.");
+			System.exit(1);
+		} catch (InvalidKeySpecException e) {
+			logger.error("Unable to read this Servers private key from file: " + SERVER_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nPlease make sure the private key file is in ENCRYPTED PKCS8 Format.\n" +
+							"To convert an unencrypted PEM key with openssl use the following command:\n" +
+							"openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER -in inputKey.key.pem -out pkcs8OutputKey.key.pem\n" +
+							"Server Application terminated.");
+			System.exit(1);
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("Unable to read this Servers private key from file: " + SERVER_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nServer Application terminated.");
+			System.exit(1);
+		}
+	}
+	
+	private void createServerCertificate(String serverCertificatePath) throws CertificateException, FileNotFoundException {
+		File certificateFile = new File(serverCertificatePath);
+		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+		serverCertificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certificateFile));
+	}
+	
+	
+	public void importCACertificate(String path) throws CertificateException {
+		try {
+			caCertificate = CommonCrypto.importCACertificate(path);
+		} catch (CertificateException e) {
+			logger.error("Unable to create X.509 CA Certificate from file: " + path + 
+					"\nReason: " + e.getMessage() + 
+					"\nServer Application terminated.");
+			System.exit(1);
+		}
+		
+		try {
+			if (!CommonCrypto.isCATrusted(caCertificate, this.trustedCAs)) {
+				logger.error("CA Certificate: " + caCertificate.getSubjectX500Principal() + " is not a trusted CA.\nServer Application terminated.");				
+				System.exit(1);
+			}
+		} catch (InvalidKeyException e) {
+			throw new CertificateException("Unable to import CA Certificate: " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			throw new CertificateException("Unable to import CA Certificate: " + e.getMessage());
+		} catch (NoSuchProviderException e) {
+			throw new CertificateException("Unable to import CA Certificate: " + e.getMessage());
+		} catch (SignatureException e) {
+			throw new CertificateException("Unable to import CA Certificate: " + e.getMessage());
+		}
+	}
 
 	/**
 	 * Initializes and starts the server. 

@@ -14,7 +14,9 @@ public final class Settings {
 	public static byte[] IV;
 	public static boolean USE_CLIENT_AUTH = true;
 	
-	public static String CA_CERT_PATH = "certs/minissl-ca.pem";
+	public static String SERVER_CERT_PATH =  "certs/serverCert/serverCert.pem";
+	public static String SERVER_PRIVKEY_PATH = "certs/serverCert/serverKey.pem";
+	public static String CA_CERT_PATH = "certs/CACert.pem";
 	public static final String TRUSTED_CA_PATH = "certs/trustStore/";
 	public static final String SERVER_FILES = "serverFiles/";
 	public static final String CLIENT_FILES = "clientFiles/";

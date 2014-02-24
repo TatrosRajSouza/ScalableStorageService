@@ -2,6 +2,7 @@ package client;
 
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -28,6 +29,9 @@ import org.apache.log4j.Logger;
 import app_kvClient.SocketStatus;
 import crypto_protocol.ClientInitMessage;
 import crypto_protocol.ClientKeyExchangeMessage;
+import crypto_protocol.ErrorMessage;
+import crypto_protocol.Message;
+import crypto_protocol.MessageType;
 import common.CommonCrypto;
 import crypto_protocol.SessionInfo;
 import crypto_protocol.HandshakeException;
@@ -98,6 +102,19 @@ public class KVStore implements KVCommInterface {
 		// System.out.println("New KVComm " + address + " " + port + " " + this.name);
 		logger.debug("Trying to create new KVComm " + address + ":" + port);
 		kvComm = new KVCommunication(address, port, this.name);
+		
+		try {
+			performHandshake(kvComm.getSocket());
+		} catch (HandshakeException e) {
+			// TODO Auto-generated catch block
+			logger.error("Exception during Handshake: " + e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			logger.error("IO Exception during Handshake: " + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		
 		KVQuery kvQueryConnectMessage = new KVQuery(KVMessage.StatusType.CONNECT);
 		logger.debug("Trying to send connect message to " + address + ":" + port);
 		kvComm.sendMessage(kvQueryConnectMessage.toBytes());
@@ -113,13 +130,6 @@ public class KVStore implements KVCommInterface {
 			if (DEBUG) {
 				logger.info(moduleName + ": Connected to KVServer");
 				logger.info(moduleName + ": Server Message: " + kvQueryMessage.getTextMessage());
-			}
-			
-			try {
-				performHandshake(kvComm.getSocket());
-			} catch (HandshakeException e) {
-				// TODO Auto-generated catch block
-				logger.error(e.getMessage());
 			}
 		}
 
@@ -139,11 +149,85 @@ public class KVStore implements KVCommInterface {
 	}
 	
 	/**
+	 * Send java object over socket output stream
+	 * @param obj a java object
+	 * @throws IOException
+	 */
+	public void sendObject(Object obj) throws IOException {
+		if (obj == null) {
+			throw new IOException("Tried to send null Object.");
+		}
+		
+		logger.info("SEND >> " + obj.toString());
+		byte[] bytes = CommonCrypto.objectToByteArray(obj);
+		kvComm.sendMessage(bytes);
+	}
+	
+	/**
+	 * General receive method
+	 * @return Message received Message
+	 * @throws IOException
+	 */
+	public Message bytesToMessage(byte[] bytes) throws IOException {
+		
+		try {
+			Object input =  CommonCrypto.objectFromByteArray(bytes);
+		
+			if (input instanceof ClientInitMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ClientInitMessage)input;
+				
+			} else if (input instanceof ClientKeyExchangeMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ClientKeyExchangeMessage)input;
+				
+			} else if (input instanceof ErrorMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ErrorMessage)input;
+				
+			} else if (input instanceof ServerAuthConfirmationMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ServerAuthConfirmationMessage)input;
+				
+			} else if (input instanceof ServerInitMessage) {
+				logger.info("RECEIVE << " + input);
+				return (ServerInitMessage)input;
+			} else {
+				throw new IOException("Received Object is not a valid Message. Expected <Message>, Received <" + input.getClass() + ">");
+			}
+		} catch (ClassNotFoundException e) {
+			throw new IOException("Received Object was not of the expected type. Expected <Message>, Received <UnknownType>");
+		}
+	}
+	
+	/**
+	 * Verifies that a given message is of a specific type
+	 * @param message message to verify
+	 * @param expectedType the expected MessageType
+	 * @return true if message is of specified type, false otherwise
+	 * @throws HandshakeException 
+	 * @throws InvalidMessageException 
+	 * @throws Exception in case of an error
+	 */
+	public boolean verifyMessageType(Message message, MessageType expectedType) throws HandshakeException {
+		if (message.getType().equals(expectedType)) {
+			return true;
+		} else if (message.getType().equals("ErrorMessage")) {
+			ErrorMessage errorMessage = (ErrorMessage) message;
+			throw new HandshakeException("Received Error Message from Client: " + errorMessage.getMessage());
+		} else {
+			throw new HandshakeException("Received unexpected Message from Client. Type: " + message.getType());
+		}
+	}
+	
+	/**
 	 * Perform the miniSSL handshake
 	 * @param clientSocket socket used for communication
 	 * @throws HandshakeException in case of an error
+	 * @throws IOException 
+	 * @throws SocketTimeoutException 
 	 */
-	public void performHandshake(Socket clientSocket) throws HandshakeException {
+	public void performHandshake(Socket clientSocket) throws HandshakeException, SocketTimeoutException, IOException {
 		/* Create new session */
 		session = new SessionInfo();
 		
@@ -155,28 +239,26 @@ public class KVStore implements KVCommInterface {
 		logger.debug("Created new Session: " + session.toString());
 		
 		// Send ClientInit
-		/*
 		ClientInitMessage clientInitMessage = new ClientInitMessage();
 		session.setClientNonce(clientInitMessage.getNonce());
 		try {
-			byte[] bytes = CommonCrypto.objectToByteArray(clientInitMessage);
-			kvComm.sendMessage(bytes);
+			sendObject(clientInitMessage);
 		} catch (IOException e) {
 			throw new HandshakeException("I/O failed while sending clientInit. Message: " + e.getMessage());
 		}
-		*/
-		/*
+		
+		
 		// Wait for ServerInit
-		ServerInitMessage serverInitMessage = null;
-		try {
-			serverInitMessage = receiveServerInit();
-		} catch (IOException e) {
-			throw new HandshakeException("I/O failed while receiving serverInit. Message: " + e.getMessage());
-		}
+		Message message = bytesToMessage(kvComm.receiveMessage());
+		if (!verifyMessageType(message, MessageType.ServerInitMessage))
+			throw new HandshakeException("Invalid Message received.");
+		
+		ServerInitMessage serverInitMessage = (ServerInitMessage) message;
 		session.setServerNonce(serverInitMessage.getNonce());
 		session.setClientAuthRequired(serverInitMessage.isClientAuthRequired());
 		session.setServerCertificate(serverInitMessage.getCertificate());
 		
+		/*
 		// Verify validity of certificate 
 		try {
 			CommonCrypto.verifyCertificate(session.getServerCertificate(), session.getCACertificate());
