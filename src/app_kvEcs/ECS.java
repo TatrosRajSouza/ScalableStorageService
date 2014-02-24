@@ -141,23 +141,27 @@ public class ECS {
 	public void removeNode() {
 		ECSMessage message;
 		ECSServerCommunicator node = moveRandomNode(storageService, serverRepository);
+		
 		if (node == null) {
-			logger.warn("Warn. There is no more server nodes available to be removed.");
+			logger.warn("There are no server nodes available for removal.");
 			return;
 		}
+		
 		ECSServerCommunicator nextNode = getNextNode(node);
+		
 		if (nextNode == null) {
-			logger.error("Bug. Error getting nextNode in the removeNode.");
+			logger.error("Unable to find the next node of " + node.getAddress() + ":" + node.getPort() + " (" + this.getStorageService().getServers().size() + " Servers managed. " + this.hashing.getHashCircle().size() + " Servers on Circle.)");
 			return;
 		}
+		
 		BigInteger startIndex = getStartIndex(node);
 		BigInteger endIndex = getEndIndex(node);
 
-		logger.info("Removing server " + node.getAddress() + ":" + node.getPort());
+		logger.info("Preparing to remove server: " + node.getAddress() + ":" + node.getPort());
 		storageService.removeServer(node.getAddress(), node.getPort());
 		hashing.removeServer(node.getAddress(), node.getPort());
 		try {
-			logger.info("Moving data to the next node " + nextNode.getAddress() + ":" + nextNode.getPort());
+			logger.info("Moving data to the next node (" + nextNode.getAddress() + ":" + nextNode.getPort() + ")");
 			message = new ECSMessage(ECSStatusType.LOCK_WRITE);
 			node.sendMessage(message.toBytes());
 			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
@@ -173,14 +177,14 @@ public class ECS {
 				return;
 			}
 
-			logger.info("Updating the metadata in the server nodes.");
+			logger.info("Updating metaData for each Server Node. (" + storageService.getServers().size() + " online.)");
 			message = new ECSMessage(ECSStatusType.UPDATE, storageService);
 			for (ServerData server : storageService.getServers()) {
 				nextNode = (ECSServerCommunicator) server;
 				nextNode.sendMessage(message.toBytes());
 			}
 
-			logger.info("Shuting down the node.");
+			logger.info("Shuting down node: " + node.getAddress() + ":" + node.getPort());
 			message = new ECSMessage(ECSStatusType.SHUTDOWN);
 			node.sendMessage(message.toBytes());
 			node.disconnect();
@@ -466,19 +470,23 @@ public class ECS {
 		ECSMessage ecsMessage;
 
 		logger.info("Getting the data status of the service.");
-
-		for (ServerData server : storageService.getServers()) {
-			serverCommunication = (ECSServerCommunicator) server;
-
-			try {
-				ecsMessage = new ECSMessage(ECSStatusType.GET_STATUS);
-				serverCommunication.sendMessage(ecsMessage.toBytes());
-			} catch (InvalidMessageException e) {
-				logger.error("Problems creating the message. Please check the protocol specification.");
-			} catch (SocketTimeoutException e) {
-				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
-			} catch (IOException e) {
-				logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
+		
+		if (storageService.getServers().size() == 0) {
+			logger.info("There are no ECS managed running servers.");
+		} else {
+			for (ServerData server : storageService.getServers()) {
+				serverCommunication = (ECSServerCommunicator) server;
+	
+				try {
+					ecsMessage = new ECSMessage(ECSStatusType.GET_STATUS);
+					serverCommunication.sendMessage(ecsMessage.toBytes());
+				} catch (InvalidMessageException e) {
+					logger.error("Problems creating the message. Please check the protocol specification.");
+				} catch (SocketTimeoutException e) {
+					logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
+				} catch (IOException e) {
+					logger.error("Couldn't send the message within the established time. Check with the server is on and try again.");
+				}
 			}
 		}
 	}

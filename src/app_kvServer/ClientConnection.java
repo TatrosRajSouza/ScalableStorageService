@@ -334,9 +334,11 @@ public class ClientConnection implements Runnable {
 		BigInteger hashedKey = ConsistentHashing.hashKey(key);
 		String value = serverInstance.getKvdata().get(hashedKey);
 		if (value == null) {
-			value = serverInstance.getLastNodeData().get(hashedKey);
+			if (serverInstance.getLastNodeData() != null)
+				value = serverInstance.getLastNodeData().get(hashedKey);
 			if (value == null) {
-				value = serverInstance.getLastLastNodeData().get(hashedKey);
+				if (serverInstance.getLastLastNodeData() != null)
+					value = serverInstance.getLastLastNodeData().get(hashedKey);
 			}
 		}
 		return value;
@@ -345,17 +347,21 @@ public class ClientConnection implements Runnable {
 	private void sendServerServerPut(String key, String value) throws SocketTimeoutException, IOException {
 		ServerServerMessage serverServerMessage;
 		try {
-			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
-					1, key, value);
-			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+			if (serverInstance.getNextServer() != null) {
+				serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
+						1, key, value);
+				serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+			}
 		} catch (InvalidMessageException e) {
 			logger.error("Error while updation"+e.getMessage());
 			e.printStackTrace();
 		}
 		try {
-			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
-					2, key, value);
-			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+			if (serverInstance.getNextNextServer() != null) {
+				serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_PUT,
+						2, key, value);
+				serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+			}
 		} catch (InvalidMessageException e) {
 			logger.error("Error while updation"+e.getMessage());
 			e.printStackTrace();
@@ -365,16 +371,20 @@ public class ClientConnection implements Runnable {
 	private void sendServerServerDelete(String key) throws SocketTimeoutException, IOException {
 		ServerServerMessage serverServerMessage;
 		try {
-			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
-					1, key);
-			serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+			if (serverInstance.getNextServer() != null) {
+				serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
+						1, key);
+				serverInstance.getNextServer().sendMessage(serverServerMessage.toBytes());
+			}
 		} catch (InvalidMessageException e) {
 			logger.error("Error while updation" + e.getMessage());
 		}
 		try {
-			serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
-					2, key);
-			serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+			if (serverInstance.getNextNextServer() != null) {
+				serverServerMessage = new ServerServerMessage(ServerServerStatustype.SERVER_DELETE,
+						2, key);
+				serverInstance.getNextNextServer().sendMessage(serverServerMessage.toBytes());
+			}
 		} catch (InvalidMessageException e) {
 			logger.error("Error while updation" + e.getMessage());
 		}
