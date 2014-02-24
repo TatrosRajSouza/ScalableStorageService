@@ -62,7 +62,7 @@ public abstract class ServerCommunicator extends ServerData {
 			logger.debug("Sending Message of unknown type to " + getAddress() + ":" + getPort());
 
 		try {
-			communication.sendMessage(msgBytes);
+			communication.sendMessageECS(msgBytes);
 		} catch (Exception e) {
 			logger.debug("Unable to send message. Exception: " + e.getClass().getName());
 		}

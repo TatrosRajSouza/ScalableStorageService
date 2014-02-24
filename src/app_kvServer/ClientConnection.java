@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import logger.LogSetup;
@@ -15,6 +16,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import common.ServerData;
+import common.Settings;
 import common.messages.ECSMessage;
 import common.messages.ECSStatusType;
 import common.messages.InvalidMessageException;
@@ -78,6 +80,7 @@ public class ClientConnection implements Runnable {
 				while(isOpen) { // until connection open
 					try { //connection lost
 						byte[] latestMsg = receiveMessage();
+						logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(latestMsg, Settings.CHARSET) + ">");
 						KVQuery kvQueryCommand;
 						try { //   not KVMessage
 							kvQueryCommand = new KVQuery(latestMsg);
@@ -138,7 +141,8 @@ public class ClientConnection implements Runnable {
 								else if(command.equals("PUT")) //put block
 								{
 									key = kvQueryCommand.getKey();
-
+									value = kvQueryCommand.getValue();
+									
 									boolean isInRange = checkRangeCoordinator(key, value);
 									BigInteger hashedKey = ConsistentHashing.hashKey(key);
 									if(isInRange)
@@ -146,8 +150,6 @@ public class ClientConnection implements Runnable {
 										//future : check in range or not
 										if(!this.serverInstance.isWriteLocked())
 										{
-
-											value = kvQueryCommand.getValue();
 											if(this.serverInstance.isDEBUG())
 											{
 												logger.info("SERVER: Put operation Key: " + key + " and Value: " + value);
@@ -157,6 +159,7 @@ public class ClientConnection implements Runnable {
 											{
 												if(returnValue == null)
 												{
+													logger.debug("value: " + value + ", returnValue: " + returnValue + " --> PUT_SUCCESS");
 													sendServerServerPut(key, value);
 													KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
 													sendMessage(kvQueryPut.toBytes());
@@ -166,6 +169,7 @@ public class ClientConnection implements Runnable {
 												}
 												else if(returnValue == value)
 												{
+													logger.debug("value: " + value + ", returnValue: " + returnValue + " --> PUT_UPDATE");
 													sendServerServerPut(key, value);
 													KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
 													sendMessage(kvQueryUpdate.toBytes());
@@ -381,14 +385,15 @@ public class ClientConnection implements Runnable {
 		try {
 			kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
 
+			sendMessage(kvQueryConnect.toBytes());
+			
 			if (kvQueryConnect.getStatus() != null)
 				logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + kvQueryConnect.getStatus());
-
-			sendMessage(kvQueryConnect.toBytes());
 		} catch (InvalidMessageException e) {
 			logger.error("Invalid connect message");
 		} catch (IOException e) {
-			logger.error("Error in sending connect success" + e.getMessage());;
+			logger.error("Error in sending connect success: " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -404,20 +409,16 @@ public class ClientConnection implements Runnable {
 
 			ServerData serverDataHash = this.serverInstance.getConsistentHashing().getServerForKey(key);
 			ServerData serverDataServer = this.serverInstance.getServerData();
-			logger.info("Check Range adress" + serverDataHash.getAddress().toString() + serverDataServer.getAddress().toString() );
-			logger.info("Check Range port" + serverDataHash.getPort() + serverDataServer.getPort() );
-			logger.info("key is: " + key + "value: " + value);
-			if(this.serverInstance.isDEBUG())
-			{
-				logger.info("Check Range adress" + serverDataHash.getAddress().toString() + serverDataServer.getAddress().toString() );
-				logger.info("Check Range port" + serverDataHash.getPort() + serverDataServer.getPort() );
-				logger.info("key is: " + key + "value: " + value);
-			}
+			logger.info("Checking range for <key, value>: <" + key + ", " + value + ">");
+			logger.info("Check range returned address: " + serverDataHash.getAddress().toString());
+			logger.info("Check range returned port: " + serverDataHash.getPort());
+			
+
 			if (serverDataHash != null && serverDataServer != null)
 			{
 				if(serverDataHash.equals(serverDataServer))
 				{
-					logger.info("success");
+					logger.info("Server is responsible for this key.");
 					return true;
 				} 
 			}
@@ -427,7 +428,7 @@ public class ClientConnection implements Runnable {
 			logger.error("no servers in the circle" + e.getMessage());
 
 		} catch(Exception e) {
-			logger.error("unknown exception in check range" + e.getMessage());
+			logger.error("unexpected exception in check range" + e.getMessage());
 		}
 		return false;
 	}
@@ -464,10 +465,12 @@ public class ClientConnection implements Runnable {
 	 * @param msg the message that is to be sent.
 	 * @throws IOException some I/O error regarding the output stream 
 	 */
+	
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		sendMessage(msgBytes, output);
 	}
 
+	/*
 	private void sendMessage(byte[] msgBytes, OutputStream output) throws IOException {
 		output.write(msgBytes, 0, msgBytes.length);
 		output.flush();
@@ -478,20 +481,56 @@ public class ClientConnection implements Runnable {
 					+ clientSocket.getPort() + ">: '" 
 					+ new String(msgBytes) +"'");
 		}
+	}*/
+	
+	/**
+	 * Method sends a Message using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
+	 */
+	private void sendMessage(byte[] msgBytes, OutputStream output) throws IOException, SocketTimeoutException {
+		if (msgBytes != null) {
+
+			byte[] bytes = ByteBuffer.allocate(8 + msgBytes.length).putInt(2).putInt(msgBytes.length).put(msgBytes).array();
+			output.write(bytes, 0, bytes.length);
+			output.flush();
+
+			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(bytes, Settings.CHARSET));
+			/*
+			if(KVClient.DEBUG) {
+				logger.info(" SEND \t<" 
+						+ clientSocket.getInetAddress().getHostAddress() + ":" 
+						+ clientSocket.getPort() + ">: '" 
+						+ new String(msgBytes) +"'");
+			}
+			*/
+		} else {
+			throw new IOException(" Unable to transmit message, the message was null.");
+		}
 	}
 
 
 	private byte[] receiveMessage() throws IOException {
-
+		// logger.debug("receiveMessage()");
 		int index = 0;
 		byte[] msgBytes = null, tmp = null;
 		byte[] bufferBytes = new byte[BUFFER_SIZE];
 
-		/* read first char from stream */
-		byte read = (byte) input.read();	
-		boolean reading = true;
+		/* read message identity */
+		byte[] identBytes = new byte[4];
+		int bytesRead = input.read(identBytes);
+		int ident = ByteBuffer.wrap(identBytes).getInt(); // 1 = CLIENT, 2 = SERVER, 3 = ECS
+		/* read length of message */
+		byte[] lenBytes = new byte[4];
+		bytesRead = input.read(lenBytes);
+		int msgLen = ByteBuffer.wrap(lenBytes).getInt();
+		logger.debug("new message - length: " + msgLen + ", ident: " + ident);
 
-		while(read != 13 && reading) {/* carriage return */
+		for (int i = 0; i < msgLen; i++) {
+			/* read next byte */
+			byte read = (byte) input.read();
+			// logger.debug("reading next byte..");
+			
 			/* if buffer filled, copy to msg array */
 			if(index == BUFFER_SIZE) {
 				if(msgBytes == null){
@@ -513,14 +552,15 @@ public class ClientConnection implements Runnable {
 			bufferBytes[index] = read;
 			index++;
 
+			
 			/* stop reading is DROP_SIZE is reached */
+			/*
 			if(msgBytes != null && msgBytes.length + index >= DROP_SIZE) {
 				reading = false;
 			}
-
-			/* read next char from stream */
-			read = (byte) input.read();
+			*/
 		}
+		// logger.debug("DONE READING.");
 
 		if(msgBytes == null){
 			tmp = new byte[index];

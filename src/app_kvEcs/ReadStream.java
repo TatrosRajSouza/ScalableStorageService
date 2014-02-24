@@ -23,7 +23,7 @@ public class ReadStream implements Runnable {
             while (true) {
                 String s = br.readLine ();
                 if (s == null) break;
-                // System.out.println ("[" + name + "] " + s);
+                System.out.println ("[" + name + "] " + s);
             }
             is.close ();    
         } catch (Exception ex) {

@@ -62,7 +62,7 @@ public class KVData {
 		else
 		{
 
-			returnValue =dataStore.remove(key);
+			returnValue = dataStore.remove(key);
 
 		}
 		return returnValue;

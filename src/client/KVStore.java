@@ -2,11 +2,23 @@ package client;
 
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.Random;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import logger.LogSetup;
 
@@ -14,8 +26,17 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import app_kvClient.SocketStatus;
+import crypto_protocol.ClientInitMessage;
+import crypto_protocol.ClientKeyExchangeMessage;
+import common.CommonCrypto;
+import crypto_protocol.SessionInfo;
+import crypto_protocol.HandshakeException;
 import common.InfrastructureMetadata;
+import crypto_protocol.ServerAuthConfirmationMessage;
 import common.ServerData;
+import crypto_protocol.ServerInitMessage;
+import crypto_protocol.SessionException;
+import common.Settings;
 import common.messages.InvalidMessageException;
 import common.messages.KVMessage;
 import common.messages.KVQuery;
@@ -41,6 +62,7 @@ public class KVStore implements KVCommInterface {
 	private String name = "";
 	private String moduleName = "<KVStore Module>";
 	private Random generator = new Random();
+	private SessionInfo session;
 
 
 	/**
@@ -92,6 +114,13 @@ public class KVStore implements KVCommInterface {
 				logger.info(moduleName + ": Connected to KVServer");
 				logger.info(moduleName + ": Server Message: " + kvQueryMessage.getTextMessage());
 			}
+			
+			try {
+				performHandshake(kvComm.getSocket());
+			} catch (HandshakeException e) {
+				// TODO Auto-generated catch block
+				logger.error(e.getMessage());
+			}
 		}
 
 		else if (kvQueryMessage.getStatus() == StatusType.CONNECT_ERROR) {
@@ -107,6 +136,197 @@ public class KVStore implements KVCommInterface {
 				System.out.println(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
 			}
 		}
+	}
+	
+	/**
+	 * Perform the miniSSL handshake
+	 * @param clientSocket socket used for communication
+	 * @throws HandshakeException in case of an error
+	 */
+	public void performHandshake(Socket clientSocket) throws HandshakeException {
+		/* Create new session */
+		session = new SessionInfo();
+		
+		session.setClientIP(clientSocket.getLocalAddress().getHostAddress());
+		session.setServerIP(clientSocket.getInetAddress().getHostAddress());
+		session.setLocalPort(clientSocket.getLocalPort());
+		session.setRemotePort(clientSocket.getPort());
+		
+		logger.debug("Created new Session: " + session.toString());
+		
+		// Send ClientInit
+		/*
+		ClientInitMessage clientInitMessage = new ClientInitMessage();
+		session.setClientNonce(clientInitMessage.getNonce());
+		try {
+			byte[] bytes = CommonCrypto.objectToByteArray(clientInitMessage);
+			kvComm.sendMessage(bytes);
+		} catch (IOException e) {
+			throw new HandshakeException("I/O failed while sending clientInit. Message: " + e.getMessage());
+		}
+		*/
+		/*
+		// Wait for ServerInit
+		ServerInitMessage serverInitMessage = null;
+		try {
+			serverInitMessage = receiveServerInit();
+		} catch (IOException e) {
+			throw new HandshakeException("I/O failed while receiving serverInit. Message: " + e.getMessage());
+		}
+		session.setServerNonce(serverInitMessage.getNonce());
+		session.setClientAuthRequired(serverInitMessage.isClientAuthRequired());
+		session.setServerCertificate(serverInitMessage.getCertificate());
+		
+		// Verify validity of certificate 
+		try {
+			CommonCrypto.verifyCertificate(session.getServerCertificate(), session.getCACertificate());
+		} catch (CertificateException e) {
+			//logger.error("Unable to verify the received X.509 Server Certificate: " + e.getMessage());
+			throw new HandshakeException("Unable to verify the received X.509 Server Certificate: " + e.getMessage());
+		} catch (InvalidKeyException e) {
+			//logger.error("Invalid key for received X.509 Server Certificate: " + e.getMessage());
+			throw new HandshakeException("Invalid key for received X.509 Server Certificate: " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			//logger.error("Invalid cipher for received X.509 Server Certificate: " + e.getMessage());
+			throw new HandshakeException("Invalid cipher for received X.509 Server Certificate: " + e.getMessage());
+		} catch (NoSuchProviderException e) {
+			//logger.error("Invalid provider for received X.509 Server Certificate file: " + e.getMessage());
+			throw new HandshakeException("Invalid provider for received X.509 Server Certificate file: " + e.getMessage());
+		} catch (SignatureException e) {
+			//logger.error("Invalid signature for received X.509 Server Certificate file: " + e.getMessage());
+			throw new HandshakeException("Invalid signature for received X.509 Server Certificate file: " + e.getMessage());
+		}
+		
+		// Generate 47 byte random master secret
+		session.setMasterSecret(generateMasterSecret(47));
+		
+		// Generate two session keys, one for encryption, one for mac
+		try {
+			session.setEncKey(CommonCrypto.generateSessionKey(Settings.ALGORITHM_HASHING, session.getMasterSecret(), session.getClientNonce(), session.getServerNonce(), new String("00000000").getBytes(Settings.CHARSET)));
+			session.setMacKey(CommonCrypto.generateSessionKey(Settings.ALGORITHM_HASHING, session.getMasterSecret(), session.getClientNonce(), session.getServerNonce(), new String("11111111").getBytes(Settings.CHARSET)));
+		} catch (IOException e) {
+			throw new HandshakeException ("I/O failed during generation of session keys. Message: " + e.getMessage());
+		} catch (InvalidKeyException e) {
+			throw new HandshakeException ("Unable to generate Session Keys. The key was invalid. Message: " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to generate Session Keys. The specified algorithm was invalid. Message: " + e.getMessage());
+		}
+		
+		// Generate Session hash
+		try {
+			session.setSecureSessionHash(CommonCrypto.generateSessionHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getClientNonce(), session.getServerNonce(), session.getServerCertificate().getEncoded(), session.isClientAuthRequired()));
+		} catch (IOException e) {
+			throw new HandshakeException ("I/O failed during generation of session hash. Message: " + e.getMessage());
+		} catch (InvalidKeyException e) {
+			throw new HandshakeException ("Unable to generate Session Hash. The key was invalid. Message: " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to generate Session Hash. The specified algorithm was invalid. Message: " + e.getMessage());
+		} catch (CertificateEncodingException e) {
+			throw new HandshakeException ("Unable to generate Session Hash. The specified Certificate has invalid encoding. Message: " + e.getMessage());
+		}
+		
+		// Encrypt master secret with public key from verified Server certificate
+		try {
+			logger.debug("THE MASTER SECRET (p): " + new String(session.getMasterSecret(), Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("THE MASTER SECRET (p): <INVALID ENCODING: " + Settings.CHARSET + ">");
+		}
+
+		try {
+			session.setEncryptedSecret(CommonCrypto.encrypt(session.getMasterSecret(), Settings.ALGORITHM_ENCRYPTION, session.getServerCertificate().getPublicKey()));
+		} catch (InvalidKeyException e) {
+			try {
+				throw new HandshakeException ("Unable to encrypt master secret. The key was invalid. Message: " + e.getMessage() + "\nKey: <" + new String(session.getServerCertificate().getPublicKey().getEncoded(), Settings.CHARSET) + ">");
+			} catch (UnsupportedEncodingException e1) {
+				throw new HandshakeException ("Unable to encrypt master secret. The key was invalid. Message: " + e.getMessage() + "\nKey: <INVALID ENCODING: " + Settings.CHARSET + ">");
+			}
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to encrypt master secret. Invalid Algorithm: " + Settings.ALGORITHM_ENCRYPTION + ". Message: " + e.getMessage());
+		} catch (NoSuchPaddingException e) {
+			throw new HandshakeException ("Unable to encrypt master secret. No such Padding for " + Settings.ALGORITHM_ENCRYPTION + ". Message: " + e.getMessage());
+		} catch (IllegalBlockSizeException e) {
+			throw new HandshakeException ("Unable to encrypt master secret. Illegal Block Size for Algorithm: " + Settings.ALGORITHM_ENCRYPTION + ". Message: " + e.getMessage());
+		} catch (BadPaddingException e) {
+			throw new HandshakeException ("Unable to encrypt master secret. Invalid padding for: " + Settings.ALGORITHM_ENCRYPTION + ". Message: " + e.getMessage());
+		}
+		
+		// Send ClientKeyExchangeMessage to Server
+		if (session.isClientAuthRequired()) {
+			// mutual authentication
+			try {
+				byte[] sigContent = CommonCrypto.concatenateByteArray(session.getServerNonce(), session.getEncryptedSecret());
+				byte[] sigContentHash = CommonCrypto.generateHash(Settings.ALGORITHM_HASHING, session.getMacKey(), sigContent);
+				byte[] signature = CommonCrypto.sign(sigContentHash, Settings.ALGORITHM_ENCRYPTION, this.clientPrivateKey);
+				
+				ClientKeyExchangeMessage clientKeyExchangeMessage = new ClientKeyExchangeMessage(session.getEncryptedSecret(), session.getSecureSessionHash(), session.getClientCertificate(), signature);
+				
+				try {
+					send(clientKeyExchangeMessage);
+				} catch (IOException e) {
+					throw new HandshakeException("I/O failed while sending clientKeyExchangeMessage. Message: " + e.getMessage());
+				}
+			} catch (InvalidKeyException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (NoSuchAlgorithmException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (UnsupportedEncodingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+
+		} else {
+			// simple authentication
+			ClientKeyExchangeMessage clientKeyExchangeMessage = new ClientKeyExchangeMessage(session.getEncryptedSecret(), session.getSecureSessionHash());
+			try {
+				send(clientKeyExchangeMessage);
+			} catch (IOException e) {
+				throw new HandshakeException("I/O failed while sending clientKeyExchangeMessage. Message: " + e.getMessage());
+			}
+		}
+		
+		// Compute confirmation Hash
+		try {
+		if (session.isClientAuthRequired())
+			session.setSecureConfirmationHash(CommonCrypto.generateConfirmationHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getEncryptedSecret(), session.getSecureSessionHash(), session.getClientCertificate()));
+		else
+			session.setSecureConfirmationHash(CommonCrypto.generateConfirmationHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getEncryptedSecret(), session.getSecureSessionHash()));
+		} catch (IOException e) {
+			throw new HandshakeException ("I/O failed during generation of Confirmation hash. Message: " + e.getMessage());
+		} catch (InvalidKeyException e) {
+			throw new HandshakeException ("Unable to generate Confirmation Hash. The key was invalid. Message: " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to generate Confirmation Hash. The specified algorithm was invalid. Message: " + e.getMessage());
+		}
+		
+		// Wait for ServerAuthConfirmation
+		ServerAuthConfirmationMessage serverAuthConfirmationMessage = null;
+		try {
+			serverAuthConfirmationMessage = receiveServerAuthConfirmation();
+		} catch (IOException e) {
+			throw new HandshakeException("I/O failed while sending serverAuthConfirmationMessage. Message: " + e.getMessage());
+		}
+		
+		// Compare generated confirmation Hash with confirmation Hash received from Server
+		if (!CommonCrypto.isByteArrayEqual(session.getSecureConfirmationHash(), serverAuthConfirmationMessage.getConfirmationHash())) {
+			throw new HandshakeException("Confirmation Information Mismatch. Confirmation Hash received from Server did not match Confirmation Hash computed by Client.");
+		} else {
+			logger.info("Successfully compared Auth Information. Confirmation Hash for Client matches Hash received from Server.");
+		}
+		
+		// Validate all session information
+		try {
+			session.validateSession();
+		} catch (SessionException e) {
+			throw new HandshakeException("The Session failed to validate. Inconsistent Session Data. Message: " + e.getMessage());
+		}
+		logger.info("Session validated. Handshake is complete.");
+		*/
 	}
 
 	/**

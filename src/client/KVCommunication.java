@@ -6,11 +6,14 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 import logger.LogSetup;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
+import common.Settings;
 
 import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
@@ -109,39 +112,64 @@ public class KVCommunication {
 	 * @param msg the message that is to be sent.
 	 * @throws IOException some I/O error regarding the output stream 
 	 */
-	public void sendMessage(byte[] msgBytes) throws IOException, SocketTimeoutException {
+	private void sendMessageInternal(byte[] msgBytes, int ident) throws IOException, SocketTimeoutException {
 		if (msgBytes != null) {
 			output = clientSocket.getOutputStream();
-			output.write(msgBytes, 0, msgBytes.length);
+			byte[] bytes = ByteBuffer.allocate(8 + msgBytes.length).putInt(ident).putInt(msgBytes.length).put(msgBytes).array();
+			output.write(bytes, 0, bytes.length);
 			output.flush();
+			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(bytes, Settings.CHARSET));
+			/*
 			if(KVClient.DEBUG) {
 				logger.info(" SEND \t<" 
 						+ clientSocket.getInetAddress().getHostAddress() + ":" 
 						+ clientSocket.getPort() + ">: '" 
 						+ new String(msgBytes) +"'");
 			}
+			*/
 		} else {
 			throw new IOException(" Unable to transmit message, the message was null.");
 		}
 	}
 	
 	/**
-	 * Receives a message as a byte array.
-	 * @return the message as byte array
-	 * @throws IOException In case of communication error
-	 * @throws SocketTimeoutException If no message is received from the server within the timeout interval.
+	 * Method sends a Message using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
 	 */
+	public void sendMessage(byte[] msgBytes) throws IOException, SocketTimeoutException {
+		sendMessageInternal(msgBytes, 1);
+	}
+	
+	/**
+	 * Method sends a Message using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
+	 */
+	public void sendMessageECS(byte[] msgBytes) throws IOException, SocketTimeoutException {
+		sendMessageInternal(msgBytes, 3);
+	}
+	
 	public byte[] receiveMessage() throws IOException, SocketTimeoutException {
 		input = clientSocket.getInputStream();
 		int index = 0;
 		byte[] msgBytes = null, tmp = null;
 		byte[] bufferBytes = new byte[BUFFER_SIZE];
 
-		/* read first char from stream */
-		byte read = (byte) input.read();	
-		boolean reading = true;
+		/* read message identity */
+		byte[] identBytes = new byte[4];
+		int bytesRead = input.read(identBytes);
+		int ident = ByteBuffer.wrap(identBytes).getInt(); // 1 = CLIENT, 2 = SERVER, 3 = ECS
+		/* read length of message */
+		byte[] lenBytes = new byte[4];
+		bytesRead = input.read(lenBytes);
+		int msgLen = ByteBuffer.wrap(lenBytes).getInt();
+		logger.debug("new message - length: " + msgLen + ", ident: " + ident);
 
-		while(read != 13 && reading) {/* carriage return */
+		for (int i = 0; i < msgLen; i++) {
+			/* read next byte */
+			byte read = (byte) input.read();
+			
 			/* if buffer filled, copy to msg array */
 			if(index == BUFFER_SIZE) {
 				if(msgBytes == null){
@@ -164,13 +192,12 @@ public class KVCommunication {
 			index++;
 
 			/* stop reading is DROP_SIZE is reached */
+			/*
 			if(msgBytes != null && msgBytes.length + index >= DROP_SIZE) {
 				reading = false;
-			}
-
-			/* read next char from stream */
-			read = (byte) input.read();
+			}*/
 		}
+		// logger.debug("DONE READING.");
 
 		if(msgBytes == null){
 			tmp = new byte[index];
@@ -184,15 +211,18 @@ public class KVCommunication {
 		msgBytes = tmp;
 
 		/* build final String */
+		/*
 		if(KVClient.DEBUG) {
 			logger.info(" RECEIVE \t<" 
 					+ clientSocket.getInetAddress().getHostAddress() + ":" 
 					+ clientSocket.getPort() + ">: '" 
 					+ new String(msgBytes) + "'");
 		}
+		*/
+		logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(msgBytes, Settings.CHARSET) + ">");
 		return msgBytes;
 	}
-
+	
 	/**
 	 * Current status of the connection
 	 * @return SocketStatus the status of the connection
@@ -207,5 +237,9 @@ public class KVCommunication {
 	 */
 	private void setSocketStatus(SocketStatus socketStatus) {
 		this.socketStatus = socketStatus;
+	}
+	
+	public Socket getSocket() {
+		return this.clientSocket;
 	}
 }
