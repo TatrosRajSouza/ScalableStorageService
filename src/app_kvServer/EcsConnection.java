@@ -255,21 +255,23 @@ public class EcsConnection {
 		}
 
 	}
+	/**
+	 * Update metadata of server.
+	 */
 	private void update(InfrastructureMetadata infrastructureMetadata)
 	{
 		this.serverInstance.getMetaData().update(infrastructureMetadata.toString());
 		this.serverInstance.getConsistentHashing().update(infrastructureMetadata.getServers());
-		//logger.info("metadata updation:" + infrastructureMetadata.toString());
 		updateNextServers();
 	}
+	
+	/**
+	 * move data from one server to another.
+	 */
 	private String moveData(BigInteger startIndex, BigInteger endIndex, ServerData serverData) throws UnknownHostException, IOException, InvalidMessageException
 	{
-		//logger.info("Data moved to:" + serverData.getName() + "port:" + serverData.getPort());
 		HashMap<BigInteger, String> movingData;
 		BigInteger serverIndex = ConsistentHashing.hashServer(serverData.getAddress(), serverData.getPort());
-		//logger.info("Start Index:" + startIndex);
-		//logger.info("End Index:" + endIndex);
-		//logger.info("serverIndex:" + serverIndex);
 		if(startIndex.compareTo(endIndex) >= 0)
 		{
 			if(serverIndex.compareTo(startIndex) > 0 && serverIndex.compareTo(endIndex) > 0)
@@ -293,9 +295,7 @@ public class EcsConnection {
 			}
 		}
 		String move = null;
-		//logger.info("dataserver:"+this.serverInstance.getPort()+"startindex:" + startIndex + "endindex:" + endIndex);
 		ECSMessage sendMessage = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL,movingData);
-
 		KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort(), "ECS");
 		communication.sendMessageECS(sendMessage.toBytes());
 		byte[] receivedmessage = communication.receiveMessage(null, null);
@@ -305,27 +305,7 @@ public class EcsConnection {
 			move = "movecompleted";
 		}
 		this.serverInstance.getKvdata().remove(movingData);
-		logger.info("data removed");
-		//this.serverInstance.getMovedDataList().add(movingData);
-		// need to send message 
 		return move;
 
 	}
-	/*private void removeData(KVServer kvserver)
-	{
-		if(this.serverInstance.getMovedDataList() != null)
-		{
-		for(HashMap<BigInteger,String> movedData : this.serverInstance.getMovedDataList())
-		{
-			try
-			{
-			this.serverInstance.getKvdata().remove(movedData);
-			}
-			catch(Exception e)
-			{
-				logger.error("Error while removing data" + e.getMessage());
-			}
-		}
-		}
-	}*/
 }

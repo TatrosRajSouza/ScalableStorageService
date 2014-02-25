@@ -56,7 +56,7 @@ public class KVServer extends Thread {
 	private ServerServerCommunicator nextNextServer;
 	private KVData lastNodeData;
 	private KVData lastLastNodeData;
-	
+
 	public static String SERVER_CERT_PATH = "";
 	public static String SERVER_PRIVKEY_PATH = "";
 	public static X509Certificate serverCertificate = null;
@@ -140,11 +140,13 @@ public class KVServer extends Thread {
 	public InfrastructureMetadata getMetaData() {
 		return metaData;
 	}
-	
+
 	public static PrivateKey getPrivateKey() {
 		return serverPrivateKey;
 	}
-
+	/**
+	 * set metadata of server.
+	 */
 	public void setMetaData(InfrastructureMetadata metaData) {
 		logger.info("SetMetaData(): " + metaData.toString());
 		this.metaData = metaData;
@@ -180,14 +182,14 @@ public class KVServer extends Thread {
 	public KVServer(int port){
 		KVServer.SERVER_CERT_PATH = Settings.SERVER_CERT_PATH;
 		KVServer.SERVER_PRIVKEY_PATH = Settings.SERVER_PRIVKEY_PATH;
-		
+
 		this.port = port;
-		
+
 		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
-		
+
 		this.logger.info("KVServer log running @port: " + port);
-		
+
 		try {
 			trustedCAs = CommonCrypto.loadTrustStore();
 		} catch (CertificateException e) {
@@ -201,7 +203,7 @@ public class KVServer extends Thread {
 		for (X509Certificate cert : trustedCAs) {
 			logger.info(cert.getSubjectX500Principal().getName());
 		}
-		
+
 		/* Try importing Server Certificate */
 		try {
 			createServerCertificate(KVServer.SERVER_CERT_PATH);
@@ -210,7 +212,7 @@ public class KVServer extends Thread {
 		} catch (FileNotFoundException e) {
 			throw new IllegalArgumentException("Server X.509 Certificate file not found at: " + KVServer.SERVER_CERT_PATH);
 		}
-		
+
 		/* Try to import CA Certificate */
 		try {
 			importCACertificate(Settings.getCACertPath());
@@ -231,9 +233,9 @@ public class KVServer extends Thread {
 		} catch (InvalidKeySpecException e) {
 			logger.error("Unable to read this Servers private key from file: " + SERVER_PRIVKEY_PATH +
 					",\nReason: " + e.getMessage() + "\nPlease make sure the private key file is in ENCRYPTED PKCS8 Format.\n" +
-							"To convert an unencrypted PEM key with openssl use the following command:\n" +
-							"openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER -in inputKey.key.pem -out pkcs8OutputKey.key.pem\n" +
-							"Server Application terminated.");
+					"To convert an unencrypted PEM key with openssl use the following command:\n" +
+					"openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER -in inputKey.key.pem -out pkcs8OutputKey.key.pem\n" +
+					"Server Application terminated.");
 			System.exit(1);
 		} catch (NoSuchAlgorithmException e) {
 			logger.error("Unable to read this Servers private key from file: " + SERVER_PRIVKEY_PATH +
@@ -241,14 +243,14 @@ public class KVServer extends Thread {
 			System.exit(1);
 		}
 	}
-	
+
 	private void createServerCertificate(String serverCertificatePath) throws CertificateException, FileNotFoundException {
 		File certificateFile = new File(serverCertificatePath);
 		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 		serverCertificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certificateFile));
 	}
-	
-	
+
+
 	public void importCACertificate(String path) throws CertificateException {
 		try {
 			caCertificate = CommonCrypto.importCACertificate(path);
@@ -258,7 +260,7 @@ public class KVServer extends Thread {
 					"\nServer Application terminated.");
 			System.exit(1);
 		}
-		
+
 		try {
 			if (!CommonCrypto.isCATrusted(caCertificate, this.trustedCAs)) {
 				logger.error("CA Certificate: " + caCertificate.getSubjectX500Principal() + " is not a trusted CA.\nServer Application terminated.");				
@@ -282,21 +284,17 @@ public class KVServer extends Thread {
 	public void run() {
 		if (!Thread.interrupted()) {
 			running = initializeServer();
-	
+
 			if(serverSocket != null) {
 				while(isRunning()){
 					try {
 						Socket client = serverSocket.accept();                
 						ClientConnection connection = 
-								new ClientConnection(client,this);
-	
-	
-						// store the clients for further accessing
+								new ClientConnection(client,this);		
 						String ip = client.getInetAddress().getHostAddress();
 						serverData = new ServerData(ip+ ":" + port, ip, port);
 						Thread.currentThread().setName("SERVER " + client.getInetAddress().getHostAddress() + ":" + client.getLocalPort());
-						logger.info("Client Connected  [" + client.getInetAddress().getHostAddress() + ":" + client.getPort() + "]");
-	
+						logger.info("Client Connected  [" + client.getInetAddress().getHostAddress() + ":" + client.getPort() + "]");	
 						new Thread(connection).start();
 					} catch (IOException e) {
 						logger.error("Error! " +
@@ -319,7 +317,7 @@ public class KVServer extends Thread {
 	}
 
 	/**
-	 * Stops the server insofar that it won't listen at the given port any more.
+	 * Initialize server.
 	 */
 
 	private boolean initializeServer() {
@@ -329,14 +327,10 @@ public class KVServer extends Thread {
 
 			logger.info("Server listening on port: " 
 					+ serverSocket.getLocalPort());   
-			
-			// init with local meta data
 			ArrayList<ServerData> serverData = new ArrayList<ServerData>();
 			String address = InetAddress.getLocalHost().getHostAddress();
-			System.out.println(address);
 			serverData.add(new ServerData(address + ":" + port, address, port));
 			setMetaData(new InfrastructureMetadata(serverData));
-			
 			return true;
 
 		} catch (IOException e) {
@@ -441,10 +435,6 @@ public class KVServer extends Thread {
 					int port = Integer.parseInt(args[0]);
 					KVServer server = new KVServer(port);
 					server.start();
-					
-					// server.setServeClientRequest(true);
-
-					//System.exit(0);
 				}
 			} catch (NumberFormatException nfe) {
 				System.out.println("Error! Invalid argument <port>! Not a number!");
