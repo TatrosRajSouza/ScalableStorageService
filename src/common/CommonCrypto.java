@@ -129,6 +129,7 @@ public class CommonCrypto {
 			
 			IvParameterSpec IVSpec = new IvParameterSpec(IV);
 			cipher.init(Cipher.DECRYPT_MODE, keySpec, IVSpec);
+			System.out.println("Cipher init");
 			return cipher.doFinal(encryptedSource);
 		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalArgumentException("Unable to decrypt contents, using " + algorithm + ", Message: " + e.getMessage());

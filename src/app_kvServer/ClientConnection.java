@@ -9,7 +9,18 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.List;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import logger.LogSetup;
 
@@ -21,7 +32,9 @@ import crypto_protocol.Message;
 import crypto_protocol.MessageType;
 import crypto_protocol.ClientInitMessage;
 import crypto_protocol.ClientKeyExchangeMessage;
+import crypto_protocol.SessionException;
 import common.CommonCrypto;
+import common.Ident;
 import crypto_protocol.ErrorMessage;
 import crypto_protocol.ServerAuthConfirmationMessage;
 import common.ServerData;
@@ -53,6 +66,8 @@ public class ClientConnection implements Runnable {
 	private OutputStream output;
 	private boolean isOpen;
 	private SessionInfo session;
+	private boolean handshakeComplete = false;
+	private Ident partner;
 
 	public boolean isOpen() {
 		return isOpen;
@@ -148,21 +163,24 @@ public class ClientConnection implements Runnable {
 		sendMessage(bytes);
 	}
 	
-	private void performHandshake(Socket clientSocket) throws HandshakeException, IOException {
-		session = new SessionInfo();
-		session.setClientAuthRequired(false);
-		
+	private void performHandshake(Socket clientSocket, byte[] firstMessage) throws HandshakeException, IOException, SessionException {
 		session.setServerIP(clientSocket.getLocalAddress().getHostAddress());
 		session.setClientIP(clientSocket.getInetAddress().getHostAddress());
 		session.setLocalPort(clientSocket.getLocalPort());
 		session.setRemotePort(clientSocket.getPort());
 		
-		logger.debug(session);
+		/* Try to import CA Certificate */
+		try {
+			session.setCACertificate(CommonCrypto.importCACertificate(Settings.getCACertPath()));
+		} catch (CertificateException e) {
+			logger.error("Unable to import CA Certificate from file: " + Settings.getCACertPath() + ", or Certificate invalid.\nReason: " + e.getMessage() + "\nClient Application Exiting.");
+			System.exit(1);
+		}
 		
 		// Expect ClientInit
-		Message message = bytesToMessage(receiveMessage());
+		Message message = bytesToMessage(firstMessage);
 		if (!verifyMessageType(message, MessageType.ClientInitMessage))
-			throw new HandshakeException("Invalid Message received.");
+			throw new HandshakeException("Invalid Message received. Expected ClientInitMessage.");
 		
 		ClientInitMessage clientInitMessage = (ClientInitMessage) message;
 		session.setClientNonce(clientInitMessage.getNonce());	
@@ -172,6 +190,108 @@ public class ClientConnection implements Runnable {
 		session.setServerNonce(serverInitMessage.getNonce());
 		session.setServerCertificate(serverInitMessage.getCertificate());
 		sendObject(serverInitMessage);
+		
+		
+		// Expect ClientKeyExchangeMessage
+		message = bytesToMessage(receiveMessage(session.getEncKey(), session.getIV()));
+		if (!verifyMessageType(message, MessageType.ClientKeyExchangeMessage))
+			throw new HandshakeException("Invalid Message received.");
+		
+		ClientKeyExchangeMessage clientKeyExchangeMessage = (ClientKeyExchangeMessage) message;
+		session.setClientCertificate(clientKeyExchangeMessage.getClientCertificate());
+		session.setEncryptedSecret(clientKeyExchangeMessage.getEncryptedSecret());	
+		
+		// Decrypt the master secret
+		session.setMasterSecret(CommonCrypto.decryptRSA(clientKeyExchangeMessage.getEncryptedSecret(), Settings.ALGORITHM_ENCRYPTION, KVServer.getPrivateKey()));
+		logger.debug("RECEIVED & DECRYPTED MASTER SECRET (p): " + new String(session.getMasterSecret(), Settings.CHARSET));
+
+		// Generate session keys for encryption and mac from received master secret
+		try {
+			session.setEncKey(CommonCrypto.generateSessionKey(Settings.ALGORITHM_HASHING, session.getMasterSecret(), session.getClientNonce(), session.getServerNonce(), new String("00000000").getBytes(Settings.CHARSET)));
+			session.setMacKey(CommonCrypto.generateSessionKey(Settings.ALGORITHM_HASHING, session.getMasterSecret(), session.getClientNonce(), session.getServerNonce(), new String("11111111").getBytes(Settings.CHARSET)));
+		} catch (InvalidKeyException e) {
+			throw new HandshakeException ("Unable to generate Session keys, Invalid key: " + Settings.ALGORITHM_ENCRYPTION + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to generate Session keys, Invalid cipher: " + Settings.ALGORITHM_ENCRYPTION + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
+		}
+		
+		// Authenticate Client
+		if (session.isClientAuthRequired()) {
+			try {
+				CommonCrypto.verifyCertificate(session.getClientCertificate(), session.getCACertificate());
+			} catch (InvalidKeyException e1) {
+				throw new HandshakeException(e1.getMessage());
+			} catch (CertificateException e1) {
+				throw new HandshakeException(e1.getMessage());
+			} catch (NoSuchAlgorithmException e1) {
+				throw new HandshakeException(e1.getMessage());
+			} catch (NoSuchProviderException e1) {
+				throw new HandshakeException(e1.getMessage());
+			} catch (SignatureException e1) {
+				throw new HandshakeException(e1.getMessage());
+			}
+			System.out.println(session.getClientCertificate());
+			logger.info("Client Certificate verified by CA.");
+			
+			try {
+				byte[] decryptedSignature = CommonCrypto.decryptRSA(clientKeyExchangeMessage.getSignature(), Settings.ALGORITHM_ENCRYPTION, session.getClientCertificate().getPublicKey());
+				byte[] sigContent = CommonCrypto.concatenateByteArray(session.getServerNonce(), session.getEncryptedSecret());
+				byte[] sigContentHash = CommonCrypto.generateHash(Settings.ALGORITHM_HASHING, session.getMacKey(), sigContent);
+
+				
+				
+				if (CommonCrypto.isByteArrayEqual(sigContentHash, decryptedSignature)) {
+					logger.info("Client Signature verified on Server Nonce and encrypted master secret.");
+				} else {
+					throw new SignatureException("Client Signature invalid. Signature hash did not match.");
+				}
+			} catch (Exception e) {
+				//logger.error("Client Signature invalid or unable to verify Signature. Message: " + e.getMessage() + "\nSession terminated.");
+				throw new HandshakeException("Client Signature invalid or unable to verify Signature. Message: " + e.getMessage() + "\nSession terminated.");
+			}
+		}
+		
+		// Compute session hash from session information
+		try {
+			session.setSecureSessionHash(CommonCrypto.generateSessionHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getClientNonce(), session.getServerNonce(), session.getServerCertificate().getEncoded(), session.isClientAuthRequired()));
+		} catch (InvalidKeyException e) {
+			throw new HandshakeException ("Unable to generate Session Hash, Invalid key: " +  Settings.ALGORITHM_HASHING + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
+		} catch (CertificateEncodingException e) {
+			throw new HandshakeException ("Unable to generate Session Hash, Invalid Certificate Encoding: " + Settings.ALGORITHM_HASHING + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
+		} catch (NoSuchAlgorithmException e) {
+			throw new HandshakeException ("Unable to generate Session Hash, Invalid Algorithm: " + Settings.ALGORITHM_HASHING + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
+		}
+	
+		// Compare generated session hash with session hash received from client
+		if (!(CommonCrypto.isByteArrayEqual(session.getSecureSessionHash(), clientKeyExchangeMessage.getSecureSessionHash()))) {
+			throw new HandshakeException("Session Information Mismatch. Session Hash received from Client did not match Session Hash computed on Server.");
+		} else {
+			logger.info("Successfully compared Session Information. Session Hash on Server matches Hash received from Client.");
+		}
+		
+		// Generate Auth Confirmation Hash & send to client
+		try {
+			if (session.isClientAuthRequired())
+				session.setSecureConfirmationHash(CommonCrypto.generateConfirmationHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getEncryptedSecret(), session.getSecureSessionHash(), session.getClientCertificate()));
+			else
+				session.setSecureConfirmationHash(CommonCrypto.generateConfirmationHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getEncryptedSecret(), session.getSecureSessionHash()));
+		} catch (Exception e) {
+			throw new HandshakeException(e.getMessage());
+		}
+		ServerAuthConfirmationMessage serverAuthConfirmationMessage = new ServerAuthConfirmationMessage(session.getSecureConfirmationHash(), session.getIV(), session.isClientAuthRequired());
+		sendObject (serverAuthConfirmationMessage);
+		
+		logger.debug(session);
+		
+		// Validate Session
+		try {
+			session.validateSession();
+		} catch (SessionException e) {
+			throw new HandshakeException(e.getMessage());
+		}
+		
+		logger.info("Session validated. Handshake is complete.");
+		this.handshakeComplete = true;
 	}
 
 	/**
@@ -189,20 +309,34 @@ public class ClientConnection implements Runnable {
 						+ clientSocket.getLocalPort();
 				
 				try {
-					performHandshake(clientSocket);
-				} catch (HandshakeException ex2) {
-					// TODO Auto-generated catch block
-					logger.error("Error during secure handshake:\n" + ex2.getMessage());
-					ex2.printStackTrace();
-				} catch (IOException ex3) {
-					logger.error("Error during secure handshake:\n" + ex3.getMessage());
-					ex3.printStackTrace();
+					session = new SessionInfo(clientSocket.getLocalAddress().getHostAddress() + ":" + clientSocket.getLocalPort(), Settings.TRANSFER_ENCRYPTION);
+					session.setClientAuthRequired(false);
+				} catch (SessionException e2) {
+					throw new IOException("Unable to create session:\n" + e2.getMessage());
 				}
 				
-				while(isOpen && session.isValid()) { // until connection open
+				
+				while(isOpen) { // until connection open
 					try { //connection lost
-						byte[] latestMsg = receiveMessage();
+						byte[] latestMsg = receiveMessage(session.getEncKey(), session.getIV());
 						logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(latestMsg, Settings.CHARSET) + ">");
+						
+						if (!handshakeComplete && partner.equals(Ident.CLIENT)) {
+							try {
+								performHandshake(clientSocket, latestMsg);
+							} catch (HandshakeException ex) {
+								// TODO Auto-generated catch block
+								logger.error("Error during secure handshake:\n" + ex.getMessage());
+								ex.printStackTrace();
+							} catch (IOException ex) {
+								logger.error("Error during secure handshake:\n" + ex.getMessage());
+								ex.printStackTrace();
+							} catch (SessionException ex) {
+								logger.error("Error during secure handshake:\n" + ex.getMessage());
+								ex.printStackTrace();
+							}
+						}
+						
 						KVQuery kvQueryCommand;
 						try { //   not KVMessage
 							kvQueryCommand = new KVQuery(latestMsg);
@@ -240,7 +374,7 @@ public class ClientConnection implements Runnable {
 										}
 										//logger.debug("returnValue: " + returnValue);
 										KVQuery kvQueryGet = new KVQuery(KVMessage.StatusType.GET_SUCCESS, returnValue);
-										sendMessage(kvQueryGet.toBytes());
+										sendMessageEncrypted(kvQueryGet.toBytes(), session);
 										logger.debug("SERVER:Get success");
 									}
 									else if (checkRangeReplicas(key)) 
@@ -248,7 +382,7 @@ public class ClientConnection implements Runnable {
 										KVQuery kvQueryGetError = new KVQuery(KVMessage.StatusType.GET_ERROR, key);
 										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
 												+ kvQueryGetError.getStatus() + " <" + kvQueryGetError.getKey() + ">");
-										sendMessage(kvQueryGetError.toBytes());
+										sendMessageEncrypted(kvQueryGetError.toBytes(), session);
 									}
 									else
 									{
@@ -256,7 +390,7 @@ public class ClientConnection implements Runnable {
 										KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
 										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
 												+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
-										sendMessage(kvQueryNotResponsible.toBytes());
+										sendMessageEncrypted(kvQueryNotResponsible.toBytes(), session);
 									}
 
 								}// get block
@@ -284,7 +418,7 @@ public class ClientConnection implements Runnable {
 													logger.debug("value: " + value + ", returnValue: " + returnValue + " --> PUT_SUCCESS");
 													sendServerServerPut(key, value);
 													KVQuery kvQueryPut = new KVQuery(KVMessage.StatusType.PUT_SUCCESS,key,value);
-													sendMessage(kvQueryPut.toBytes());
+													sendMessageEncrypted(kvQueryPut.toBytes(), session);
 													logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
 															+ kvQueryPut.getStatus() + " <" + kvQueryPut.getKey() + ", " + kvQueryPut.getValue() + ">");
 
@@ -294,7 +428,7 @@ public class ClientConnection implements Runnable {
 													logger.debug("value: " + value + ", returnValue: " + returnValue + " --> PUT_UPDATE");
 													sendServerServerPut(key, value);
 													KVQuery kvQueryUpdate = new KVQuery(KVMessage.StatusType.PUT_UPDATE,key,value);
-													sendMessage(kvQueryUpdate.toBytes());
+													sendMessageEncrypted(kvQueryUpdate.toBytes(), session);
 													logger.debug("SERVER:put update success");
 
 												}
@@ -312,7 +446,7 @@ public class ClientConnection implements Runnable {
 												{
 													sendServerServerDelete(key);
 													KVQuery kvQueryDelete = new KVQuery(KVMessage.StatusType.DELETE_SUCCESS,key,returnValue);
-													sendMessage(kvQueryDelete.toBytes());
+													sendMessageEncrypted(kvQueryDelete.toBytes(), session);
 													logger.debug("SERVER:put delete success");
 
 												}
@@ -336,7 +470,7 @@ public class ClientConnection implements Runnable {
 										KVQuery kvQueryNotResponsible = new KVQuery(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE,"metaData",this.serverInstance.getMetaData().toString());
 										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
 												+ kvQueryNotResponsible.getStatus() + " <" + kvQueryNotResponsible.getKey() + ", " + kvQueryNotResponsible.getValue() + ">");
-										sendMessage(kvQueryNotResponsible.toBytes());
+										sendMessageEncrypted(kvQueryNotResponsible.toBytes(), session);
 									}
 								}//put block
 
@@ -345,7 +479,7 @@ public class ClientConnection implements Runnable {
 									KVQuery kvQueryDisconnect;
 									try {
 										kvQueryDisconnect = new KVQuery(KVMessage.StatusType.DISCONNECT_SUCCESS);
-										sendMessage(kvQueryDisconnect.toBytes());
+										sendMessageEncrypted(kvQueryDisconnect.toBytes(), session);
 										logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " 
 												+ kvQueryDisconnect.getStatus());
 
@@ -383,7 +517,7 @@ public class ClientConnection implements Runnable {
 								KVQuery kvQueryNoService;
 								try {
 									kvQueryNoService = new KVQuery(KVMessage.StatusType.SERVER_STOPPED,key,value);
-									sendMessage(kvQueryNoService.toBytes());
+									sendMessageEncrypted(kvQueryNoService.toBytes(), session);
 									logger.debug("SERVER:Stopped");
 
 								} catch (InvalidMessageException e1) {
@@ -517,7 +651,8 @@ public class ClientConnection implements Runnable {
 		try {
 			kvQueryConnect = new KVQuery(KVMessage.StatusType.CONNECT_SUCCESS,connectSuccess );
 
-			sendMessage(kvQueryConnect.toBytes());
+			//sendMessage(kvQueryConnect.toBytes());
+			sendMessageEncrypted(kvQueryConnect.toBytes(), session);
 			
 			if (kvQueryConnect.getStatus() != null)
 				logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + kvQueryConnect.getStatus());
@@ -597,23 +732,18 @@ public class ClientConnection implements Runnable {
 	 * @param msg the message that is to be sent.
 	 * @throws IOException some I/O error regarding the output stream 
 	 */
-	
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		sendMessage(msgBytes, output);
 	}
-
-	/*
-	private void sendMessage(byte[] msgBytes, OutputStream output) throws IOException {
-		output.write(msgBytes, 0, msgBytes.length);
-		output.flush();
-		if(this.serverInstance.isDEBUG())
-		{
-			logger.info("SEND \t<" 
-					+ clientSocket.getInetAddress().getHostAddress() + ":" 
-					+ clientSocket.getPort() + ">: '" 
-					+ new String(msgBytes) +"'");
-		}
-	}*/
+	
+	/**
+	 * Method sends a TextMessage using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
+	 */
+	public void sendMessageEncrypted(byte[] msgBytes, SessionInfo session) throws IOException {
+		sendMessageEncrypted(msgBytes, output, session);
+	}
 	
 	/**
 	 * Method sends a Message using this socket.
@@ -623,45 +753,91 @@ public class ClientConnection implements Runnable {
 	private void sendMessage(byte[] msgBytes, OutputStream output) throws IOException, SocketTimeoutException {
 		if (msgBytes != null) {
 
-			byte[] bytes = ByteBuffer.allocate(8 + msgBytes.length).putInt(2).putInt(msgBytes.length).put(msgBytes).array();
+			byte[] bytes = ByteBuffer.allocate(12 + msgBytes.length).putInt(0).putInt(2).putInt(msgBytes.length).put(msgBytes).array();
 			output.write(bytes, 0, bytes.length);
 			output.flush();
 
 			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(bytes, Settings.CHARSET));
-			/*
-			if(KVClient.DEBUG) {
-				logger.info(" SEND \t<" 
-						+ clientSocket.getInetAddress().getHostAddress() + ":" 
-						+ clientSocket.getPort() + ">: '" 
-						+ new String(msgBytes) +"'");
-			}
-			*/
 		} else {
-			throw new IOException(" Unable to transmit message, the message was null.");
+			throw new IOException("Unable to transmit message, the message was null.");
 		}
 	}
+	
+	/**
+	 * Method sends a Message using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
+	 */
+	private void sendMessageEncrypted(byte[] msgBytes, OutputStream output, SessionInfo session) throws IOException, SocketTimeoutException {
+		if (msgBytes != null) {
 
+			byte[] bytes = null;
+			byte[] encryptedBytes = null;
+			try {
+				/* Encrypt contents AES-CBC-128 */	 
+				SecretKeySpec k = new SecretKeySpec(session.getEncKey().getEncoded(), "AES");
+				Cipher cipher = Cipher.getInstance(Settings.TRANSFER_ENCRYPTION);
+				cipher.init (Cipher.ENCRYPT_MODE, k, new IvParameterSpec(session.getIV()));
+				encryptedBytes = cipher.doFinal(msgBytes);
+				bytes = ByteBuffer.allocate(12 + encryptedBytes.length).putInt(1).putInt(2).putInt(encryptedBytes.length).put(encryptedBytes).array();
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new IOException("Unable to encrypt message: " + e.getMessage());
+			}
+			
+			output.write(bytes, 0, bytes.length);
+			output.flush();
 
-	private byte[] receiveMessage() throws IOException {
-		// logger.debug("receiveMessage()");
+			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(encryptedBytes, Settings.CHARSET));
+		} else {
+			throw new IOException("Unable to transmit message, the message was null.");
+		}
+	}
+	
+	public byte[] receiveMessage(Key decryptionKey, byte[] IV) throws IOException, SocketTimeoutException {
 		int index = 0;
 		byte[] msgBytes = null, tmp = null;
 		byte[] bufferBytes = new byte[BUFFER_SIZE];
-
+		
+		/* read message encryption flag */
+		byte[] encFlagBytes = new byte[4];
+		input.read(encFlagBytes);
+		int encFlag = ByteBuffer.wrap(encFlagBytes).getInt(); // 0 = Plain, 1 = Encrypted
+		
+		if (encFlag != 0 && encFlag != 1)
+			throw new IOException("Encryption flag of received message was set to invalid value");
+		
 		/* read message identity */
 		byte[] identBytes = new byte[4];
-		int bytesRead = input.read(identBytes);
+		input.read(identBytes);
 		int ident = ByteBuffer.wrap(identBytes).getInt(); // 1 = CLIENT, 2 = SERVER, 3 = ECS
+		
+		if (ident == 1) {
+			partner = Ident.CLIENT;
+			logger.debug("RECEIVED MESSAGE IS FROM CLIENT");
+		} else if (ident == 2) {
+			partner = Ident.SERVER;
+			logger.debug("RECEIVED MESSAGE IS FROM SERVER");
+		} else if (ident == 3) {
+			partner = Ident.ECS;
+			logger.debug("RECEIVED MESSAGE IS FROM ECS");
+		} else {
+			throw new IOException("Ident flag of received message was set to invalid value");
+		}
+		
 		/* read length of message */
 		byte[] lenBytes = new byte[4];
-		bytesRead = input.read(lenBytes);
+		input.read(lenBytes);
 		int msgLen = ByteBuffer.wrap(lenBytes).getInt();
+		
+		if (msgLen < 0)
+			throw new IOException("Length field of received message was invalid (negative).");
+		
 		logger.debug("new message - length: " + msgLen + ", ident: " + ident);
 
 		for (int i = 0; i < msgLen; i++) {
 			/* read next byte */
 			byte read = (byte) input.read();
-			// logger.debug("reading next byte..");
 			
 			/* if buffer filled, copy to msg array */
 			if(index == BUFFER_SIZE) {
@@ -684,13 +860,11 @@ public class ClientConnection implements Runnable {
 			bufferBytes[index] = read;
 			index++;
 
-			
 			/* stop reading is DROP_SIZE is reached */
 			/*
 			if(msgBytes != null && msgBytes.length + index >= DROP_SIZE) {
 				reading = false;
-			}
-			*/
+			}*/
 		}
 		// logger.debug("DONE READING.");
 
@@ -704,19 +878,31 @@ public class ClientConnection implements Runnable {
 		}
 
 		msgBytes = tmp;
-
-		/* build final String */
-
-		if(this.serverInstance.isDEBUG())
-		{
-			logger.info("RECEIVE @@@@@@\t<" 
-					+ clientSocket.getInetAddress().getHostAddress() + ":" 
-					+ clientSocket.getPort() + ">: '" 
-					+ new String(msgBytes) + "'");
+			
+		if (encFlag == 0) {
+			logger.debug("Received Plain from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(msgBytes, Settings.CHARSET) + ">");
+			return msgBytes;
+		} else {
+			
+			logger.debug("Received Encrypted from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n" + new String(msgBytes, Settings.CHARSET));
+			if (decryptionKey == null)
+				throw new IOException("Unable to decrypt message. No decryptionKey was supplied.");
+			
+			if (IV == null)
+				throw new IOException("Unable to decrypt message. No IV was supplied.");
+			
+			/* Decrypt contents */
+			try {
+				byte[] plainBytes = CommonCrypto.decryptAES(msgBytes, Settings.TRANSFER_ENCRYPTION, decryptionKey, IV);
+				logger.debug("Successfully decrypted message using " + Settings.TRANSFER_ENCRYPTION);
+				logger.debug("---BEGIN DECRYPTED MESSAGE---");
+				logger.debug(new String(plainBytes, Settings.CHARSET));
+				logger.debug("---END DECRYPTED MESSAGE---");
+				logger.debug("Decrypted Message from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n" + new String(plainBytes, Settings.CHARSET));
+				return plainBytes;
+			} catch (Exception e) {
+				throw new IOException("Unable to decrypt message:\n" + e.getMessage());
+			}
 		}
-		return msgBytes;
 	}
-
-
-
 }

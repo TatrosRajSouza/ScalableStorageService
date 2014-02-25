@@ -11,10 +11,11 @@ public final class Settings {
 	public static final String TRANSFER_ENCRYPTION = "AES/CBC/PKCS5Padding"; //Symmetric file transfer encryption
 	public static final String CHARSET = "UTF-8";
 	public static String PAYLOAD_FILE = "payload.txt";
-	public static byte[] IV;
 	public static boolean USE_CLIENT_AUTH = true;
 	
 	public static String SERVER_CERT_PATH =  "certs/serverCert/serverCert.pem";
+	public static String CLIENT_PRIVKEY_PATH =  "certs/clientCert/clientKey.pem";
+	public static String CLIENT_CERT_PATH =  "certs/clientCert/clientCert.pem";
 	public static String SERVER_PRIVKEY_PATH = "certs/serverCert/serverKey.pem";
 	public static String CA_CERT_PATH = "certs/CACert.pem";
 	public static final String TRUSTED_CA_PATH = "certs/trustStore/";

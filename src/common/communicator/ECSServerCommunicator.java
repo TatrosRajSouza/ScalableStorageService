@@ -53,7 +53,7 @@ public class ECSServerCommunicator extends ServerCommunicator {
 	 * @throws InvalidMessageException thrown if the received message wasn't an ECS
 	 */
 	public ECSMessage receiveMessage() throws SocketTimeoutException, IOException, InvalidMessageException {
-		byte[] message = communication.receiveMessage();
+		byte[] message = communication.receiveMessage(null, null);
 		return new ECSMessage(message);
 	}
 }

@@ -1,9 +1,18 @@
 package crypto_protocol;
 
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+
+import logger.LogSetup;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import common.Settings;
 
@@ -14,6 +23,8 @@ import common.Settings;
  *
  */
 public class SessionInfo {
+	private Logger logger;
+	private String name;
 	private String clientIP;
 	private String serverIP;
 	private int localPort;
@@ -27,13 +38,16 @@ public class SessionInfo {
 	private byte[] encryptedSecret;
 	private byte[] clientNonce;
 	private byte[] serverNonce;
+	private byte[] IV;
 	private boolean clientAuthRequired;
 	private boolean isValid;
+	private Cipher cipher;
 
 	X509Certificate serverCertificate;
 	X509Certificate clientCertificate;
 	X509Certificate caCertificate;
 
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -85,18 +99,23 @@ public class SessionInfo {
 			else
 				sb.append("\nserverNonce: " + "<NOT SET>");
 			
+			if (IV != null)
+				sb.append("\nIV: " + new String(IV, Settings.CHARSET));
+			else
+				sb.append("\nIV: " + "<NOT SET>");
+			
 			if (serverCertificate != null)
-				sb.append("\nserverCertificate: " + serverCertificate);
+				sb.append("\nserverCertificate: " + serverCertificate.getSubjectX500Principal());
 			else
 				sb.append("\nserverCertificate: " + "<NOT SET>");
 			
 			if (clientCertificate != null)
-				sb.append("\nclientCertificate: " + clientCertificate);
+				sb.append("\nclientCertificate: " + clientCertificate.getSubjectX500Principal());
 			else
 				sb.append("\nclientCertificate: " + "<NOT SET>");
 			
 			if (caCertificate != null)
-				sb.append("\ncaCertificate: " + caCertificate);
+				sb.append("\ncaCertificate: " + caCertificate.getSubjectX500Principal());
 			else
 				sb.append("\ncaCertificate: " + "<NOT SET>");
 		} catch (UnsupportedEncodingException ex) {
@@ -106,7 +125,9 @@ public class SessionInfo {
 		return sb.toString();
 	}
 
-	public SessionInfo() {
+	public SessionInfo(String name, String transferEncryption) throws SessionException {
+		initLog();
+		this.name = "Session-" + name;
 		this.clientAuthRequired = false;
 		
 		this.encKey = null;
@@ -117,11 +138,23 @@ public class SessionInfo {
 		this.encryptedSecret = null;
 		this.clientNonce = null;
 		this.serverNonce = null;
+		this.IV = null;
 		
 		this.serverCertificate = null;
 		this.clientCertificate = null;
 		
 		this.isValid = false;
+		
+		try {
+			cipher = Cipher.getInstance(transferEncryption);
+		} catch (Exception e) {
+			throw new SessionException("Session invalid. Unable to create cipher:\n" + e.getMessage());
+		}
+	}
+	
+	public void initLog() {
+		LogSetup ls = new LogSetup("logs/session.log", "Session", Level.ALL);
+		this.logger = ls.getLogger();
 	}
 	
 	public void validateSession() throws SessionException {
@@ -152,6 +185,9 @@ public class SessionInfo {
 		if (this.serverCertificate == null)
 			throw new SessionException("Session invalid. Server Certificate undefined.");
 		
+		if (this.IV == null)
+			throw new SessionException("Session invalid. IV undefined.");
+		
 		if (isClientAuthRequired()) {
 			if (this.clientCertificate == null)
 				throw new SessionException("Session invalid. Client Certificate undefined.");
@@ -174,6 +210,11 @@ public class SessionInfo {
 		}
 		
 		this.caCertificate = caCertificate;
+		
+		if (this.caCertificate != null)
+			logger.debug("Set CA Certificate: " + caCertificate.getSubjectX500Principal());
+		else
+			logger.debug("Set CA Certificate: " + "<N/A>");
 	}
 	
 	public String getClientIP() {
@@ -208,6 +249,24 @@ public class SessionInfo {
 		this.remotePort = remotePort;
 	}
 	
+	public byte[] getIV() {
+		return this.IV;
+	}
+	
+	public void setIV(byte[] IV) {
+		this.IV = IV;
+		
+		if (IV != null) {
+			try {
+				logger.debug("Set IV: " + new String(IV, Settings.CHARSET));
+			} catch (UnsupportedEncodingException e) {
+				logger.debug("Set IV: <ENCODING_NOT_SUPPORTED>");
+			}
+		} else {
+			logger.debug("Set IV: <N/A>");
+		}
+	}
+	
 	public X509Certificate getServerCertificate() {
 		return serverCertificate;
 	}
@@ -218,6 +277,10 @@ public class SessionInfo {
 		}
 		
 		this.serverCertificate = serverCertificate;
+		if (this.serverCertificate != null)
+			logger.debug("Set Server Certificate: " + serverCertificate.getSubjectX500Principal());
+		else
+			logger.debug("Set Server Certificate: " + "<N/A>");
 	}
 
 	public X509Certificate getClientCertificate() {
@@ -230,6 +293,11 @@ public class SessionInfo {
 		}
 		
 		this.clientCertificate = clientCertificate;
+		
+		if (this.clientCertificate != null)
+			logger.debug("Set Client Certificate: " + clientCertificate.getSubjectX500Principal());
+		else
+			logger.debug("Set Client Certificate: " + "<N/A>");
 	}
 	
 	public byte[] getClientNonce() {
@@ -242,6 +310,11 @@ public class SessionInfo {
 		}
 		
 		this.clientNonce = clientNonce;
+		try {
+			logger.debug("Set Client Nonce: " + new String(clientNonce, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Client Nonce: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 
 	public byte[] getServerNonce() {
@@ -254,6 +327,12 @@ public class SessionInfo {
 		}
 		
 		this.serverNonce = serverNonce;
+		
+		try {
+			logger.debug("Set Server Nonce: " + new String(serverNonce, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Server Nonce: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 	
 	public byte[] getMasterSecret() {
@@ -266,6 +345,12 @@ public class SessionInfo {
 		}
 		
 		this.masterSecret = masterSecret;
+		
+		try {
+			logger.debug("Set Master Secret: " + new String(masterSecret, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Master Secret: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 	
 	public byte[] getEncryptedSecret() {
@@ -278,6 +363,12 @@ public class SessionInfo {
 		}
 		
 		this.encryptedSecret = encryptedSecret;
+		
+		try {
+			logger.debug("Set Encrypted Secret: " + new String(encryptedSecret, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Encrypted Secret: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 
 	public byte[] getSecureSessionHash() {
@@ -290,6 +381,12 @@ public class SessionInfo {
 		}
 		
 		this.secureSessionHash = secureSessionHash;
+		
+		try {
+			logger.debug("Set Secure Session Hash: " + new String(secureSessionHash, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Secure Session Hash: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 
 	public byte[] getSecureConfirmationHash() {
@@ -302,6 +399,12 @@ public class SessionInfo {
 		}
 		
 		this.secureConfirmationHash = secureConfirmationHash;
+		
+		try {
+			logger.debug("Set Secure Confirmation Hash: " + new String(secureConfirmationHash, Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Secure Confirmation Hash: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 	
 	public boolean isClientAuthRequired() {
@@ -310,6 +413,8 @@ public class SessionInfo {
 
 	public void setClientAuthRequired(boolean clientAuthRequired) {
 		this.clientAuthRequired = clientAuthRequired;
+		
+		logger.debug("Set Require Client Auth: " + clientAuthRequired);
 	}
 
 	public SecretKeySpec getEncKey() {
@@ -322,6 +427,22 @@ public class SessionInfo {
 		}
 		
 		this.encKey = value;
+		
+		try {
+			/* Encrypt contents AES-CBC-128 */	 
+			SecretKeySpec k = new SecretKeySpec(encKey.getEncoded(), "AES");
+			
+			cipher.init (Cipher.ENCRYPT_MODE, k);
+			this.setIV(cipher.getIV());
+		} catch (InvalidKeyException e) {
+			throw new IllegalArgumentException("Invalid Encryption Key:\n" + e.getMessage());
+		}
+		
+		try {
+			logger.debug("Set Enc Key: " + new String(encKey.getEncoded(), Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set Enc Key: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 	
 	public SecretKeySpec getMacKey() {
@@ -334,5 +455,11 @@ public class SessionInfo {
 		}
 		
 		this.macKey = value;
+		
+		try {
+			logger.debug("Set MAC Key: " + new String(macKey.getEncoded(), Settings.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			logger.debug("Set MAC Key: <ENCODING_NOT_SUPPORTED>");
+		}
 	}
 }

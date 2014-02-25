@@ -298,7 +298,7 @@ public class EcsConnection {
 
 		KVCommunication communication = new KVCommunication(serverData.getAddress(), serverData.getPort(), "ECS");
 		communication.sendMessageECS(sendMessage.toBytes());
-		byte[] receivedmessage = communication.receiveMessage();
+		byte[] receivedmessage = communication.receiveMessage(null, null);
 		ECSMessage receiveMessage = new ECSMessage(receivedmessage);
 		if(receiveMessage.getCommand().equals(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS))
 		{

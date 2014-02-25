@@ -7,13 +7,21 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.security.Key;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import logger.LogSetup;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import common.CommonCrypto;
 import common.Settings;
+import common.messages.InvalidMessageException;
+import crypto_protocol.SessionInfo;
 
 import app_kvClient.KVClient;
 import app_kvClient.SocketStatus;
@@ -115,20 +123,45 @@ public class KVCommunication {
 	private void sendMessageInternal(byte[] msgBytes, int ident) throws IOException, SocketTimeoutException {
 		if (msgBytes != null) {
 			output = clientSocket.getOutputStream();
-			byte[] bytes = ByteBuffer.allocate(8 + msgBytes.length).putInt(ident).putInt(msgBytes.length).put(msgBytes).array();
+			byte[] bytes = ByteBuffer.allocate(12 + msgBytes.length).putInt(0).putInt(ident).putInt(msgBytes.length).put(msgBytes).array();
 			output.write(bytes, 0, bytes.length);
 			output.flush();
 			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(bytes, Settings.CHARSET));
-			/*
-			if(KVClient.DEBUG) {
-				logger.info(" SEND \t<" 
-						+ clientSocket.getInetAddress().getHostAddress() + ":" 
-						+ clientSocket.getPort() + ">: '" 
-						+ new String(msgBytes) +"'");
-			}
-			*/
+
 		} else {
 			throw new IOException(" Unable to transmit message, the message was null.");
+		}
+	}
+	
+	/**
+	 * Method sends a Message using this socket.
+	 * @param msg the message that is to be sent.
+	 * @throws IOException some I/O error regarding the output stream 
+	 */
+	public void sendMessageEncrypted(byte[] msgBytes, SessionInfo session) throws IOException, SocketTimeoutException {
+		if (msgBytes != null) {
+
+			byte[] bytes = null;
+			byte[] encryptedBytes = null;
+			try {
+				/* Encrypt contents AES-CBC-128 */	 
+				SecretKeySpec k = new SecretKeySpec(session.getEncKey().getEncoded(), "AES");
+				Cipher cipher = Cipher.getInstance(Settings.TRANSFER_ENCRYPTION);
+				cipher.init (Cipher.ENCRYPT_MODE, k, new IvParameterSpec(session.getIV()));
+				encryptedBytes = cipher.doFinal(msgBytes);
+				bytes = ByteBuffer.allocate(12 + encryptedBytes.length).putInt(1).putInt(1).putInt(encryptedBytes.length).put(encryptedBytes).array();
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new IOException("Unable to encrypt message: " + e.getMessage());
+			}
+			
+			output.write(bytes, 0, bytes.length);
+			output.flush();
+
+			logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + new String(encryptedBytes, Settings.CHARSET));
+			
+		} else {
+			throw new IOException("Unable to transmit message, the message was null.");
 		}
 	}
 	
@@ -150,20 +183,36 @@ public class KVCommunication {
 		sendMessageInternal(msgBytes, 3);
 	}
 	
-	public byte[] receiveMessage() throws IOException, SocketTimeoutException {
+	public byte[] receiveMessage(Key decryptionKey, byte[] IV) throws IOException, SocketTimeoutException {
 		input = clientSocket.getInputStream();
 		int index = 0;
 		byte[] msgBytes = null, tmp = null;
 		byte[] bufferBytes = new byte[BUFFER_SIZE];
-
+		
+		/* read message encryption flag */
+		byte[] encFlagBytes = new byte[4];
+		input.read(encFlagBytes);
+		int encFlag = ByteBuffer.wrap(encFlagBytes).getInt(); // 0 = Plain, 1 = Encrypted
+		
+		if (encFlag != 0 && encFlag != 1)
+			throw new IOException("Encryption flag of received message was set to invalid value");
+		
 		/* read message identity */
 		byte[] identBytes = new byte[4];
-		int bytesRead = input.read(identBytes);
+		input.read(identBytes);
 		int ident = ByteBuffer.wrap(identBytes).getInt(); // 1 = CLIENT, 2 = SERVER, 3 = ECS
+		
+		if (ident != 1 && ident != 2 && ident != 3)
+			throw new IOException("Ident flag of received message was set to invalid value");
+		
 		/* read length of message */
 		byte[] lenBytes = new byte[4];
-		bytesRead = input.read(lenBytes);
+		input.read(lenBytes);
 		int msgLen = ByteBuffer.wrap(lenBytes).getInt();
+		
+		if (msgLen < 0)
+			throw new IOException("Length field of received message was invalid (negative).");
+		
 		logger.debug("new message - length: " + msgLen + ", ident: " + ident);
 
 		for (int i = 0; i < msgLen; i++) {
@@ -209,18 +258,33 @@ public class KVCommunication {
 		}
 
 		msgBytes = tmp;
-
-		/* build final String */
-		/*
-		if(KVClient.DEBUG) {
-			logger.info(" RECEIVE \t<" 
-					+ clientSocket.getInetAddress().getHostAddress() + ":" 
-					+ clientSocket.getPort() + ">: '" 
-					+ new String(msgBytes) + "'");
+			
+		if (encFlag == 0) {
+			logger.debug("Received Plain from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(msgBytes, Settings.CHARSET) + ">");
+			return msgBytes;
+		} else {
+			
+			logger.debug("Received Encrypted from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n" + new String(msgBytes, Settings.CHARSET));
+			if (decryptionKey == null)
+				throw new IOException("Unable to decrypt message. No decryptionKey was supplied.");
+			
+			if (IV == null)
+				throw new IOException("Unable to decrypt message. No IV was supplied.");
+			
+			/* Decrypt contents */
+			try {
+				byte[] plainBytes = CommonCrypto.decryptAES(msgBytes, Settings.TRANSFER_ENCRYPTION, decryptionKey, IV);
+				logger.debug("Successfully decrypted message using " + Settings.TRANSFER_ENCRYPTION);
+				logger.debug("---BEGIN DECRYPTED MESSAGE---");
+				logger.debug(new String(plainBytes, Settings.CHARSET));
+				logger.debug("---END DECRYPTED MESSAGE---");
+				logger.debug("Decrypted Message from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(plainBytes, Settings.CHARSET) + ">");
+				return plainBytes;
+			} catch (Exception e) {
+				throw new IOException("Unable to decrypt message:\n" + e.getMessage());
+			}
+			
 		}
-		*/
-		logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(msgBytes, Settings.CHARSET) + ">");
-		return msgBytes;
 	}
 	
 	/**

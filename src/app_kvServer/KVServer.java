@@ -140,7 +140,10 @@ public class KVServer extends Thread {
 	public InfrastructureMetadata getMetaData() {
 		return metaData;
 	}
-
+	
+	public static PrivateKey getPrivateKey() {
+		return serverPrivateKey;
+	}
 
 	public void setMetaData(InfrastructureMetadata metaData) {
 		logger.info("SetMetaData(): " + metaData.toString());

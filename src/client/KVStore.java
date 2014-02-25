@@ -1,6 +1,9 @@
 package client;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -8,12 +11,19 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -67,6 +77,9 @@ public class KVStore implements KVCommInterface {
 	private String moduleName = "<KVStore Module>";
 	private Random generator = new Random();
 	private SessionInfo session;
+	private boolean handshakeComplete = false;
+	private ArrayList<X509Certificate> trustedCAs;
+	private PrivateKey clientPrivateKey;
 
 
 	/**
@@ -87,6 +100,70 @@ public class KVStore implements KVCommInterface {
 
 		/* Initialize the consistent Hashing */
 		this.consHash = new ConsistentHashing(metaData.getServers());
+		
+		/* 
+		 * Try to import clients private key
+		 * Please make sure key is in pkcs 8 format.
+		 * For conversion you can use:
+		 * "openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER -in inputKey.key.pem -out pkcs8OutputKey.key.pem"
+		 */
+		try {
+			this.clientPrivateKey = CommonCrypto.loadPrivateKey(Settings.CLIENT_PRIVKEY_PATH, Charset.forName(Settings.CHARSET));
+		} catch (UnsupportedCharsetException e) {
+			logger.error("Cannot read Clients private key at: " + Settings.CLIENT_PRIVKEY_PATH + ",\nbecause the Charset " + Settings.CHARSET + " is not supported.\nClient Application terminated.");
+			System.exit(1);
+		} catch (FileNotFoundException e) {
+			logger.error("Clients private key file not found at: " + Settings.CLIENT_PRIVKEY_PATH + "\nClient Application terminated.");
+			System.exit(1);
+		}catch (IOException e) {
+			logger.error("Unable to read this clients private key from file: " + Settings.CLIENT_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nClient Application terminated.");
+			System.exit(1);
+		} catch (InvalidKeySpecException e) {
+			logger.error("Unable to read this clients private key from file: " + Settings.CLIENT_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nPlease make sure the private key file is in PKCS8 DER Format.\n" +
+							"To convert an unencrypted PEM key with openssl use the following command:\n" +
+							"openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER -in inputKey.key.pem -out pkcs8OutputKey.key.pem\n" +
+							"Client Application terminated.");
+			System.exit(1);
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("Unable to read this clients private key from file: " + Settings.CLIENT_PRIVKEY_PATH +
+					",\nReason: " + e.getMessage() + "\nClient Application terminated.");
+			System.exit(1);
+		}
+		
+		/* Load trusted CAs from trust store */
+		try {
+			trustedCAs = CommonCrypto.loadTrustStore();
+		} catch (CertificateException e) {
+			logger.error("Unable to load Trust Store: " + e.getMessage() + "\nClient Application terminated.");
+			System.exit(1);
+		} catch (Exception e) {
+			logger.error("Unable to load Trust Store: " + e.getMessage() + "\nServer Application terminated.");
+			System.exit(1);
+		}
+		logger.info("---List of trusted CAs---");
+		for (X509Certificate cert : trustedCAs) {
+			logger.info(cert.getSubjectX500Principal().getName());
+		}
+	}
+	
+	/**
+	 * Imports the client certificate from the specified path
+	 * @param path Path to the client certificate file
+	 * @throws CertificateException
+	 * @throws FileNotFoundException
+	 */
+	public void importClientCertificate(String path) throws CertificateException, FileNotFoundException {
+		logger.debug("Trying to import X509 client Certificate from: " + path);
+		File certificateFile = new File(path);
+		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+		X509Certificate clientCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certificateFile));
+		
+		if (clientCert != null)
+			session.setClientCertificate(clientCert);
+		else
+			logger.debug("Unable to import client certificate from " + path);
 	}
 
 	public void initLog() {
@@ -100,6 +177,7 @@ public class KVStore implements KVCommInterface {
 	@Override
 	public void connect() throws UnknownHostException, IOException, InvalidMessageException, ConnectException {
 		// System.out.println("New KVComm " + address + " " + port + " " + this.name);
+		handshakeComplete = false;
 		logger.debug("Trying to create new KVComm " + address + ":" + port);
 		kvComm = new KVCommunication(address, port, this.name);
 		
@@ -112,38 +190,42 @@ public class KVStore implements KVCommInterface {
 		} catch (IOException e) {
 			logger.error("IO Exception during Handshake: " + e.getMessage());
 			e.printStackTrace();
+		} catch (SessionException ex) {
+			logger.error("Error during secure handshake:\n" + ex.getMessage());
+			ex.printStackTrace();
 		}
 		
-		
-		KVQuery kvQueryConnectMessage = new KVQuery(KVMessage.StatusType.CONNECT);
-		logger.debug("Trying to send connect message to " + address + ":" + port);
-		kvComm.sendMessage(kvQueryConnectMessage.toBytes());
-		logger.debug("Sent Connect message to " + address + ":" + port);
-		logger.debug("Waiting for response from " + address + ":" + port);
-		byte[] connectResponse = kvComm.receiveMessage();
-		logger.debug("Response received " + address + ":" + port);
-
-		KVQuery kvQueryMessage = new KVQuery(connectResponse);
-
-
-		if (kvQueryMessage.getStatus() == StatusType.CONNECT_SUCCESS) {
-			if (DEBUG) {
-				logger.info(moduleName + ": Connected to KVServer");
-				logger.info(moduleName + ": Server Message: " + kvQueryMessage.getTextMessage());
+		if (handshakeComplete) {
+			KVQuery kvQueryConnectMessage = new KVQuery(KVMessage.StatusType.CONNECT);
+			logger.debug("Trying to send connect message to " + address + ":" + port);
+			kvComm.sendMessageEncrypted(kvQueryConnectMessage.toBytes(), session);
+			logger.debug("Sent Connect message to " + address + ":" + port);
+			logger.debug("Waiting for response from " + address + ":" + port);
+			byte[] connectResponse = kvComm.receiveMessage(session.getEncKey(), session.getIV());
+			logger.debug("Response received " + address + ":" + port);
+	
+			KVQuery kvQueryMessage = new KVQuery(connectResponse);
+	
+	
+			if (kvQueryMessage.getStatus() == StatusType.CONNECT_SUCCESS) {
+				if (DEBUG) {
+					logger.info(moduleName + ": Connected to KVServer");
+					logger.info(moduleName + ": Server Message: " + kvQueryMessage.getTextMessage());
+				}
 			}
-		}
-
-		else if (kvQueryMessage.getStatus() == StatusType.CONNECT_ERROR) {
-			if (DEBUG) {
-				System.out.println(moduleName + ": Unable to connect to KVServer.");
-				logger.error(moduleName + ": Unable to connect to KVServer.");
+	
+			else if (kvQueryMessage.getStatus() == StatusType.CONNECT_ERROR) {
+				if (DEBUG) {
+					System.out.println(moduleName + ": Unable to connect to KVServer.");
+					logger.error(moduleName + ": Unable to connect to KVServer.");
+				}
 			}
-		}
-
-		else {
-			if (DEBUG) {
-				logger.error(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
-				System.out.println(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
+	
+			else {
+				if (DEBUG) {
+					logger.error(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
+					System.out.println(moduleName + ": Unknown Message received from KVServer. Type: " + kvQueryMessage.getStatus().toString());
+				}
 			}
 		}
 	}
@@ -221,22 +303,70 @@ public class KVStore implements KVCommInterface {
 	}
 	
 	/**
+	 * Generate random bytes for pre-master secret
+	 * @param numBytes number of bytes to generate
+	 * @return random bytes of specified length
+	 */
+	private byte[] generateMasterSecret(int numBytes) {
+		byte[] p = new byte[numBytes];
+		
+		Random rand = new Random();
+		rand.nextBytes(p);
+		
+		return p;
+	}
+	
+	/**
 	 * Perform the miniSSL handshake
 	 * @param clientSocket socket used for communication
 	 * @throws HandshakeException in case of an error
 	 * @throws IOException 
 	 * @throws SocketTimeoutException 
+	 * @throws SessionException 
 	 */
-	public void performHandshake(Socket clientSocket) throws HandshakeException, SocketTimeoutException, IOException {
+	public void performHandshake(Socket clientSocket) throws HandshakeException, SocketTimeoutException, IOException, SessionException {
 		/* Create new session */
-		session = new SessionInfo();
+		session = new SessionInfo(this.name, Settings.TRANSFER_ENCRYPTION);
 		
 		session.setClientIP(clientSocket.getLocalAddress().getHostAddress());
 		session.setServerIP(clientSocket.getInetAddress().getHostAddress());
 		session.setLocalPort(clientSocket.getLocalPort());
 		session.setRemotePort(clientSocket.getPort());
 		
-		logger.debug("Created new Session: " + session.toString());
+		/* Try to import Client Certificate */
+		try {
+			importClientCertificate(Settings.CLIENT_CERT_PATH);
+		} catch (CertificateException e) {
+			throw new IllegalArgumentException("Unable to create X.509 Certificate from file: " + Settings.CLIENT_CERT_PATH);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException("X.509 Certificate file not found at: " + Settings.CLIENT_CERT_PATH);
+		}
+		
+		/* Try to import CA Certificate */
+		try {
+			session.setCACertificate(CommonCrypto.importCACertificate(Settings.getCACertPath()));
+			if (!CommonCrypto.isCATrusted(session.getCACertificate(), this.trustedCAs)) {
+				logger.error("CA Certificate: " + session.getCACertificate().getSubjectX500Principal() + " is not a trusted CA.\nClient Application terminated.");				
+				System.exit(1);
+			}
+		} catch (CertificateException e) {
+			logger.error("Unable to import CA Certificate from file: " + Settings.getCACertPath() + ", or Certificate invalid.\nReason: " + e.getMessage() + "\nClient Application Exiting.");
+			System.exit(1);
+		} catch (InvalidKeyException e) {
+			logger.error("Unable to import CA Certificate: " + e.getMessage() + ".\nClient Application terminated.");
+			System.exit(1);
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("Unable to import CA Certificate: " + e.getMessage() + ".\nClient Application terminated.");
+			System.exit(1);
+		} catch (NoSuchProviderException e) {
+			logger.error("Unable to import CA Certificate: " + e.getMessage() + ".\nClient Application terminated.");
+			System.exit(1);
+		} catch (SignatureException e) {
+			logger.error("Unable to import CA Certificate: " + e.getMessage() + ".\nClient Application terminated.");
+			System.exit(1);
+		}
+		
+		
 		
 		// Send ClientInit
 		ClientInitMessage clientInitMessage = new ClientInitMessage();
@@ -249,7 +379,7 @@ public class KVStore implements KVCommInterface {
 		
 		
 		// Wait for ServerInit
-		Message message = bytesToMessage(kvComm.receiveMessage());
+		Message message = bytesToMessage(kvComm.receiveMessage(session.getEncKey(), session.getIV()));
 		if (!verifyMessageType(message, MessageType.ServerInitMessage))
 			throw new HandshakeException("Invalid Message received.");
 		
@@ -258,7 +388,7 @@ public class KVStore implements KVCommInterface {
 		session.setClientAuthRequired(serverInitMessage.isClientAuthRequired());
 		session.setServerCertificate(serverInitMessage.getCertificate());
 		
-		/*
+		
 		// Verify validity of certificate 
 		try {
 			CommonCrypto.verifyCertificate(session.getServerCertificate(), session.getCACertificate());
@@ -281,6 +411,7 @@ public class KVStore implements KVCommInterface {
 		
 		// Generate 47 byte random master secret
 		session.setMasterSecret(generateMasterSecret(47));
+		
 		
 		// Generate two session keys, one for encryption, one for mac
 		try {
@@ -306,6 +437,7 @@ public class KVStore implements KVCommInterface {
 		} catch (CertificateEncodingException e) {
 			throw new HandshakeException ("Unable to generate Session Hash. The specified Certificate has invalid encoding. Message: " + e.getMessage());
 		}
+		
 		
 		// Encrypt master secret with public key from verified Server certificate
 		try {
@@ -343,7 +475,7 @@ public class KVStore implements KVCommInterface {
 				ClientKeyExchangeMessage clientKeyExchangeMessage = new ClientKeyExchangeMessage(session.getEncryptedSecret(), session.getSecureSessionHash(), session.getClientCertificate(), signature);
 				
 				try {
-					send(clientKeyExchangeMessage);
+					sendObject(clientKeyExchangeMessage);
 				} catch (IOException e) {
 					throw new HandshakeException("I/O failed while sending clientKeyExchangeMessage. Message: " + e.getMessage());
 				}
@@ -366,7 +498,7 @@ public class KVStore implements KVCommInterface {
 			// simple authentication
 			ClientKeyExchangeMessage clientKeyExchangeMessage = new ClientKeyExchangeMessage(session.getEncryptedSecret(), session.getSecureSessionHash());
 			try {
-				send(clientKeyExchangeMessage);
+				sendObject(clientKeyExchangeMessage);
 			} catch (IOException e) {
 				throw new HandshakeException("I/O failed while sending clientKeyExchangeMessage. Message: " + e.getMessage());
 			}
@@ -386,13 +518,15 @@ public class KVStore implements KVCommInterface {
 			throw new HandshakeException ("Unable to generate Confirmation Hash. The specified algorithm was invalid. Message: " + e.getMessage());
 		}
 		
+		
+		
 		// Wait for ServerAuthConfirmation
-		ServerAuthConfirmationMessage serverAuthConfirmationMessage = null;
-		try {
-			serverAuthConfirmationMessage = receiveServerAuthConfirmation();
-		} catch (IOException e) {
-			throw new HandshakeException("I/O failed while sending serverAuthConfirmationMessage. Message: " + e.getMessage());
-		}
+		// Wait for ServerInit
+		message = bytesToMessage(kvComm.receiveMessage(session.getEncKey(), session.getIV()));
+		if (!verifyMessageType(message, MessageType.ServerAuthConfirmationMessage))
+			throw new HandshakeException("Invalid Message received.");
+		
+		ServerAuthConfirmationMessage serverAuthConfirmationMessage = (ServerAuthConfirmationMessage) message;
 		
 		// Compare generated confirmation Hash with confirmation Hash received from Server
 		if (!CommonCrypto.isByteArrayEqual(session.getSecureConfirmationHash(), serverAuthConfirmationMessage.getConfirmationHash())) {
@@ -401,14 +535,19 @@ public class KVStore implements KVCommInterface {
 			logger.info("Successfully compared Auth Information. Confirmation Hash for Client matches Hash received from Server.");
 		}
 		
+		session.setIV(serverAuthConfirmationMessage.getIV());
+		
+		logger.debug(session);
+		
 		// Validate all session information
 		try {
 			session.validateSession();
 		} catch (SessionException e) {
 			throw new HandshakeException("The Session failed to validate. Inconsistent Session Data. Message: " + e.getMessage());
 		}
+		
 		logger.info("Session validated. Handshake is complete.");
-		*/
+		handshakeComplete = true;
 	}
 
 	/**
@@ -418,7 +557,7 @@ public class KVStore implements KVCommInterface {
 	public void disconnect() {
 		if (kvComm != null && kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			try {
-				kvComm.sendMessage(new KVQuery(StatusType.DISCONNECT).toBytes());
+				kvComm.sendMessageEncrypted(new KVQuery(StatusType.DISCONNECT).toBytes(), session);
 			} catch (IOException ex) {
 				logger.error(moduleName + ": Unable to send disconnect message, an IO Error occured:\n" + ex.getMessage());
 			} catch (InvalidMessageException ex) {
@@ -432,7 +571,7 @@ public class KVStore implements KVCommInterface {
 				logger.info(moduleName + ": Waiting for disconnect response from server...");
 
 			try {
-				byte[] disconnectResponse = kvComm.receiveMessage();
+				byte[] disconnectResponse = kvComm.receiveMessage(session.getEncKey(), session.getIV());
 				KVQuery kvQueryMessage = new KVQuery(disconnectResponse);
 				if (kvQueryMessage.getStatus() == StatusType.DISCONNECT_SUCCESS) {
 					if (DEBUG)
@@ -564,7 +703,7 @@ public class KVStore implements KVCommInterface {
 
 			try {
 				/* Optimistic Query, send put request to current connected server */
-				kvComm.sendMessage(new KVQuery(StatusType.PUT, key, value).toBytes());
+				kvComm.sendMessageEncrypted(new KVQuery(StatusType.PUT, key, value).toBytes(), session);
 
 				if (DEBUG)
 					logger.info(moduleName + ": Sent PUT Request for <key, value>: <" + key + ", " + value + ">");
@@ -579,7 +718,7 @@ public class KVStore implements KVCommInterface {
 				logger.info("Waiting for PUT response from server...");
 
 			try {
-				byte[] putResponse = kvComm.receiveMessage();
+				byte[] putResponse = kvComm.receiveMessage(session.getEncKey(), session.getIV());
 				KVQuery kvQueryMessage = new KVQuery(putResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(), kvQueryMessage.getValue());
 				//System.out.println(kvResult.getStatus());
@@ -654,7 +793,7 @@ public class KVStore implements KVCommInterface {
 		if (kvComm != null && kvComm.getSocketStatus() == SocketStatus.CONNECTED) {
 			/* Optimistic query to currently connected Server */
 			try {
-				kvComm.sendMessage(new KVQuery(StatusType.GET, key).toBytes());
+				kvComm.sendMessageEncrypted(new KVQuery(StatusType.GET, key).toBytes(), session);
 
 				if (DEBUG)
 					logger.info(moduleName + ": Sent GET Request for <key>: <" + key + ">");
@@ -671,7 +810,7 @@ public class KVStore implements KVCommInterface {
 				logger.info("Waiting for GET response from server...");
 
 			try {
-				byte[] getResponse = kvComm.receiveMessage();
+				byte[] getResponse = kvComm.receiveMessage(session.getEncKey(), session.getIV());
 				KVQuery kvQueryMessage = new KVQuery(getResponse);
 				KVResult kvResult = new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
 
@@ -687,8 +826,8 @@ public class KVStore implements KVCommInterface {
 						port = responsibleServer.getPort();
 						name = responsibleServer.getName();
 						connect();
-						kvComm.sendMessage(new KVQuery(StatusType.GET, key).toBytes());
-						getResponse = kvComm.receiveMessage();
+						kvComm.sendMessageEncrypted(new KVQuery(StatusType.GET, key).toBytes(), session);
+						getResponse = kvComm.receiveMessage(session.getEncKey(), session.getIV());
 						kvQueryMessage = new KVQuery(getResponse);
 						return new KVResult(kvQueryMessage.getStatus(), kvQueryMessage.getKey(),kvQueryMessage.getValue());
 					}
