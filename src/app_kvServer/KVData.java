@@ -46,7 +46,9 @@ public class KVData {
 		
 		return data.toString();
 	}
-
+	/**
+	 * store/update/delete key,value pair in KVdata .
+	 */
 	public String put(BigInteger key, String value) {
 		String returnValue = null;
 		if(!value.equals("null"))
@@ -68,6 +70,9 @@ public class KVData {
 		return returnValue;
 
 	}
+	/**
+	 * move data from one kvdata to other.
+	 */
 	public void moveData(HashMap<BigInteger,String> movingData)
 	{
 		if(!movingData.isEmpty())
@@ -85,43 +90,33 @@ public class KVData {
 		}
 
 	}
-
+	
+	/**
+	 * get value for given key.
+	 */
 	public String get(BigInteger hashedKey)  {
-		/*logger.info("size of the datastore:" + dataStore.size());
-		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
-		// iterate over the range or hashmap?
-		if(!dataStore.isEmpty())
-		{
-		Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
-			logger.info("key:"+pairs.getKey() + "value:"+pairs.getValue());
-		}
-		}*/
 		return dataStore.get(hashedKey);
 	}
-
+	
+	/**
+	 * Find data set which is to be moved from one server to other.
+	 */
 	public HashMap<BigInteger,String> findMovingData(BigInteger startIndex, BigInteger endIndex,boolean corner)
 	{
 		BigInteger key;
 		HashMap<BigInteger, String> movingData = new HashMap<BigInteger,String>();
-		// iterate over the range or hashmap?
 		if(!dataStore.isEmpty())
 		{
 		Iterator<Entry<BigInteger, String>> it = dataStore.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<BigInteger,String> pairs = (Entry<BigInteger, String>)it.next();
 			key = pairs.getKey();
-			//logger.info("Start Index:" + startIndex);
-			//logger.info("End Index:" + endIndex);
-			//logger.info("Key:" + key);
 			if(!corner)
 			{
 			if((key.compareTo(startIndex)  >= 0  && key.compareTo(endIndex) <= 0 ))
 			{
 				logger.info("correct1");
 				movingData.put(key, pairs.getValue());
-				//logger.info("correctindex:key:" + key + "value:" + pairs.getValue());
 			}
 			}
 			else
@@ -130,52 +125,15 @@ public class KVData {
 			{
 				logger.info("correct2");
 				movingData.put(key, pairs.getValue());
-				//logger.info("correctindex:key:" + key + "value:" + pairs.getValue());
 			}
 			}
-			// need modification
-			//int a = startIndex.compareTo(key);
-			//int b = endIndex.compareTo(key);
-	/*		if(startIndex.compareTo(endIndex) >= 0)
-			{
-			if(startIndex.compareTo(key)  >= 0  && endIndex.compareTo(key) <= 0 )
-			{
-				movingData.put(key, pairs.getValue());
-				//logger.info("correctindex:key:" + key + "value:" + pairs.getValue());
-			}
-			else if(startIndex.compareTo(key)  <= 0 || endIndex.compareTo(key) <= 0 )
-				logger.info("incorrect start index");
-				logger.info("Start Index:" + startIndex);
-				logger.info("End Index:" + endIndex);
-				logger.info("Key:" + key);
-			{
-				movingData.put(key, pairs.getValue());
-				logger.info("incorrectindex:key:" + key + "value:" + pairs.getValue());
-			}
-			}
-			else 
-			{
-				if(endIndex.compareTo(key)  >= 0  && startIndex.compareTo(key) <= 0 )
-				{
-					movingData.put(key, pairs.getValue());
-					//logger.info("correctindex:key:" + key + "value:" + pairs.getValue());
-				}
-				else if(endIndex.compareTo(key)  <= 0 || startIndex.compareTo(key) <= 0 )
-					logger.info("incorrect start index");
-					logger.info("Start Index:" + startIndex);
-					logger.info("End Index:" + endIndex);
-					logger.info("Key:" + key);
-				{
-					movingData.put(key, pairs.getValue());
-					logger.info("incorrectindex:key:" + key + "value:" + pairs.getValue());
-				}
-			}
-			*/
 		}
 		}
 		return movingData;
 	}
-
+	/**
+	 * remove data set from server.
+	 */
 	public void remove(HashMap<BigInteger, String> movedData) {
 		if(!movedData.isEmpty())
 		{

@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
@@ -60,7 +59,6 @@ public class ClientConnection implements Runnable {
 	private KVServer serverInstance;
 	private Logger logger;
 	private static final int BUFFER_SIZE = 1024;
-	private static final int DROP_SIZE = 44096 * BUFFER_SIZE;
 	private Socket clientSocket;
 	private InputStream input;
 	private OutputStream output;
@@ -90,33 +88,33 @@ public class ClientConnection implements Runnable {
 		LogSetup ls = new LogSetup("logs/server.log", "Server", Level.ALL);
 		this.logger = ls.getLogger();
 	}
-	
+
 	/**
 	 * General receive method
 	 * @return Message received Message
 	 * @throws IOException
 	 */
 	public Message bytesToMessage(byte[] bytes) throws IOException {
-		
+
 		try {
 			Object input =  CommonCrypto.objectFromByteArray(bytes);
-		
+
 			if (input instanceof ClientInitMessage) {
 				logger.info("RECEIVE << " + input);
 				return (ClientInitMessage)input;
-				
+
 			} else if (input instanceof ClientKeyExchangeMessage) {
 				logger.info("RECEIVE << " + input);
 				return (ClientKeyExchangeMessage)input;
-				
+
 			} else if (input instanceof ErrorMessage) {
 				logger.info("RECEIVE << " + input);
 				return (ErrorMessage)input;
-				
+
 			} else if (input instanceof ServerAuthConfirmationMessage) {
 				logger.info("RECEIVE << " + input);
 				return (ServerAuthConfirmationMessage)input;
-				
+
 			} else if (input instanceof ServerInitMessage) {
 				logger.info("RECEIVE << " + input);
 				return (ServerInitMessage)input;
@@ -127,7 +125,7 @@ public class ClientConnection implements Runnable {
 			throw new IOException("Received Object was not of the expected type. Expected <Message>, Received <UnknownType>");
 		}
 	}
-	
+
 	/**
 	 * Verifies that a given message is of a specific type
 	 * @param message message to verify
@@ -147,7 +145,7 @@ public class ClientConnection implements Runnable {
 			throw new HandshakeException("Received unexpected Message from Client. Type: " + message.getType());
 		}
 	}
-	
+
 	/**
 	 * Send java object over socket output stream
 	 * @param obj a java object
@@ -157,18 +155,18 @@ public class ClientConnection implements Runnable {
 		if (obj == null) {
 			throw new IOException("Tried to send null Object.");
 		}
-		
+
 		logger.info("SEND >> " + obj.toString());
 		byte[] bytes = CommonCrypto.objectToByteArray(obj);
 		sendMessage(bytes);
 	}
-	
+
 	private void performHandshake(Socket clientSocket, byte[] firstMessage) throws HandshakeException, IOException, SessionException {
 		session.setServerIP(clientSocket.getLocalAddress().getHostAddress());
 		session.setClientIP(clientSocket.getInetAddress().getHostAddress());
 		session.setLocalPort(clientSocket.getLocalPort());
 		session.setRemotePort(clientSocket.getPort());
-		
+
 		/* Try to import CA Certificate */
 		try {
 			session.setCACertificate(CommonCrypto.importCACertificate(Settings.getCACertPath()));
@@ -176,31 +174,31 @@ public class ClientConnection implements Runnable {
 			logger.error("Unable to import CA Certificate from file: " + Settings.getCACertPath() + ", or Certificate invalid.\nReason: " + e.getMessage() + "\nClient Application Exiting.");
 			System.exit(1);
 		}
-		
+
 		// Expect ClientInit
 		Message message = bytesToMessage(firstMessage);
 		if (!verifyMessageType(message, MessageType.ClientInitMessage))
 			throw new HandshakeException("Invalid Message received. Expected ClientInitMessage.");
-		
+
 		ClientInitMessage clientInitMessage = (ClientInitMessage) message;
 		session.setClientNonce(clientInitMessage.getNonce());	
-		
+
 		// Send ServerInit
 		ServerInitMessage serverInitMessage = new ServerInitMessage(Settings.TRANSFER_ENCRYPTION, KVServer.serverCertificate, session.isClientAuthRequired());
 		session.setServerNonce(serverInitMessage.getNonce());
 		session.setServerCertificate(serverInitMessage.getCertificate());
 		sendObject(serverInitMessage);
-		
-		
+
+
 		// Expect ClientKeyExchangeMessage
 		message = bytesToMessage(receiveMessage(session.getEncKey(), session.getIV()));
 		if (!verifyMessageType(message, MessageType.ClientKeyExchangeMessage))
 			throw new HandshakeException("Invalid Message received.");
-		
+
 		ClientKeyExchangeMessage clientKeyExchangeMessage = (ClientKeyExchangeMessage) message;
 		session.setClientCertificate(clientKeyExchangeMessage.getClientCertificate());
 		session.setEncryptedSecret(clientKeyExchangeMessage.getEncryptedSecret());	
-		
+
 		// Decrypt the master secret
 		session.setMasterSecret(CommonCrypto.decryptRSA(clientKeyExchangeMessage.getEncryptedSecret(), Settings.ALGORITHM_ENCRYPTION, KVServer.getPrivateKey()));
 		logger.debug("RECEIVED & DECRYPTED MASTER SECRET (p): " + new String(session.getMasterSecret(), Settings.CHARSET));
@@ -214,7 +212,7 @@ public class ClientConnection implements Runnable {
 		} catch (NoSuchAlgorithmException e) {
 			throw new HandshakeException ("Unable to generate Session keys, Invalid cipher: " + Settings.ALGORITHM_ENCRYPTION + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
 		}
-		
+
 		// Authenticate Client
 		if (session.isClientAuthRequired()) {
 			try {
@@ -232,14 +230,14 @@ public class ClientConnection implements Runnable {
 			}
 			System.out.println(session.getClientCertificate());
 			logger.info("Client Certificate verified by CA.");
-			
+
 			try {
 				byte[] decryptedSignature = CommonCrypto.decryptRSA(clientKeyExchangeMessage.getSignature(), Settings.ALGORITHM_ENCRYPTION, session.getClientCertificate().getPublicKey());
 				byte[] sigContent = CommonCrypto.concatenateByteArray(session.getServerNonce(), session.getEncryptedSecret());
 				byte[] sigContentHash = CommonCrypto.generateHash(Settings.ALGORITHM_HASHING, session.getMacKey(), sigContent);
 
-				
-				
+
+
 				if (CommonCrypto.isByteArrayEqual(sigContentHash, decryptedSignature)) {
 					logger.info("Client Signature verified on Server Nonce and encrypted master secret.");
 				} else {
@@ -250,7 +248,7 @@ public class ClientConnection implements Runnable {
 				throw new HandshakeException("Client Signature invalid or unable to verify Signature. Message: " + e.getMessage() + "\nSession terminated.");
 			}
 		}
-		
+
 		// Compute session hash from session information
 		try {
 			session.setSecureSessionHash(CommonCrypto.generateSessionHash(Settings.ALGORITHM_HASHING, session.getMacKey(), session.getClientNonce(), session.getServerNonce(), session.getServerCertificate().getEncoded(), session.isClientAuthRequired()));
@@ -261,14 +259,14 @@ public class ClientConnection implements Runnable {
 		} catch (NoSuchAlgorithmException e) {
 			throw new HandshakeException ("Unable to generate Session Hash, Invalid Algorithm: " + Settings.ALGORITHM_HASHING + ",\nMessage: " + e.getMessage()+ "\nConnection terminated.");
 		}
-	
+
 		// Compare generated session hash with session hash received from client
 		if (!(CommonCrypto.isByteArrayEqual(session.getSecureSessionHash(), clientKeyExchangeMessage.getSecureSessionHash()))) {
 			throw new HandshakeException("Session Information Mismatch. Session Hash received from Client did not match Session Hash computed on Server.");
 		} else {
 			logger.info("Successfully compared Session Information. Session Hash on Server matches Hash received from Client.");
 		}
-		
+
 		// Generate Auth Confirmation Hash & send to client
 		try {
 			if (session.isClientAuthRequired())
@@ -280,16 +278,16 @@ public class ClientConnection implements Runnable {
 		}
 		ServerAuthConfirmationMessage serverAuthConfirmationMessage = new ServerAuthConfirmationMessage(session.getSecureConfirmationHash(), session.getIV(), session.isClientAuthRequired());
 		sendObject (serverAuthConfirmationMessage);
-		
+
 		logger.debug(session);
-		
+
 		// Validate Session
 		try {
 			session.validateSession();
 		} catch (SessionException e) {
 			throw new HandshakeException(e.getMessage());
 		}
-		
+
 		logger.info("Session validated. Handshake is complete.");
 		this.handshakeComplete = true;
 	}
@@ -307,20 +305,20 @@ public class ClientConnection implements Runnable {
 				String connectSuccess = "Connection to MSRG Echo server established: " 
 						+ clientSocket.getLocalAddress() + " / "
 						+ clientSocket.getLocalPort();
-				
+
 				try {
 					session = new SessionInfo(clientSocket.getLocalAddress().getHostAddress() + ":" + clientSocket.getLocalPort(), Settings.TRANSFER_ENCRYPTION);
 					session.setClientAuthRequired(false);
 				} catch (SessionException e2) {
 					throw new IOException("Unable to create session:\n" + e2.getMessage());
 				}
-				
-				
+
+
 				while(isOpen) { // until connection open
 					try { //connection lost
 						byte[] latestMsg = receiveMessage(session.getEncKey(), session.getIV());
 						logger.debug("Received from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(latestMsg, Settings.CHARSET) + ">");
-						
+
 						if (!handshakeComplete && partner.equals(Ident.CLIENT)) {
 							try {
 								performHandshake(clientSocket, latestMsg);
@@ -336,7 +334,7 @@ public class ClientConnection implements Runnable {
 								ex.printStackTrace();
 							}
 						}
-						
+
 						KVQuery kvQueryCommand;
 						try { //   not KVMessage
 							kvQueryCommand = new KVQuery(latestMsg);
@@ -398,7 +396,7 @@ public class ClientConnection implements Runnable {
 								{
 									key = kvQueryCommand.getKey();
 									value = kvQueryCommand.getValue();
-									
+
 									boolean isInRange = checkRangeCoordinator(key, value);
 									BigInteger hashedKey = ConsistentHashing.hashKey(key);
 									if(isInRange)
@@ -499,8 +497,6 @@ public class ClientConnection implements Runnable {
 								else if(command.equals("CONNECT")) // connect block only for clients not for ECS
 								{
 									sendConnectSuccess(connectSuccess);
-									// logger.debug("SERVER:Connect success");
-
 
 								}// connect block only for clients not for ECS
 
@@ -508,8 +504,6 @@ public class ClientConnection implements Runnable {
 							else if(command.equals("CONNECT")) // connect block only for clients not for ECS
 							{
 								sendConnectSuccess(connectSuccess);
-								logger.debug("SERVER:Connect success");
-
 
 							} // connect block only for clients not for ECS
 							else // server stopped block
@@ -536,19 +530,16 @@ public class ClientConnection implements Runnable {
 									{
 										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_COMPLETED);
 										sendMessage(ecsMoveSuccess.toBytes());
-										logger.debug("SERVER:ECS move completed");
 									}
 									else if(ecsMessage.equals("moveinternalcompleted"))
 									{
 										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_DATA_INTERNAL_SUCCESS);
 										sendMessage(ecsMoveSuccess.toBytes());
-										logger.debug("SERVER:ECS movinternale completed");
 									}
 									else
 									{
 										ECSMessage ecsMoveSuccess = new ECSMessage(ECSStatusType.MOVE_ERROR);
 										sendMessage(ecsMoveSuccess.toBytes());
-										logger.debug("SERVER:ECS move error");
 									}
 								}
 							} catch (InvalidMessageException eEcs) {//Server-server message
@@ -563,7 +554,6 @@ public class ClientConnection implements Runnable {
 						}//ECS block
 					}//connection lost
 					catch (IOException ioe) {
-						// logger.error("Error! Connection lost!"); // I commented this out because it is irritating. Happens every disconnect.
 						isOpen = false;
 					}
 				}// until connection open
@@ -653,7 +643,7 @@ public class ClientConnection implements Runnable {
 
 			//sendMessage(kvQueryConnect.toBytes());
 			sendMessageEncrypted(kvQueryConnect.toBytes(), session);
-			
+
 			if (kvQueryConnect.getStatus() != null)
 				logger.debug("Sent to           [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + kvQueryConnect.getStatus());
 		} catch (InvalidMessageException e) {
@@ -664,8 +654,7 @@ public class ClientConnection implements Runnable {
 		}
 	}
 
-	/***
-	 * 
+	/**
 	 * @param key
 	 * @param value 
 	 * @return hashedkey
@@ -679,7 +668,7 @@ public class ClientConnection implements Runnable {
 			logger.info("Checking range for <key, value>: <" + key + ", " + value + ">");
 			logger.info("Check range returned address: " + serverDataHash.getAddress().toString());
 			logger.info("Check range returned port: " + serverDataHash.getPort());
-			
+
 
 			if (serverDataHash != null && serverDataServer != null)
 			{
@@ -735,7 +724,7 @@ public class ClientConnection implements Runnable {
 	public void sendMessage(byte[] msgBytes) throws IOException {
 		sendMessage(msgBytes, output);
 	}
-	
+
 	/**
 	 * Method sends a TextMessage using this socket.
 	 * @param msg the message that is to be sent.
@@ -744,7 +733,7 @@ public class ClientConnection implements Runnable {
 	public void sendMessageEncrypted(byte[] msgBytes, SessionInfo session) throws IOException {
 		sendMessageEncrypted(msgBytes, output, session);
 	}
-	
+
 	/**
 	 * Method sends a Message using this socket.
 	 * @param msg the message that is to be sent.
@@ -762,7 +751,7 @@ public class ClientConnection implements Runnable {
 			throw new IOException("Unable to transmit message, the message was null.");
 		}
 	}
-	
+
 	/**
 	 * Method sends a Message using this socket.
 	 * @param msg the message that is to be sent.
@@ -784,7 +773,7 @@ public class ClientConnection implements Runnable {
 				e.printStackTrace();
 				throw new IOException("Unable to encrypt message: " + e.getMessage());
 			}
-			
+
 			output.write(bytes, 0, bytes.length);
 			output.flush();
 
@@ -793,25 +782,25 @@ public class ClientConnection implements Runnable {
 			throw new IOException("Unable to transmit message, the message was null.");
 		}
 	}
-	
+
 	public byte[] receiveMessage(Key decryptionKey, byte[] IV) throws IOException, SocketTimeoutException {
 		int index = 0;
 		byte[] msgBytes = null, tmp = null;
 		byte[] bufferBytes = new byte[BUFFER_SIZE];
-		
+
 		/* read message encryption flag */
 		byte[] encFlagBytes = new byte[4];
 		input.read(encFlagBytes);
 		int encFlag = ByteBuffer.wrap(encFlagBytes).getInt(); // 0 = Plain, 1 = Encrypted
-		
+
 		if (encFlag != 0 && encFlag != 1)
 			throw new IOException("Encryption flag of received message was set to invalid value");
-		
+
 		/* read message identity */
 		byte[] identBytes = new byte[4];
 		input.read(identBytes);
 		int ident = ByteBuffer.wrap(identBytes).getInt(); // 1 = CLIENT, 2 = SERVER, 3 = ECS
-		
+
 		if (ident == 1) {
 			partner = Ident.CLIENT;
 			logger.debug("RECEIVED MESSAGE IS FROM CLIENT");
@@ -824,21 +813,21 @@ public class ClientConnection implements Runnable {
 		} else {
 			throw new IOException("Ident flag of received message was set to invalid value");
 		}
-		
+
 		/* read length of message */
 		byte[] lenBytes = new byte[4];
 		input.read(lenBytes);
 		int msgLen = ByteBuffer.wrap(lenBytes).getInt();
-		
+
 		if (msgLen < 0)
 			throw new IOException("Length field of received message was invalid (negative).");
-		
+
 		logger.debug("new message - length: " + msgLen + ", ident: " + ident);
 
 		for (int i = 0; i < msgLen; i++) {
 			/* read next byte */
 			byte read = (byte) input.read();
-			
+
 			/* if buffer filled, copy to msg array */
 			if(index == BUFFER_SIZE) {
 				if(msgBytes == null){
@@ -859,14 +848,7 @@ public class ClientConnection implements Runnable {
 			/* only read valid characters, i.e. letters and constants */
 			bufferBytes[index] = read;
 			index++;
-
-			/* stop reading is DROP_SIZE is reached */
-			/*
-			if(msgBytes != null && msgBytes.length + index >= DROP_SIZE) {
-				reading = false;
-			}*/
 		}
-		// logger.debug("DONE READING.");
 
 		if(msgBytes == null){
 			tmp = new byte[index];
@@ -878,19 +860,19 @@ public class ClientConnection implements Runnable {
 		}
 
 		msgBytes = tmp;
-			
+
 		if (encFlag == 0) {
 			logger.debug("Received Plain from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n<" + new String(msgBytes, Settings.CHARSET) + ">");
 			return msgBytes;
 		} else {
-			
+
 			logger.debug("Received Encrypted from     [" + this.clientSocket.getInetAddress().getHostAddress() + ":" + this.clientSocket.getPort() + "] " + "RAW DATA\n" + new String(msgBytes, Settings.CHARSET));
 			if (decryptionKey == null)
 				throw new IOException("Unable to decrypt message. No decryptionKey was supplied.");
-			
+
 			if (IV == null)
 				throw new IOException("Unable to decrypt message. No IV was supplied.");
-			
+
 			/* Decrypt contents */
 			try {
 				byte[] plainBytes = CommonCrypto.decryptAES(msgBytes, Settings.TRANSFER_ENCRYPTION, decryptionKey, IV);
