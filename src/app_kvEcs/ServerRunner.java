@@ -2,6 +2,8 @@ package app_kvEcs;
 
 import java.io.IOException;
 
+import common.Settings;
+
 public class ServerRunner implements Runnable {
     String name;
     Thread thread;     
@@ -24,7 +26,7 @@ public class ServerRunner implements Runnable {
 		StringBuilder sb = new StringBuilder();
 		//sb.append("java -jar ");
 		sb.append("java -jar ");
-		sb.append(System.getProperty("user.dir") + "\\ms3-server.jar ");
+		sb.append(System.getProperty("user.dir") + "\\" + Settings.SERVERJAR + " ");
 		sb.append(port);
 		
 		String cmd = sb.toString();
@@ -53,4 +55,3 @@ public class ServerRunner implements Runnable {
 		} 
     }
 }
-

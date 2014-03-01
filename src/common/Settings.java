@@ -12,6 +12,7 @@ public final class Settings {
 			.getCodeSource()
 			.getLocation().getPath();
 	static String home = fullpath.substring(0,fullpath.lastIndexOf("/"));
+	public static final String SERVERJAR = "ms5-server.jar";
 	public static final String ALGORITHM_HASHING = "HmacSHA1"; // Secure hashing algorithm
 	public static final String ALGORITHM_ENCRYPTION = "RSA"; // Encryption used during authentication
 	public static final String TRANSFER_ENCRYPTION = "AES/CBC/PKCS5Padding"; //Symmetric file transfer encryption
